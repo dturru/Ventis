@@ -200,51 +200,64 @@ static const char INDEX_HTML[] PROGMEM = R"raw(<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ventis</title>
 <style>
-:root{--bg:#0e1116;--tile:#151b23;--fg:#e6edf3;--muted:#8b949e;--green:#2ea043;--amber:#d29922;--red:#f85149;--accent:#58a6ff;--border:#30363d;}
+:root{--bg:#ffffff;--tile:#ffffff;--tile-alt:#f7faf6;--fg:#1f2a1f;--muted:#5e6b5e;--green:#1e6e3a;--green-hover:#155026;--green-light:#e8f5e9;--amber:#b87900;--amber-light:#fff7e0;--red:#c62828;--red-light:#ffebee;--accent:#1e6e3a;--border:#d5dfd5;--shadow:0 1px 2px rgba(30,110,58,.06);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:16px;max-width:480px;margin:0 auto;-webkit-font-smoothing:antialiased;}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-h1{font-size:20px;font-weight:600;}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{50%{opacity:.3;}}
-.live{font-size:12px;color:var(--muted);}
-.tile{background:var(--tile);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
-.co2-tile{text-align:center;padding:24px 16px;transition:background .5s;}
-.co2-tile.green{background:linear-gradient(180deg,#1b3a2a 0%,var(--tile) 100%);}
-.co2-tile.amber{background:linear-gradient(180deg,#3a2e1b 0%,var(--tile) 100%);}
-.co2-tile.red{background:linear-gradient(180deg,#3a1b1b 0%,var(--tile) 100%);}
-.co2-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-.co2-value{font-size:56px;font-weight:700;line-height:1;margin:8px 0;}
-.co2-unit{font-size:18px;color:var(--muted);}
-.co2-status{font-size:14px;margin-top:8px;}
+.live{font-size:12px;color:var(--muted);font-weight:500;}
+.tile{background:var(--tile);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
+.co2-tile{text-align:center;padding:24px 16px;transition:background .5s,border-color .5s;}
+.co2-tile.green{background:linear-gradient(180deg,var(--green-light) 0%,var(--tile) 100%);border-color:#bedfc4;}
+.co2-tile.amber{background:linear-gradient(180deg,var(--amber-light) 0%,var(--tile) 100%);border-color:#e8d28a;}
+.co2-tile.red{background:linear-gradient(180deg,var(--red-light) 0%,var(--tile) 100%);border-color:#e8a8a8;}
+.co2-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.co2-value{font-size:60px;font-weight:700;line-height:1;margin:8px 0;color:var(--fg);}
+.co2-unit{font-size:16px;color:var(--muted);}
+.co2-status{font-size:13px;margin-top:10px;font-weight:600;}
 .co2-status.green{color:var(--green);}
 .co2-status.amber{color:var(--amber);}
 .co2-status.red{color:var(--red);}
 .row{display:flex;gap:12px;}
 .row .tile{flex:1;}
-.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.metric-value{font-size:22px;font-weight:600;margin-top:4px;}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
+.metric-value{font-size:22px;font-weight:600;margin-top:4px;color:var(--fg);}
 .metric-sub{font-size:12px;color:var(--muted);margin-top:2px;}
 .fan-tile{display:flex;align-items:center;justify-content:space-between;}
 .fan-status{display:flex;flex-direction:column;}
-.fan-state{font-weight:600;font-size:16px;}
+.fan-state{font-weight:700;font-size:16px;letter-spacing:.3px;}
 .fan-state.on{color:var(--green);}
 .fan-state.off{color:var(--muted);}
 .fan-reason{font-size:12px;color:var(--muted);margin-top:2px;}
-.fan-duty{font-size:24px;font-weight:700;}
-.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;}
-.chart-tile h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.fan-duty{font-size:24px;font-weight:700;color:var(--green);}
+.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;text-transform:uppercase;letter-spacing:.5px;}
+.chart-tile h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px;}
 #chart{width:100%;height:160px;display:block;}
 .controls{display:flex;gap:8px;}
-.controls button{flex:1;padding:12px;background:var(--tile);border:1px solid var(--border);color:var(--fg);border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
-.controls button:hover{border-color:var(--accent);}
-.controls button.active{background:var(--accent);border-color:var(--accent);color:#0d1117;}
-.insight-tile{display:none;}
+.controls button{flex:1;padding:12px;background:var(--tile-alt);border:1px solid var(--border);color:var(--fg);border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;}
+.controls button:hover{border-color:var(--green);color:var(--green);}
+.controls button.active{background:var(--green);border-color:var(--green);color:#ffffff;}
+.insight-tile{display:none;background:var(--green-light);border-color:#bedfc4;}
 .insight-tile.visible{display:block;}
 .insight-text{font-size:14px;line-height:1.5;color:var(--fg);}
 .insight-meta{font-size:11px;color:var(--muted);margin-top:8px;}
-.btn-insight{width:100%;padding:14px;background:linear-gradient(135deg,#58a6ff 0%,#8957e5 100%);border:none;color:white;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;}
+.btn-insight{width:100%;padding:14px;background:var(--green);border:none;color:white;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;transition:background .15s;}
+.btn-insight:hover{background:var(--green-hover);}
 .btn-insight:disabled{opacity:.6;cursor:wait;}
+.log-row{display:flex;gap:8px;align-items:center;}
+.log-input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--fg);background:var(--tile-alt);}
+.log-input:focus{outline:none;border-color:var(--green);}
+.log-btn{padding:10px 16px;border:1px solid var(--green);background:var(--green);color:white;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;}
+.log-btn:hover{background:var(--green-hover);border-color:var(--green-hover);}
+.log-btn.stop{background:var(--tile);color:var(--red);border-color:var(--red);}
+.log-btn.stop:hover{background:var(--red-light);}
+.log-active{display:none;align-items:center;justify-content:space-between;}
+.log-active.visible{display:flex;}
+.log-active-info{display:flex;flex-direction:column;}
+.log-active-label{font-weight:600;color:var(--green);font-size:14px;}
+.log-active-rows{font-size:12px;color:var(--muted);margin-top:2px;}
 </style></head><body>
 <header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
 <div class="tile co2-tile" id="co2-tile">
@@ -285,11 +298,25 @@ h1{font-size:20px;font-weight:600;}
   <div class="insight-meta" id="insight-meta"></div>
 </div>
 <div class="tile">
-  <div class="metric-label" style="margin-bottom:8px;">Manual Override</div>
+  <div class="metric-label" style="margin-bottom:10px;">Manual Override</div>
   <div class="controls">
     <button data-mode="auto" class="active" onclick="setMode('auto')">Auto</button>
     <button data-mode="on" onclick="setMode('on')">On</button>
     <button data-mode="off" onclick="setMode('off')">Off</button>
+  </div>
+</div>
+<div class="tile">
+  <div class="metric-label" style="margin-bottom:10px;">Sheets Logging</div>
+  <div class="log-row" id="log-idle">
+    <input class="log-input" type="text" id="log-label" placeholder="run label (e.g. dorm_baseline)">
+    <button class="log-btn" onclick="startLog()">Start</button>
+  </div>
+  <div class="log-active" id="log-active">
+    <div class="log-active-info">
+      <div class="log-active-label" id="log-active-label">--</div>
+      <div class="log-active-rows"><span id="log-rows">0</span> rows</div>
+    </div>
+    <button class="log-btn stop" onclick="stopLog()">Stop</button>
   </div>
 </div>
 <script>
@@ -310,6 +337,14 @@ async function refreshData(){
     const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
     document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
+    const logIdle=document.getElementById('log-idle');const logActive=document.getElementById('log-active');
+    if(d.logEnabled){
+      logIdle.style.display='none';logActive.classList.add('visible');
+      document.getElementById('log-active-label').textContent=d.runLabel||'unlabeled';
+      document.getElementById('log-rows').textContent=d.logRowCount||0;
+    }else{
+      logIdle.style.display='flex';logActive.classList.remove('visible');
+    }
   }catch(e){}
 }
 async function refreshHistory(){
@@ -326,15 +361,15 @@ function renderChart(samples){
   const y=ppm=>H-((ppm-minCo2)/(maxCo2-minCo2))*H;
   const yRed=y(1000),yAmber=y(800);
   let s='';
-  s+=`<rect x="0" y="0" width="${W}" height="${yRed}" fill="#3a1b1b" opacity="0.4"/>`;
-  s+=`<rect x="0" y="${yRed}" width="${W}" height="${yAmber-yRed}" fill="#3a2e1b" opacity="0.4"/>`;
-  s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#1b3a2a" opacity="0.4"/>`;
-  s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#f85149" stroke-dasharray="4 4" opacity="0.6"/>`;
-  s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#d29922" stroke-dasharray="4 4" opacity="0.6"/>`;
+  s+=`<rect x="0" y="0" width="${W}" height="${yRed}" fill="#ffebee" opacity="0.7"/>`;
+  s+=`<rect x="0" y="${yRed}" width="${W}" height="${yAmber-yRed}" fill="#fff7e0" opacity="0.7"/>`;
+  s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#e8f5e9" opacity="0.7"/>`;
+  s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
+  s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
   const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
-  s+=`<polyline points="${pts}" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   const last=samples[samples.length-1];
-  s+=`<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.co2).toFixed(1)}" r="4" fill="#58a6ff"/>`;
+  s+=`<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.co2).toFixed(1)}" r="5" fill="#1e6e3a"/>`;
   document.getElementById('chart').innerHTML=s;
 }
 async function setMode(mode){
@@ -358,6 +393,15 @@ async function getInsight(){
   }
   btn.disabled=false;btn.textContent='Generate AI Insight';
 }
+async function startLog(){
+  const label=document.getElementById('log-label').value||'unlabeled';
+  if(USE_MOCK){alert('Logging is a live-device feature.');return;}
+  try{await fetch('/log/start?label='+encodeURIComponent(label));refreshData();}catch(e){}
+}
+async function stopLog(){
+  if(USE_MOCK)return;
+  try{await fetch('/log/stop');refreshData();}catch(e){}
+}
 refreshData();refreshHistory();
 setInterval(refreshData,2000);
 setInterval(refreshHistory,10000);
@@ -377,7 +421,10 @@ void setupServer() {
         json += "\"tempOut\":"  + String(readings.tempOut, 2)    + ",";
         json += "\"fanOn\":"    + String(fan.on ? "true" : "false") + ",";
         json += "\"reason\":\"" + String(reasonStr(fan.reason))  + "\",";
-        json += "\"duty\":"     + String(computeDuty(fan, readings));
+        json += "\"duty\":"     + String(computeDuty(fan, readings)) + ",";
+        json += "\"logEnabled\":"  + String(logEnabled ? "true" : "false") + ",";
+        json += "\"runLabel\":\""  + String(runLabel) + "\",";
+        json += "\"logRowCount\":" + String(logRowCount);
         json += "}";
         req->send(200, "application/json", json);
     });
@@ -389,12 +436,12 @@ void setupServer() {
         logEnabled  = true;
         logRowCount = 0;
         lastLogMs   = 0;
-        req->redirect("/");
+        req->send(200, "application/json", "{\"ok\":true,\"enabled\":true}");
     });
 
     server.on("/log/stop", HTTP_GET, [](AsyncWebServerRequest *req) {
         logEnabled = false;
-        req->redirect("/");
+        req->send(200, "application/json", "{\"ok\":true,\"enabled\":false}");
     });
 
     server.on("/outdoor", HTTP_POST, [](AsyncWebServerRequest *req) {

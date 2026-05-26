@@ -5,5 +5,8 @@
   "tempOut": 20.0,
   "fanOn": false,
   "reason": "---",
-  "duty": 0
+  "duty": 0,
+  "logEnabled": false,
+  "runLabel": "unlabeled",
+  "logRowCount": 0
 }

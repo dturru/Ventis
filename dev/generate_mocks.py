@@ -79,6 +79,9 @@ def main():
         "fanOn": last["fanOn"],
         "reason": "CO2" if last["fanOn"] else "---",
         "duty": 128 if last["fanOn"] else 0,
+        "logEnabled": False,
+        "runLabel": "unlabeled",
+        "logRowCount": 0,
     }
     (OUT_DIR / "mock-data.json").write_text(json.dumps(data, indent=2))
 

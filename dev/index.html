@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ventis</title>
+<style>
+:root{--bg:#0e1116;--tile:#151b23;--fg:#e6edf3;--muted:#8b949e;--green:#2ea043;--amber:#d29922;--red:#f85149;--accent:#58a6ff;--border:#30363d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:16px;max-width:480px;margin:0 auto;-webkit-font-smoothing:antialiased;}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+h1{font-size:20px;font-weight:600;}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{50%{opacity:.3;}}
+.live{font-size:12px;color:var(--muted);}
+.tile{background:var(--tile);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+.co2-tile{text-align:center;padding:24px 16px;transition:background .5s;}
+.co2-tile.green{background:linear-gradient(180deg,#1b3a2a 0%,var(--tile) 100%);}
+.co2-tile.amber{background:linear-gradient(180deg,#3a2e1b 0%,var(--tile) 100%);}
+.co2-tile.red{background:linear-gradient(180deg,#3a1b1b 0%,var(--tile) 100%);}
+.co2-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.co2-value{font-size:56px;font-weight:700;line-height:1;margin:8px 0;}
+.co2-unit{font-size:18px;color:var(--muted);}
+.co2-status{font-size:14px;margin-top:8px;}
+.co2-status.green{color:var(--green);}
+.co2-status.amber{color:var(--amber);}
+.co2-status.red{color:var(--red);}
+.row{display:flex;gap:12px;}
+.row .tile{flex:1;}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.metric-value{font-size:22px;font-weight:600;margin-top:4px;}
+.metric-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.fan-tile{display:flex;align-items:center;justify-content:space-between;}
+.fan-status{display:flex;flex-direction:column;}
+.fan-state{font-weight:600;font-size:16px;}
+.fan-state.on{color:var(--green);}
+.fan-state.off{color:var(--muted);}
+.fan-reason{font-size:12px;color:var(--muted);margin-top:2px;}
+.fan-duty{font-size:24px;font-weight:700;}
+.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;}
+.chart-tile h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+#chart{width:100%;height:160px;display:block;}
+.controls{display:flex;gap:8px;}
+.controls button{flex:1;padding:12px;background:var(--tile);border:1px solid var(--border);color:var(--fg);border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
+.controls button:hover{border-color:var(--accent);}
+.controls button.active{background:var(--accent);border-color:var(--accent);color:#0d1117;}
+.insight-tile{display:none;}
+.insight-tile.visible{display:block;}
+.insight-text{font-size:14px;line-height:1.5;color:var(--fg);}
+.insight-meta{font-size:11px;color:var(--muted);margin-top:8px;}
+.btn-insight{width:100%;padding:14px;background:linear-gradient(135deg,#58a6ff 0%,#8957e5 100%);border:none;color:white;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;}
+.btn-insight:disabled{opacity:.6;cursor:wait;}
+</style></head><body>
+<header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
+<div class="tile co2-tile" id="co2-tile">
+  <div class="co2-label">CO2</div>
+  <div class="co2-value"><span id="co2">--</span></div>
+  <div class="co2-unit">ppm</div>
+  <div class="co2-status" id="co2-status">--</div>
+</div>
+<div class="row">
+  <div class="tile">
+    <div class="metric-label">Indoor</div>
+    <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
+    <div class="metric-sub"><span id="humidity">--</span>% RH</div>
+  </div>
+  <div class="tile">
+    <div class="metric-label">Outdoor</div>
+    <div class="metric-value"><span id="tempOut">--</span>&deg;F</div>
+    <div class="metric-sub">&nbsp;</div>
+  </div>
+</div>
+<div class="tile fan-tile">
+  <div class="fan-status">
+    <div class="fan-state" id="fan-state">--</div>
+    <div class="fan-reason" id="fan-reason">&nbsp;</div>
+  </div>
+  <div>
+    <div class="fan-duty" id="fan-duty">0%</div>
+    <div class="fan-duty-label">duty</div>
+  </div>
+</div>
+<div class="tile chart-tile">
+  <h3>Last 5 minutes</h3>
+  <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+</div>
+<button class="btn-insight" id="btn-insight" onclick="getInsight()">Generate AI Insight</button>
+<div class="tile insight-tile" id="insight-tile">
+  <div class="insight-text" id="insight-text"></div>
+  <div class="insight-meta" id="insight-meta"></div>
+</div>
+<div class="tile">
+  <div class="metric-label" style="margin-bottom:8px;">Manual Override</div>
+  <div class="controls">
+    <button data-mode="auto" class="active" onclick="setMode('auto')">Auto</button>
+    <button data-mode="on" onclick="setMode('on')">On</button>
+    <button data-mode="off" onclick="setMode('off')">Off</button>
+  </div>
+</div>
+<script>
+const USE_MOCK=location.search.includes('mock=1');
+const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
+const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
+function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
+function tierLabel(t){return t==='red'?'Elevated - flush recommended':t==='amber'?'Approaching threshold':'Healthy';}
+async function refreshData(){
+  try{const r=await fetch(DATA_URL);const d=await r.json();
+    document.getElementById('co2').textContent=d.co2;
+    const tt=tier(d.co2);
+    const tile=document.getElementById('co2-tile');tile.classList.remove('green','amber','red');tile.classList.add(tt);
+    const st=document.getElementById('co2-status');st.textContent=tierLabel(tt);st.classList.remove('green','amber','red');st.classList.add(tt);
+    document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
+    document.getElementById('humidity').textContent=d.humidity.toFixed(0);
+    document.getElementById('tempOut').textContent=(d.tempOut*9/5+32).toFixed(1);
+    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
+    document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
+    document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
+  }catch(e){}
+}
+async function refreshHistory(){
+  try{const r=await fetch(HIST_URL);const d=await r.json();renderChart(d.samples);}catch(e){}
+}
+function renderChart(samples){
+  if(!samples||samples.length<2)return;
+  const W=600,H=160;
+  const maxCo2=Math.max(1200,...samples.map(s=>s.co2));
+  const minCo2=400;
+  const tMin=samples[0].t,tMax=samples[samples.length-1].t;
+  const tRange=tMax-tMin||1;
+  const x=t=>((t-tMin)/tRange)*W;
+  const y=ppm=>H-((ppm-minCo2)/(maxCo2-minCo2))*H;
+  const yRed=y(1000),yAmber=y(800);
+  let s='';
+  s+=`<rect x="0" y="0" width="${W}" height="${yRed}" fill="#3a1b1b" opacity="0.4"/>`;
+  s+=`<rect x="0" y="${yRed}" width="${W}" height="${yAmber-yRed}" fill="#3a2e1b" opacity="0.4"/>`;
+  s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#1b3a2a" opacity="0.4"/>`;
+  s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#f85149" stroke-dasharray="4 4" opacity="0.6"/>`;
+  s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#d29922" stroke-dasharray="4 4" opacity="0.6"/>`;
+  const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
+  s+=`<polyline points="${pts}" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const last=samples[samples.length-1];
+  s+=`<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.co2).toFixed(1)}" r="4" fill="#58a6ff"/>`;
+  document.getElementById('chart').innerHTML=s;
+}
+async function setMode(mode){
+  document.querySelectorAll('.controls button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  if(USE_MOCK)return;
+  try{await fetch('/control?mode='+mode,{method:'POST'});refreshData();}catch(e){}
+}
+async function getInsight(){
+  const btn=document.getElementById('btn-insight');
+  btn.disabled=true;btn.textContent='Thinking...';
+  try{
+    const r=await fetch(USE_MOCK?'/mock-insight.json':'/insight',{method:'POST'});
+    const d=await r.json();
+    document.getElementById('insight-text').textContent=d.text;
+    const src=d.source==='live'?'Live - ':'Offline - ';
+    document.getElementById('insight-meta').textContent=src+d.generated_at;
+    document.getElementById('insight-tile').classList.add('visible');
+  }catch(e){
+    document.getElementById('insight-text').textContent='Insight unavailable.';
+    document.getElementById('insight-tile').classList.add('visible');
+  }
+  btn.disabled=false;btn.textContent='Generate AI Insight';
+}
+refreshData();refreshHistory();
+setInterval(refreshData,2000);
+setInterval(refreshHistory,10000);
+</script>
+</body></html>

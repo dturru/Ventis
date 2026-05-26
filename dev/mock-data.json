@@ -1,0 +1,9 @@
+{
+  "co2": 660,
+  "tempIn": 22.5,
+  "humidity": 40.0,
+  "tempOut": 20.0,
+  "fanOn": false,
+  "reason": "---",
+  "duty": 0
+}

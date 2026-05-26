@@ -1,0 +1,485 @@
+{
+  "interval_ms": 5000,
+  "samples": [
+    {
+      "t": -295,
+      "co2": 624,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -290,
+      "co2": 622,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -285,
+      "co2": 621,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -280,
+      "co2": 619,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -275,
+      "co2": 617,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -270,
+      "co2": 616,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -265,
+      "co2": 614,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -260,
+      "co2": 613,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -255,
+      "co2": 612,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -250,
+      "co2": 611,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -245,
+      "co2": 610,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -240,
+      "co2": 610,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -235,
+      "co2": 610,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -230,
+      "co2": 610,
+      "tempIn": 22.6,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -225,
+      "co2": 611,
+      "tempIn": 22.6,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -220,
+      "co2": 620,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -215,
+      "co2": 645,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -210,
+      "co2": 671,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -205,
+      "co2": 696,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -200,
+      "co2": 721,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -195,
+      "co2": 747,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -190,
+      "co2": 772,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -185,
+      "co2": 797,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -180,
+      "co2": 823,
+      "tempIn": 22.7,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -175,
+      "co2": 848,
+      "tempIn": 22.7,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -170,
+      "co2": 873,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -165,
+      "co2": 899,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -160,
+      "co2": 924,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -155,
+      "co2": 949,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -150,
+      "co2": 975,
+      "tempIn": 22.8,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -145,
+      "co2": 1000,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -140,
+      "co2": 1015,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -135,
+      "co2": 1030,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -130,
+      "co2": 1045,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -125,
+      "co2": 1060,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -120,
+      "co2": 1075,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -115,
+      "co2": 1090,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -110,
+      "co2": 1105,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -105,
+      "co2": 1120,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -100,
+      "co2": 1135,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -95,
+      "co2": 1150,
+      "tempIn": 22.9,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -90,
+      "co2": 1120,
+      "tempIn": 22.8,
+      "humidity": 43.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -85,
+      "co2": 1090,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -80,
+      "co2": 1060,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -75,
+      "co2": 1030,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -70,
+      "co2": 1000,
+      "tempIn": 22.8,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -65,
+      "co2": 970,
+      "tempIn": 22.7,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -60,
+      "co2": 940,
+      "tempIn": 22.7,
+      "humidity": 42.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -55,
+      "co2": 910,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -50,
+      "co2": 880,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -45,
+      "co2": 850,
+      "tempIn": 22.7,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -40,
+      "co2": 820,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": true
+    },
+    {
+      "t": -35,
+      "co2": 790,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -30,
+      "co2": 760,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -25,
+      "co2": 730,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -20,
+      "co2": 700,
+      "tempIn": 22.6,
+      "humidity": 41.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -15,
+      "co2": 690,
+      "tempIn": 22.6,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -10,
+      "co2": 680,
+      "tempIn": 22.6,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": -5,
+      "co2": 670,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    },
+    {
+      "t": 0,
+      "co2": 660,
+      "tempIn": 22.5,
+      "humidity": 40.0,
+      "tempOut": 20.0,
+      "fanOn": false
+    }
+  ]
+}

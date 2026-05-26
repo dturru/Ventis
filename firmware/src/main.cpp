@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 #include <time.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -10,6 +11,10 @@
 #include <Adafruit_SSD1306.h>
 #include <ESPAsyncWebServer.h>
 #include "config.h"
+
+#ifndef ANTHROPIC_MODEL
+#define ANTHROPIC_MODEL "claude-haiku-4-5-20251001"
+#endif
 
 inline float toF(float c) { return c * 9.0f / 5.0f + 32.0f; }
 
@@ -72,6 +77,10 @@ unsigned long lastLogMs        = 0;
 bool          logEnabled       = false;
 char          runLabel[64]     = "unlabeled";
 uint32_t      logRowCount      = 0;
+
+// /insight is deferred from the AsyncWebServer handler to loop() — the HTTPS POST to
+// Anthropic takes ~2-3s and would block AsyncTCP's event loop if run inline.
+AsyncWebServerRequest* pendingInsightReq = nullptr;
 
 // ── Control logic ─────────────────────────────────────────────────────────────
 
@@ -190,6 +199,161 @@ void updateOled() {
     }
 
     oled.display();
+}
+
+// ── /insight helpers ─────────────────────────────────────────────────────────
+
+// Used when ANTHROPIC_API_KEY is missing, WiFi is down, or the API call fails.
+// Cites real sensor numbers instead of generic baked text.
+String fallbackInsight() {
+    String s;
+    if (!readings.valid) {
+        s = "Sensors are still warming up — give it a moment.";
+    } else if (readings.co2 >= CO2_ALARM_PPM) {
+        s = "CO2 is elevated at " + String(readings.co2) + " ppm. ";
+        s += fan.on ? "Fan is running to flush the room." : "Consider switching to manual on or opening a window.";
+    } else if (readings.co2 >= CO2_THRESHOLD) {
+        s = "CO2 climbing — " + String(readings.co2) + " ppm. ";
+        s += fan.on ? "Fan kicked on automatically." : "Below the active-ventilation threshold for now.";
+    } else {
+        s = "Air looks good: " + String(readings.co2) + " ppm CO2, "
+          + String(toF(readings.tempIn), 0) + "F indoor, " + String((int)readings.humidity) + "% RH.";
+    }
+    return s;
+}
+
+// Compact sensor snapshot the model sees. Keep this dense — every line is tokens.
+String buildInsightUserMessage() {
+    String msg = "Now: CO2 " + String(readings.co2) + " ppm, indoor "
+               + String(toF(readings.tempIn), 1) + "F / " + String((int)readings.humidity)
+               + "% RH, outdoor " + String(toF(readings.tempOut), 1) + "F.\n";
+
+    uint8_t count = historyFull ? HISTORY_SIZE : historyHead;
+    if (count >= 2) {
+        uint8_t startIdx = historyFull ? historyHead : 0;
+        uint8_t lastIdx  = (historyHead == 0 ? HISTORY_SIZE - 1 : historyHead - 1);
+        uint16_t startCo2 = history[startIdx].co2;
+        uint16_t endCo2   = history[lastIdx].co2;
+        const char* dir = (endCo2 > startCo2 + 50) ? "rising"
+                        : (endCo2 + 50 < startCo2) ? "falling" : "stable";
+        msg += "CO2 last ~5 min: " + String(startCo2) + " -> " + String(endCo2) + " ppm (" + dir + ").\n";
+    }
+
+    msg += "Fan: ";
+    msg += fan.on ? "ON" : "OFF";
+    msg += " (";
+    msg += (override_mode == OVR_ON)  ? "manual on"
+         : (override_mode == OVR_OFF) ? "manual off"
+                                      : "auto";
+    if (fan.on) {
+        msg += String(", reason ") + reasonStr(fan.reason);
+        msg += ", duty " + String((int)(computeDuty(fan, readings) * 100 / 255)) + "%";
+    }
+    msg += ").";
+    return msg;
+}
+
+// JSON-escape a String for embedding inside double-quoted JSON strings.
+String jsonEscape(const String& in) {
+    String out;
+    out.reserve(in.length() + 16);
+    for (size_t i = 0; i < in.length(); i++) {
+        char c = in.charAt(i);
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n";  break;
+            case '\r': out += "\\r";  break;
+            case '\t': out += "\\t";  break;
+            default:
+                if ((uint8_t)c < 0x20) {
+                    char buf[8];
+                    snprintf(buf, sizeof(buf), "\\u%04x", c);
+                    out += buf;
+                } else {
+                    out += c;
+                }
+        }
+    }
+    return out;
+}
+
+// Calls Anthropic Messages API. Sets `outSource` to "live" or "fallback".
+// Returns the text to surface to the dashboard.
+String callAnthropic(String& outSource) {
+#ifndef ANTHROPIC_API_KEY
+    outSource = "fallback";
+    return fallbackInsight();
+#else
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("[insight] STA not connected — using fallback");
+        outSource = "fallback";
+        return fallbackInsight();
+    }
+
+    String userMsg = buildInsightUserMessage();
+    // System prompt locked 2026-05-26 after 6-scenario tuning via dev/test_insight_prompt.py.
+    // Mirror this exact wording in dev/test_insight_prompt.py:SYSTEM_PROMPT — they must stay in sync.
+    // Locked copy also at Projects/Ventis/AI Insight Prompt.md (vault).
+    String body = String("{\"model\":\"") + ANTHROPIC_MODEL + "\","
+        + "\"max_tokens\":160,"
+        + "\"system\":"
+          "\"You are Ventis, a smart indoor air-quality sensor in a Dartmouth dorm room. "
+          "Given the room's recent sensor data, write a brief observational note (1-2 short sentences) "
+          "the resident would read on their phone. Narrate what the room and the system are doing right now. "
+          "Cite specific numbers from the input (CO2 ppm, temp, fan state). "
+          "Conversational tone, like a smart roommate noting the state of things — not a consumer app handing out advice. "
+          "No emoji, no greeting, no bullet list. Stay under 200 characters.\\n"
+          "\\n"
+          "Rules:\\n"
+          "- If CO2 is under 800 ppm and nothing else is notable, just confirm the air is healthy in ONE short sentence. "
+          "Do NOT suggest opening windows or taking action when there is no problem.\\n"
+          "- Only use trend words ('rising', 'climbing', 'falling') when the input explicitly states a direction. Never invent a trend.\\n"
+          "- When the fan is on, name the reason from the input (CO2, COOLING, HUMIDITY). Don't guess a reason that isn't there.\\n"
+          "- Lead with the most striking fact (e.g., CO2 hit a new high, fan ramped to 100%, temperature crossed the cooling threshold).\","
+        + "\"messages\":[{\"role\":\"user\",\"content\":\"" + jsonEscape(userMsg) + "\"}]"
+        + "}";
+
+    WiFiClientSecure client;
+    client.setInsecure();   // demo: skip cert check. For prod, bundle Anthropic root cert.
+    HTTPClient http;
+    http.setTimeout(15000);
+    if (!http.begin(client, "https://api.anthropic.com/v1/messages")) {
+        Serial.println("[insight] http.begin failed");
+        outSource = "fallback";
+        return fallbackInsight();
+    }
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("x-api-key", ANTHROPIC_API_KEY);
+    http.addHeader("anthropic-version", "2023-06-01");
+
+    int code = http.POST(body);
+    String resp = http.getString();
+    http.end();
+
+    if (code != 200) {
+        Serial.printf("[insight] HTTP %d: %s\n", code, resp.substring(0, 200).c_str());
+        outSource = "fallback";
+        return fallbackInsight();
+    }
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) {
+        Serial.printf("[insight] parse error: %s\n", err.c_str());
+        outSource = "fallback";
+        return fallbackInsight();
+    }
+
+    const char* text = doc["content"][0]["text"];
+    if (text == nullptr || strlen(text) == 0) {
+        outSource = "fallback";
+        return fallbackInsight();
+    }
+
+    outSource = "live";
+    return String(text);
+#endif
 }
 
 // ── Web server ────────────────────────────────────────────────────────────────
@@ -487,17 +651,17 @@ void setupServer() {
         req->send(200, "application/json", "{\"ok\":true}");
     });
 
-    // Option C stub — returns a baked fallback. Replaced by live Claude API call once secrets.h is set up.
+    // Defer to loop() — the Anthropic call takes ~2-3s and would block AsyncTCP.
+    // Frontend keeps the connection open; loop() calls req->send() when the API returns.
     server.on("/insight", HTTP_POST, [](AsyncWebServerRequest *req) {
-        char ts[25] = "now";
-        struct tm t;
-        if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
-        String json = "{\"text\":\"Your CO2 has been averaging in a healthy range. "
-                      "The fan responded to a brief spike earlier and recovery was fast. "
-                      "Air quality is stable.\","
-                      "\"generated_at\":\"" + String(ts) + "\","
-                      "\"source\":\"fallback\"}";
-        req->send(200, "application/json", json);
+        if (pendingInsightReq != nullptr) {
+            // Another insight call is already in flight — refuse politely.
+            req->send(429, "application/json",
+                "{\"text\":\"Already thinking — try again in a moment.\","
+                "\"source\":\"fallback\",\"generated_at\":\"\"}");
+            return;
+        }
+        pendingInsightReq = req;
     });
 
     server.begin();
@@ -608,6 +772,23 @@ void setup() {
 
 void loop() {
     unsigned long now = millis();
+
+    // /insight — deferred Anthropic call. Blocks loop() for ~2-3s on a live API call;
+    // SCD40 (5s cadence) and the slow DS18B20 read (30s) tolerate this. Watchdog default is 5s.
+    if (pendingInsightReq != nullptr) {
+        AsyncWebServerRequest* req = pendingInsightReq;
+        pendingInsightReq = nullptr;  // clear first — re-entry safe
+        String source;
+        String text = callAnthropic(source);
+        char ts[25] = "now";
+        struct tm t;
+        if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
+        String json = "{\"text\":\"" + jsonEscape(text)
+                    + "\",\"generated_at\":\"" + String(ts)
+                    + "\",\"source\":\"" + source + "\"}";
+        req->send(200, "application/json", json);
+        now = millis();  // refresh — we just spent a few seconds on the API call
+    }
 
     // Read SCD40
     if (now - lastScd40Read >= INTERVAL_SCD40) {

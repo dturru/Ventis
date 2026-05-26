@@ -1,0 +1,29 @@
+# Build artifacts
+.pio/
+.cache/
+build/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Secrets (must never be committed)
+firmware/include/secrets.h
+outdoor-node/include/secrets.h
+*.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs / scratch
+*.log
+excalidraw.log

@@ -1,0 +1,632 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <time.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <SensirionI2CScd4x.h>
+#include <Adafruit_SSD1306.h>
+#include <ESPAsyncWebServer.h>
+#include "config.h"
+
+inline float toF(float c) { return c * 9.0f / 5.0f + 32.0f; }
+
+// ── Sensors ──────────────────────────────────────────────────────────────────
+
+SensirionI2cScd4x scd40;
+OneWire           oneWire(PIN_DS18B20);
+DallasTemperature ds18b20(&oneWire);
+Adafruit_SSD1306  oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
+AsyncWebServer    server(80);
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+struct Readings {
+    uint16_t co2        = 0;
+    float    tempIn     = 0.0f;   // °C, from SCD40
+    float    humidity   = 0.0f;   // %RH
+    float    tempOut    = 0.0f;   // °C, from DS18B20
+    bool     valid      = false;
+} readings;
+
+enum FanReason { NONE, COOLING, CO2_HIGH, HUMIDITY_HIGH, MANUAL };
+enum SwitchMode { SW_AUTO, SW_FORCE_ON };
+enum OverrideMode { OVR_AUTO, OVR_ON, OVR_OFF };
+
+SwitchMode readSwitch() {
+    return digitalRead(PIN_SWITCH_ON) == LOW ? SW_FORCE_ON : SW_AUTO;
+}
+
+struct FanState {
+    bool      on     = false;
+    FanReason reason = NONE;
+} fan;
+
+OverrideMode override_mode = OVR_AUTO;  // set via POST /control?mode=auto|on|off
+
+// History ring buffer — 60 samples × 5s cadence = 5 min rolling window
+#define HISTORY_SIZE 60
+struct HistorySample {
+    unsigned long t_ms;       // millis() at capture
+    uint16_t      co2;
+    float         tempIn;     // °C
+    float         humidity;   // %RH
+    float         tempOut;    // °C
+    bool          fanOn;
+};
+HistorySample history[HISTORY_SIZE];
+uint8_t       historyHead = 0;
+bool          historyFull = false;
+
+unsigned long lastScd40Read   = 0;
+unsigned long lastDs18b20Read = 0;
+
+float         tempOutWired     = 0.0f;   // from wired DS18B20
+float         tempOutWireless  = 0.0f;   // from C3 outdoor node
+unsigned long lastOutdoorPostMs = 0;      // 0 = never received
+
+bool          oledOk           = false;   // set by probe in setup(); guards all OLED I2C ops
+unsigned long lastLogMs        = 0;
+bool          logEnabled       = false;
+char          runLabel[64]     = "unlabeled";
+uint32_t      logRowCount      = 0;
+
+// ── Control logic ─────────────────────────────────────────────────────────────
+
+FanState evaluateFan(const Readings &r) {
+    FanState s;
+    if (!r.valid) return s;
+
+    if (r.co2 > CO2_THRESHOLD) {
+        s.on = true; s.reason = CO2_HIGH; return s;
+    }
+    if (r.humidity > HUMIDITY_THRESHOLD) {
+        s.on = true; s.reason = HUMIDITY_HIGH; return s;
+    }
+    if ((r.tempIn - r.tempOut) > COOLING_DELTA_C) {
+        s.on = true; s.reason = COOLING; return s;
+    }
+    return s;
+}
+
+const char *reasonStr(FanReason r) {
+    switch (r) {
+        case CO2_HIGH:      return "CO2";
+        case HUMIDITY_HIGH: return "HUMIDITY";
+        case COOLING:       return "COOLING";
+        case MANUAL:        return "MANUAL";
+        default:            return "---";
+    }
+}
+
+// PWM duty selection — relay still gates 12V (true off), PWM scales speed when fan.on.
+// NF-P12 Redux doesn't fully stop at duty 0, so relay + PWM both matter.
+uint8_t computeDuty(const FanState &f, const Readings &r) {
+    if (!f.on) return 0;
+    if (f.reason == MANUAL) return FAN_DUTY_MAX;
+    if (f.reason == CO2_HIGH && r.co2 >= CO2_ALARM_PPM) return FAN_DUTY_MAX;
+    return FAN_DUTY_MID;
+}
+
+void setFanOutputs(const FanState &f, const Readings &r) {
+    digitalWrite(PIN_RELAY, f.on ? RELAY_ON : RELAY_OFF);
+    ledcWrite(FAN_PWM_CHANNEL, computeDuty(f, r));
+}
+
+void pushHistory(const Readings &r, bool fanOn) {
+    HistorySample &s = history[historyHead];
+    s.t_ms     = millis();
+    s.co2      = r.co2;
+    s.tempIn   = r.tempIn;
+    s.humidity = r.humidity;
+    s.tempOut  = r.tempOut;
+    s.fanOn    = fanOn;
+    historyHead = (historyHead + 1) % HISTORY_SIZE;
+    if (historyHead == 0) historyFull = true;
+}
+
+// ── Google Sheets logger ─────────────────────────────────────────────────────
+
+void logToSheets() {
+    if (!readings.valid || strlen(SHEETS_URL) == 0) return;
+    char ts[25] = "unknown";
+    struct tm t;
+    if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
+    char body[300];
+    snprintf(body, sizeof(body),
+        "{\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
+        "\"humidity_pct\":%.2f,\"temp_out_c\":%.2f,\"fan_on\":%s,\"reason\":\"%s\"}",
+        ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
+        fan.on ? "true" : "false", reasonStr(fan.reason));
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    http.begin(client, SHEETS_URL);
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.addHeader("Content-Type", "application/json");
+    http.POST(body);
+    http.end();
+    Serial.printf("[LOG] %s co2=%u\n", ts, readings.co2);
+}
+
+// ── RGB LED ──────────────────────────────────────────────────────────────────
+
+void updateLed(uint16_t co2, bool valid) {
+    if (!valid || logEnabled) {
+        digitalWrite(PIN_LED_R, LOW);
+        digitalWrite(PIN_LED_G, LOW);
+        digitalWrite(PIN_LED_B, LOW);
+        return;
+    }
+    // Green <800 | Yellow 800-999 | Red ≥1000 (common cathode: HIGH = on)
+    bool red    = co2 >= CO2_ALARM_PPM;
+    bool yellow = co2 >= CO2_THRESHOLD && !red;
+    bool green  = !red && !yellow;
+    digitalWrite(PIN_LED_R, (red || yellow) ? HIGH : LOW);
+    digitalWrite(PIN_LED_G, (green || yellow) ? HIGH : LOW);
+    digitalWrite(PIN_LED_B, LOW);
+}
+
+// ── OLED ─────────────────────────────────────────────────────────────────────
+
+void updateOled() {
+    if (!oledOk) return;
+    oled.clearDisplay();
+    oled.setTextSize(1);
+    oled.setTextColor(SSD1306_WHITE);
+    oled.setCursor(0, 0);
+
+    oled.printf("CO2:  %4u ppm\n",   readings.co2);
+    oled.printf("IN:   %.1fF  %.0f%%\n", toF(readings.tempIn), readings.humidity);
+    oled.printf("OUT:  %.1fF\n",      toF(readings.tempOut));
+    oled.printf("FAN:  %s  %s\n",
+        fan.on ? "ON " : "OFF",
+        fan.on ? reasonStr(fan.reason) : "");
+    oled.printf("IP: %s\n", WiFi.localIP().toString().c_str());
+    if (logEnabled) {
+        oled.printf("LOG: %s (%u)\n", runLabel, logRowCount);
+    }
+
+    oled.display();
+}
+
+// ── Web server ────────────────────────────────────────────────────────────────
+
+static const char INDEX_HTML[] PROGMEM = R"raw(<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ventis</title>
+<style>
+:root{--bg:#0e1116;--tile:#151b23;--fg:#e6edf3;--muted:#8b949e;--green:#2ea043;--amber:#d29922;--red:#f85149;--accent:#58a6ff;--border:#30363d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:16px;max-width:480px;margin:0 auto;-webkit-font-smoothing:antialiased;}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+h1{font-size:20px;font-weight:600;}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{50%{opacity:.3;}}
+.live{font-size:12px;color:var(--muted);}
+.tile{background:var(--tile);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+.co2-tile{text-align:center;padding:24px 16px;transition:background .5s;}
+.co2-tile.green{background:linear-gradient(180deg,#1b3a2a 0%,var(--tile) 100%);}
+.co2-tile.amber{background:linear-gradient(180deg,#3a2e1b 0%,var(--tile) 100%);}
+.co2-tile.red{background:linear-gradient(180deg,#3a1b1b 0%,var(--tile) 100%);}
+.co2-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.co2-value{font-size:56px;font-weight:700;line-height:1;margin:8px 0;}
+.co2-unit{font-size:18px;color:var(--muted);}
+.co2-status{font-size:14px;margin-top:8px;}
+.co2-status.green{color:var(--green);}
+.co2-status.amber{color:var(--amber);}
+.co2-status.red{color:var(--red);}
+.row{display:flex;gap:12px;}
+.row .tile{flex:1;}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.metric-value{font-size:22px;font-weight:600;margin-top:4px;}
+.metric-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.fan-tile{display:flex;align-items:center;justify-content:space-between;}
+.fan-status{display:flex;flex-direction:column;}
+.fan-state{font-weight:600;font-size:16px;}
+.fan-state.on{color:var(--green);}
+.fan-state.off{color:var(--muted);}
+.fan-reason{font-size:12px;color:var(--muted);margin-top:2px;}
+.fan-duty{font-size:24px;font-weight:700;}
+.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;}
+.chart-tile h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+#chart{width:100%;height:160px;display:block;}
+.controls{display:flex;gap:8px;}
+.controls button{flex:1;padding:12px;background:var(--tile);border:1px solid var(--border);color:var(--fg);border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;}
+.controls button:hover{border-color:var(--accent);}
+.controls button.active{background:var(--accent);border-color:var(--accent);color:#0d1117;}
+.insight-tile{display:none;}
+.insight-tile.visible{display:block;}
+.insight-text{font-size:14px;line-height:1.5;color:var(--fg);}
+.insight-meta{font-size:11px;color:var(--muted);margin-top:8px;}
+.btn-insight{width:100%;padding:14px;background:linear-gradient(135deg,#58a6ff 0%,#8957e5 100%);border:none;color:white;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;}
+.btn-insight:disabled{opacity:.6;cursor:wait;}
+</style></head><body>
+<header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
+<div class="tile co2-tile" id="co2-tile">
+  <div class="co2-label">CO2</div>
+  <div class="co2-value"><span id="co2">--</span></div>
+  <div class="co2-unit">ppm</div>
+  <div class="co2-status" id="co2-status">--</div>
+</div>
+<div class="row">
+  <div class="tile">
+    <div class="metric-label">Indoor</div>
+    <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
+    <div class="metric-sub"><span id="humidity">--</span>% RH</div>
+  </div>
+  <div class="tile">
+    <div class="metric-label">Outdoor</div>
+    <div class="metric-value"><span id="tempOut">--</span>&deg;F</div>
+    <div class="metric-sub">&nbsp;</div>
+  </div>
+</div>
+<div class="tile fan-tile">
+  <div class="fan-status">
+    <div class="fan-state" id="fan-state">--</div>
+    <div class="fan-reason" id="fan-reason">&nbsp;</div>
+  </div>
+  <div>
+    <div class="fan-duty" id="fan-duty">0%</div>
+    <div class="fan-duty-label">duty</div>
+  </div>
+</div>
+<div class="tile chart-tile">
+  <h3>Last 5 minutes</h3>
+  <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+</div>
+<button class="btn-insight" id="btn-insight" onclick="getInsight()">Generate AI Insight</button>
+<div class="tile insight-tile" id="insight-tile">
+  <div class="insight-text" id="insight-text"></div>
+  <div class="insight-meta" id="insight-meta"></div>
+</div>
+<div class="tile">
+  <div class="metric-label" style="margin-bottom:8px;">Manual Override</div>
+  <div class="controls">
+    <button data-mode="auto" class="active" onclick="setMode('auto')">Auto</button>
+    <button data-mode="on" onclick="setMode('on')">On</button>
+    <button data-mode="off" onclick="setMode('off')">Off</button>
+  </div>
+</div>
+<script>
+const USE_MOCK=location.search.includes('mock=1');
+const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
+const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
+function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
+function tierLabel(t){return t==='red'?'Elevated - flush recommended':t==='amber'?'Approaching threshold':'Healthy';}
+async function refreshData(){
+  try{const r=await fetch(DATA_URL);const d=await r.json();
+    document.getElementById('co2').textContent=d.co2;
+    const tt=tier(d.co2);
+    const tile=document.getElementById('co2-tile');tile.classList.remove('green','amber','red');tile.classList.add(tt);
+    const st=document.getElementById('co2-status');st.textContent=tierLabel(tt);st.classList.remove('green','amber','red');st.classList.add(tt);
+    document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
+    document.getElementById('humidity').textContent=d.humidity.toFixed(0);
+    document.getElementById('tempOut').textContent=(d.tempOut*9/5+32).toFixed(1);
+    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
+    document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
+    document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
+  }catch(e){}
+}
+async function refreshHistory(){
+  try{const r=await fetch(HIST_URL);const d=await r.json();renderChart(d.samples);}catch(e){}
+}
+function renderChart(samples){
+  if(!samples||samples.length<2)return;
+  const W=600,H=160;
+  const maxCo2=Math.max(1200,...samples.map(s=>s.co2));
+  const minCo2=400;
+  const tMin=samples[0].t,tMax=samples[samples.length-1].t;
+  const tRange=tMax-tMin||1;
+  const x=t=>((t-tMin)/tRange)*W;
+  const y=ppm=>H-((ppm-minCo2)/(maxCo2-minCo2))*H;
+  const yRed=y(1000),yAmber=y(800);
+  let s='';
+  s+=`<rect x="0" y="0" width="${W}" height="${yRed}" fill="#3a1b1b" opacity="0.4"/>`;
+  s+=`<rect x="0" y="${yRed}" width="${W}" height="${yAmber-yRed}" fill="#3a2e1b" opacity="0.4"/>`;
+  s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#1b3a2a" opacity="0.4"/>`;
+  s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#f85149" stroke-dasharray="4 4" opacity="0.6"/>`;
+  s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#d29922" stroke-dasharray="4 4" opacity="0.6"/>`;
+  const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
+  s+=`<polyline points="${pts}" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const last=samples[samples.length-1];
+  s+=`<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.co2).toFixed(1)}" r="4" fill="#58a6ff"/>`;
+  document.getElementById('chart').innerHTML=s;
+}
+async function setMode(mode){
+  document.querySelectorAll('.controls button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  if(USE_MOCK)return;
+  try{await fetch('/control?mode='+mode,{method:'POST'});refreshData();}catch(e){}
+}
+async function getInsight(){
+  const btn=document.getElementById('btn-insight');
+  btn.disabled=true;btn.textContent='Thinking...';
+  try{
+    const r=await fetch(USE_MOCK?'/mock-insight.json':'/insight',{method:'POST'});
+    const d=await r.json();
+    document.getElementById('insight-text').textContent=d.text;
+    const src=d.source==='live'?'Live - ':'Offline - ';
+    document.getElementById('insight-meta').textContent=src+d.generated_at;
+    document.getElementById('insight-tile').classList.add('visible');
+  }catch(e){
+    document.getElementById('insight-text').textContent='Insight unavailable.';
+    document.getElementById('insight-tile').classList.add('visible');
+  }
+  btn.disabled=false;btn.textContent='Generate AI Insight';
+}
+refreshData();refreshHistory();
+setInterval(refreshData,2000);
+setInterval(refreshHistory,10000);
+</script>
+</body></html>)raw";
+
+void setupServer() {
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *req) {
+        req->send(200, "text/html", INDEX_HTML);
+    });
+
+    server.on("/data", HTTP_GET, [](AsyncWebServerRequest *req) {
+        String json = "{";
+        json += "\"co2\":"      + String(readings.co2)           + ",";
+        json += "\"tempIn\":"   + String(readings.tempIn, 2)     + ",";
+        json += "\"humidity\":" + String(readings.humidity, 2)   + ",";
+        json += "\"tempOut\":"  + String(readings.tempOut, 2)    + ",";
+        json += "\"fanOn\":"    + String(fan.on ? "true" : "false") + ",";
+        json += "\"reason\":\"" + String(reasonStr(fan.reason))  + "\",";
+        json += "\"duty\":"     + String(computeDuty(fan, readings));
+        json += "}";
+        req->send(200, "application/json", json);
+    });
+
+    server.on("/log/start", HTTP_GET, [](AsyncWebServerRequest *req) {
+        if (req->hasParam("label")) {
+            strncpy(runLabel, req->getParam("label")->value().c_str(), sizeof(runLabel) - 1);
+        }
+        logEnabled  = true;
+        logRowCount = 0;
+        lastLogMs   = 0;
+        req->redirect("/");
+    });
+
+    server.on("/log/stop", HTTP_GET, [](AsyncWebServerRequest *req) {
+        logEnabled = false;
+        req->redirect("/");
+    });
+
+    server.on("/outdoor", HTTP_POST, [](AsyncWebServerRequest *req) {
+        if (req->hasParam("temp_c")) {
+            tempOutWireless   = req->getParam("temp_c")->value().toFloat();
+            lastOutdoorPostMs = millis();
+            Serial.printf("Outdoor node: %.2f C\n", tempOutWireless);
+        }
+        req->send(200, "text/plain", "OK");
+    });
+
+    server.on("/history", HTTP_GET, [](AsyncWebServerRequest *req) {
+        String json = "{\"interval_ms\":" + String(INTERVAL_SCD40) + ",\"samples\":[";
+        uint8_t count = historyFull ? HISTORY_SIZE : historyHead;
+        uint8_t start = historyFull ? historyHead : 0;
+        unsigned long now = millis();
+        bool first = true;
+        for (uint8_t i = 0; i < count; i++) {
+            uint8_t idx = (start + i) % HISTORY_SIZE;
+            const HistorySample &s = history[idx];
+            long t_rel = (long)((s.t_ms - now) / 1000);  // seconds before now (negative for past)
+            if (!first) json += ",";
+            first = false;
+            json += "{\"t\":"        + String(t_rel)
+                  + ",\"co2\":"      + String(s.co2)
+                  + ",\"tempIn\":"   + String(s.tempIn, 1)
+                  + ",\"humidity\":" + String(s.humidity, 0)
+                  + ",\"tempOut\":"  + String(s.tempOut, 1)
+                  + ",\"fanOn\":"    + String(s.fanOn ? "true" : "false")
+                  + "}";
+        }
+        json += "]}";
+        req->send(200, "application/json", json);
+    });
+
+    server.on("/control", HTTP_POST, [](AsyncWebServerRequest *req) {
+        if (req->hasParam("mode")) {
+            String m = req->getParam("mode")->value();
+            if (m == "auto")      override_mode = OVR_AUTO;
+            else if (m == "on")   override_mode = OVR_ON;
+            else if (m == "off")  override_mode = OVR_OFF;
+        }
+        req->send(200, "application/json", "{\"ok\":true}");
+    });
+
+    // Option C stub — returns a baked fallback. Replaced by live Claude API call once secrets.h is set up.
+    server.on("/insight", HTTP_POST, [](AsyncWebServerRequest *req) {
+        char ts[25] = "now";
+        struct tm t;
+        if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
+        String json = "{\"text\":\"Your CO2 has been averaging in a healthy range. "
+                      "The fan responded to a brief spike earlier and recovery was fast. "
+                      "Air quality is stable.\","
+                      "\"generated_at\":\"" + String(ts) + "\","
+                      "\"source\":\"fallback\"}";
+        req->send(200, "application/json", json);
+    });
+
+    server.begin();
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
+void setup() {
+    Serial.begin(115200);
+
+    pinMode(PIN_RELAY,      OUTPUT);
+    pinMode(PIN_LED_R,      OUTPUT);
+    pinMode(PIN_LED_G,      OUTPUT);
+    pinMode(PIN_LED_B,      OUTPUT);
+    pinMode(PIN_SWITCH_ON,  INPUT_PULLUP);
+    pinMode(PIN_FAN_TACH,   INPUT);  // ext 10kΩ pull-up provides logic high
+
+    digitalWrite(PIN_RELAY,  RELAY_OFF);
+    digitalWrite(PIN_LED_R,  LOW);
+    digitalWrite(PIN_LED_G,  LOW);
+    digitalWrite(PIN_LED_B,  LOW);
+
+    // Fan PWM — Noctua 4-pin native 25 kHz input
+    ledcSetup(FAN_PWM_CHANNEL, FAN_PWM_FREQ, FAN_PWM_RES_BITS);
+    ledcAttachPin(PIN_FAN_PWM, FAN_PWM_CHANNEL);
+    ledcWrite(FAN_PWM_CHANNEL, 0);
+
+    Wire.begin(PIN_SDA, PIN_SCL);
+
+    Serial.println("I2C scan:");
+    for (byte addr = 1; addr < 127; addr++) {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0) {
+            Serial.printf("  found device at 0x%02X\n", addr);
+        }
+    }
+    // Reset I2C bus after scan — ESP32 NAK flood can leave SDA stuck
+    Wire.end();
+    delay(10);
+    Wire.begin(PIN_SDA, PIN_SCL);
+
+    delay(2000);  // SCD40 power-on max is 1000ms; 2000ms gives margin
+
+    // OLED probe + init before SCD40 — oled.begin() drives Wire.write() calls that prime
+    // the ESP32 Wire TX buffer; a bare probe (no write) is not sufficient
+    Wire.beginTransmission(OLED_ADDR);
+    oledOk = (Wire.endTransmission() == 0);
+    Serial.printf("OLED probe: %s\n", oledOk ? "found" : "not found");
+    if (oledOk && !oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+        oledOk = false;
+        Serial.println("OLED init failed");
+    }
+    if (!oledOk) {
+        // No OLED writes happened — prime Wire TX path manually before SCD40
+        Wire.beginTransmission(OLED_ADDR); Wire.write(0); Wire.endTransmission();
+    }
+
+    // SCD40 — Wire TX path is now primed
+    scd40.begin(Wire, 0x62);
+    uint16_t stopErr = scd40.stopPeriodicMeasurement();
+    if (stopErr) {
+        // stop failed — re-prime Wire TX and retry
+        Wire.end(); delay(50); Wire.begin(PIN_SDA, PIN_SCL);
+        Wire.beginTransmission(OLED_ADDR); Wire.write(0x00); Wire.write(0xE3); Wire.endTransmission();
+        scd40.stopPeriodicMeasurement();
+    }
+    // stopPeriodicMeasurement() has 500ms internal delay — Wire TX de-primes during it; re-prime before start
+    Wire.beginTransmission(OLED_ADDR); Wire.write(0x00); Wire.write(0xE3); Wire.endTransmission();
+    scd40.startPeriodicMeasurement();
+
+    if (oledOk) {
+        oled.clearDisplay();
+        oled.setTextColor(SSD1306_WHITE);
+        oled.setCursor(0, 0);
+        oled.println("Ventis v1");
+        oled.println("Starting...");
+        oled.display();
+    }
+
+    // DS18B20
+    ds18b20.begin();
+    Serial.printf("DS18B20 devices found: %d\n", ds18b20.getDeviceCount());
+
+    // WiFi
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.print("Connecting to WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.printf("\nIP: %s\n", WiFi.localIP().toString().c_str());
+
+    // NTP time sync (needed for log timestamps)
+    configTime(-4 * 3600, 3600, "pool.ntp.org");  // ET: UTC-4 summer, +1hr DST
+    struct tm t;
+    int ntpTries = 0;
+    while (!getLocalTime(&t) && ntpTries++ < 20) delay(500);
+    Serial.printf("NTP: %s\n", ntpTries < 20 ? "synced" : "failed");
+
+    WiFi.softAP(AP_SSID, AP_PASSWORD);
+    Serial.printf("AP started: %s\n", WiFi.softAPIP().toString().c_str());
+
+    setupServer();
+    if (oledOk) updateOled();
+}
+
+// ── Loop ──────────────────────────────────────────────────────────────────────
+
+void loop() {
+    unsigned long now = millis();
+
+    // Read SCD40
+    if (now - lastScd40Read >= INTERVAL_SCD40) {
+        lastScd40Read = now;
+        uint16_t co2;
+        float    temp, hum;
+        bool     dataReady = false;
+
+        scd40.getDataReadyStatus(dataReady);
+        if (dataReady) {
+            uint16_t err = scd40.readMeasurement(co2, temp, hum);
+            if (err == 0) {
+                readings.co2      = co2;
+                readings.tempIn   = temp;
+                readings.humidity = hum;
+                readings.valid    = true;
+            }
+        }
+    }
+
+    // Read DS18B20
+    if (now - lastDs18b20Read >= INTERVAL_DS18B20) {
+        lastDs18b20Read = now;
+        ds18b20.requestTemperatures();
+        float t = ds18b20.getTempCByIndex(0);
+        if (t != DEVICE_DISCONNECTED_C) {
+            tempOutWired = t;
+        }
+    }
+
+    // Prefer wireless when fresh; fall back to wired if C3 is silent
+    bool wirelessFresh = lastOutdoorPostMs > 0 &&
+                         (now - lastOutdoorPostMs < OUTDOOR_STALE_MS);
+    readings.tempOut = wirelessFresh ? tempOutWireless : tempOutWired;
+
+    // Control logic — web override > physical switch > auto
+    if (override_mode == OVR_ON) {
+        fan.on = true;   fan.reason = MANUAL;
+    } else if (override_mode == OVR_OFF) {
+        fan.on = false;  fan.reason = NONE;
+    } else if (readSwitch() == SW_FORCE_ON) {
+        fan.on = true;   fan.reason = MANUAL;
+    } else {
+        fan = evaluateFan(readings);
+    }
+    setFanOutputs(fan, readings);  // relay = master enable, PWM = variable speed
+
+    // Push to history ring buffer on every SCD40 read (5s cadence)
+    static unsigned long lastHistoryPush = 0;
+    if (readings.valid && now - lastHistoryPush >= INTERVAL_SCD40) {
+        lastHistoryPush = now;
+        pushHistory(readings, fan.on);
+    }
+
+    // Google Sheets logging
+    if (logEnabled && readings.valid && (now - lastLogMs >= LOG_INTERVAL)) {
+        lastLogMs = now;
+        logToSheets();
+        logRowCount++;
+    }
+
+    // RGB LED
+    updateLed(readings.co2, readings.valid);
+
+    // Update display every SCD40 cycle
+    if (now - lastScd40Read < 100) {
+        updateOled();
+    }
+}

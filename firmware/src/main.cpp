@@ -672,6 +672,64 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
   </div>
   <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2" hidden>
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <g class="wing-down-l">
+        <rect x="3" y="21" width="2" height="1" fill="#0d4520"/>
+        <rect x="3" y="22" width="2" height="1" fill="#155026"/>
+        <rect x="5" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="24" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="25" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="25" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="26" width="2" height="1" fill="#155026"/>
+        <rect x="6" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="27" width="2" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-down-r">
+        <rect x="27" y="21" width="2" height="1" fill="#0d4520"/>
+        <rect x="26" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="22" width="2" height="1" fill="#155026"/>
+        <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="24" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="25" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="25" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="26" width="2" height="1" fill="#155026"/>
+        <rect x="28" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="27" width="2" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-up-l">
+        <rect x="3" y="19" width="2" height="1" fill="#0d4520"/>
+        <rect x="3" y="20" width="2" height="1" fill="#155026"/>
+        <rect x="5" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="21" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="21" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="22" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="24" width="1" height="1" fill="#155026"/>
+        <rect x="5" y="24" width="1" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-up-r">
+        <rect x="27" y="19" width="2" height="1" fill="#0d4520"/>
+        <rect x="26" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="20" width="2" height="1" fill="#155026"/>
+        <rect x="25" y="21" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="21" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="22" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="26" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="24" width="1" height="1" fill="#155026"/>
+        <rect x="28" y="24" width="1" height="1" fill="#0d4520"/>
+      </g>
       <g class="body-group">
         <!-- FEATHERS (y=0-3) -->
         <rect x="13" y="1" width="1" height="2" fill="#155026"/>

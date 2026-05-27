@@ -406,14 +406,19 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
 .metric-value{font-size:22px;font-weight:600;margin-top:4px;color:var(--fg);}
 .metric-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.fan-tile{display:flex;align-items:center;justify-content:space-between;}
+.fan-tile{display:flex;align-items:center;justify-content:space-between;background:var(--green);color:#fff;border-color:var(--green);}
+.fan-tile.idle{background:var(--tile);color:var(--fg);border-color:var(--border);}
 .fan-status{display:flex;flex-direction:column;}
-.fan-state{font-weight:700;font-size:16px;letter-spacing:.3px;}
-.fan-state.on{color:var(--green);}
-.fan-state.off{color:var(--muted);}
-.fan-reason{font-size:12px;color:var(--muted);margin-top:2px;}
-.fan-duty{font-size:24px;font-weight:700;color:var(--green);}
-.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;text-transform:uppercase;letter-spacing:.5px;}
+.fan-state{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;}
+.fan-duty{font-size:26px;font-weight:700;letter-spacing:-.3px;margin-top:2px;}
+.fan-duty-suffix{font-size:14px;font-weight:500;opacity:.75;margin-left:4px;}
+.fan-reason{font-size:11px;opacity:.75;margin-top:2px;}
+.fan-icon-wrap{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fan-tile.idle .fan-icon-wrap{background:var(--tile-alt);}
+.fan-icon{width:26px;height:26px;color:#fff;}
+.fan-tile.idle .fan-icon{color:var(--muted);}
+.fan-tile.running .fan-icon{animation:fan-spin 1.4s linear infinite;}
+@keyframes fan-spin{to{transform:rotate(360deg);}}
 .chart-tile h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px;}
 #chart{width:100%;height:160px;display:block;}
 .controls{display:flex;gap:8px;}
@@ -854,14 +859,20 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
     <div class="metric-value"><span id="humidity">--</span>%</div>
   </div>
 </div>
-<div class="tile fan-tile">
+<div class="tile fan-tile idle" id="fan-tile">
   <div class="fan-status">
-    <div class="fan-state" id="fan-state">--</div>
+    <div class="fan-state" id="fan-state">FAN IDLE</div>
+    <div class="fan-duty"><span id="fan-duty">0%</span><span class="fan-duty-suffix">duty</span></div>
     <div class="fan-reason" id="fan-reason">&nbsp;</div>
   </div>
-  <div>
-    <div class="fan-duty" id="fan-duty">0%</div>
-    <div class="fan-duty-label">duty</div>
+  <div class="fan-icon-wrap">
+    <svg class="fan-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="3" fill="currentColor"/>
+      <ellipse cx="16" cy="7" rx="2.5" ry="6" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="25" cy="16" rx="6" ry="2.5" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="16" cy="25" rx="2.5" ry="6" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="7" cy="16" rx="6" ry="2.5" fill="currentColor" opacity="0.9"/>
+    </svg>
   </div>
 </div>
 <div class="tile insight-tile always-on" id="insight-tile">
@@ -922,7 +933,8 @@ async function refreshData(){
     if(tt!==lastDodiState){lastDodiState=tt;getInsight(true);}
     document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
     document.getElementById('humidity').textContent=d.humidity.toFixed(0);
-    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
+    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'FAN RUNNING':'FAN IDLE';
+    const fanTile=document.getElementById('fan-tile');fanTile.classList.toggle('running',!!d.fanOn);fanTile.classList.toggle('idle',!d.fanOn);
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
     document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
     const dodoPx=document.getElementById('dodo-pixel-v2');
@@ -960,10 +972,7 @@ function renderChart(samples){
   s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#e8f5e9" opacity="0.7"/>`;
   s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
   s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
-  [400,600,800,1000,1200].forEach(v=>{if(v>=minCo2&&v<=maxCo2)s+=`<text x="4" y="${y(v)-3}" font-size="11" font-weight="600" fill="#5e6b5e">${v}</text>`;});
-  s+=`<text x="${W-32}" y="${H-4}" font-size="11" font-weight="600" fill="#5e6b5e">now</text>`;
-  s+=`<text x="4" y="${H-4}" font-size="11" font-weight="600" fill="#5e6b5e">-5m</text>`;
-  s+=`<text x="${W/2-20}" y="12" font-size="10" fill="#5e6b5e">CO₂ ppm</text>`;
+  [800,1000].forEach(v=>{if(v>=minCo2&&v<=maxCo2)s+=`<text x="4" y="${y(v)-2}" font-size="9" font-weight="600" fill="#5e6b5e">${v}</text>`;});
   const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
   s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   const last=samples[samples.length-1];

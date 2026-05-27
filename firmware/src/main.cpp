@@ -164,18 +164,26 @@ void logToSheets() {
 
 void updateLed(uint16_t co2, bool valid) {
     if (!valid || logEnabled) {
-        digitalWrite(PIN_LED_R, LOW);
-        digitalWrite(PIN_LED_G, LOW);
-        digitalWrite(PIN_LED_B, LOW);
+        analogWrite(PIN_LED_R, 0);
+        analogWrite(PIN_LED_G, 0);
+        analogWrite(PIN_LED_B, 0);
         return;
     }
-    // Green <800 | Yellow 800-999 | Red ≥1000 (common cathode: HIGH = on)
+    // Green <800 | Amber 800-999 | Red ≥1000 (common cathode active HIGH)
+    // PWM mixing — red channel dimmed during amber so green isn't overpowered.
     bool red    = co2 >= CO2_ALARM_PPM;
-    bool yellow = co2 >= CO2_THRESHOLD && !red;
-    bool green  = !red && !yellow;
-    digitalWrite(PIN_LED_R, (red || yellow) ? HIGH : LOW);
-    digitalWrite(PIN_LED_G, (green || yellow) ? HIGH : LOW);
-    digitalWrite(PIN_LED_B, LOW);
+    bool amber  = co2 >= CO2_THRESHOLD && !red;
+    if (red) {
+        analogWrite(PIN_LED_R, 255);
+        analogWrite(PIN_LED_G, 0);
+    } else if (amber) {
+        analogWrite(PIN_LED_R, 60);    // dimmed red
+        analogWrite(PIN_LED_G, 220);   // brighter green → reads as amber
+    } else {
+        analogWrite(PIN_LED_R, 0);
+        analogWrite(PIN_LED_G, 220);
+    }
+    analogWrite(PIN_LED_B, 0);
 }
 
 // ── OLED ─────────────────────────────────────────────────────────────────────
@@ -439,6 +447,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 #dodo-pixel-v2.facing-right .dodo-side-r{display:block;}
 #dodo-pixel-v2.facing-left .body-group,#dodo-pixel-v2.facing-left .feet,#dodo-pixel-v2.facing-left .wing-down-l,#dodo-pixel-v2.facing-left .wing-down-r,#dodo-pixel-v2.facing-left .wing-up-l,#dodo-pixel-v2.facing-left .wing-up-r{display:none;}
 #dodo-pixel-v2.facing-left .dodo-side-l{display:block;}
+body.demo-mode .tile-sheets{display:none;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
@@ -828,7 +837,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
     <button data-mode="off" onclick="setMode('off')">Off</button>
   </div>
 </div>
-<div class="tile">
+<div class="tile tile-sheets">
   <div class="metric-label" style="margin-bottom:10px;">Sheets Logging</div>
   <div class="log-row" id="log-idle">
     <input class="log-input" type="text" id="log-label" placeholder="run label (e.g. dorm_baseline)">
@@ -844,6 +853,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 </div>
 <script>
 const USE_MOCK=location.search.includes('mock=1');
+if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
 function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
@@ -895,6 +905,10 @@ function renderChart(samples){
   s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#e8f5e9" opacity="0.7"/>`;
   s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
   s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
+  [400,600,800,1000,1200].forEach(v=>{if(v>=minCo2&&v<=maxCo2)s+=`<text x="4" y="${y(v)-3}" font-size="11" font-weight="600" fill="#5e6b5e">${v}</text>`;});
+  s+=`<text x="${W-32}" y="${H-4}" font-size="11" font-weight="600" fill="#5e6b5e">now</text>`;
+  s+=`<text x="4" y="${H-4}" font-size="11" font-weight="600" fill="#5e6b5e">-5m</text>`;
+  s+=`<text x="${W/2-20}" y="12" font-size="10" fill="#5e6b5e">CO₂ ppm</text>`;
   const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
   s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   const last=samples[samples.length-1];

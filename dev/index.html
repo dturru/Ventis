@@ -521,7 +521,14 @@ const USE_MOCK=location.search.includes('mock=1');
 if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
-function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
+let _lastTier='green';
+function tier(ppm){
+  // Hysteresis (20 ppm on downward edges) — prevents UI flicker when CO2 jitters near thresholds.
+  if(_lastTier==='green'){if(ppm>=1000)_lastTier='red';else if(ppm>=800)_lastTier='amber';}
+  else if(_lastTier==='amber'){if(ppm>=1000)_lastTier='red';else if(ppm<780)_lastTier='green';}
+  else{if(ppm<980)_lastTier='amber';}
+  return _lastTier;
+}
 function tierLabel(t){return t==='red'?'Elevated - flush recommended':t==='amber'?'Approaching threshold':'Healthy';}
 async function refreshData(){
   try{const r=await fetch(DATA_URL);const d=await r.json();

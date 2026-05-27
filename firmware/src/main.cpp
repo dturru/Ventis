@@ -169,16 +169,25 @@ void updateLed(uint16_t co2, bool valid) {
         analogWrite(PIN_LED_B, 0);
         return;
     }
-    // Green <800 | Amber 800-999 | Red ≥1000 (common cathode active HIGH)
-    // PWM mixing — red channel dimmed during amber so green isn't overpowered.
-    bool red    = co2 >= CO2_ALARM_PPM;
-    bool amber  = co2 >= CO2_THRESHOLD && !red;
-    if (red) {
+    // Green <800 | Amber 800-999 | Red ≥1000. Hysteresis 20 ppm on the
+    // downward edges prevents flicker when readings jitter around the
+    // thresholds (sensor noise is typically ±5-10 ppm).
+    static uint8_t state = 0;  // 0=green, 1=amber, 2=red
+    if (state == 0) {
+        if (co2 >= CO2_ALARM_PPM)       state = 2;
+        else if (co2 >= CO2_THRESHOLD)  state = 1;
+    } else if (state == 1) {
+        if (co2 >= CO2_ALARM_PPM)             state = 2;
+        else if (co2 < CO2_THRESHOLD - 20)    state = 0;
+    } else {
+        if (co2 < CO2_ALARM_PPM - 20)         state = 1;
+    }
+    if (state == 2) {
         analogWrite(PIN_LED_R, 255);
         analogWrite(PIN_LED_G, 0);
-    } else if (amber) {
-        analogWrite(PIN_LED_R, 60);    // dimmed red
-        analogWrite(PIN_LED_G, 220);   // brighter green → reads as amber
+    } else if (state == 1) {
+        analogWrite(PIN_LED_R, 60);
+        analogWrite(PIN_LED_G, 220);
     } else {
         analogWrite(PIN_LED_R, 0);
         analogWrite(PIN_LED_G, 220);
@@ -889,7 +898,14 @@ const USE_MOCK=location.search.includes('mock=1');
 if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
-function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
+let _lastTier='green';
+function tier(ppm){
+  // Hysteresis (20 ppm on downward edges) — prevents UI flicker when CO2 jitters near thresholds.
+  if(_lastTier==='green'){if(ppm>=1000)_lastTier='red';else if(ppm>=800)_lastTier='amber';}
+  else if(_lastTier==='amber'){if(ppm>=1000)_lastTier='red';else if(ppm<780)_lastTier='green';}
+  else{if(ppm<980)_lastTier='amber';}
+  return _lastTier;
+}
 function tierLabel(t){return t==='red'?'Elevated - flush recommended':t==='amber'?'Approaching threshold':'Healthy';}
 async function refreshData(){
   try{const r=await fetch(DATA_URL);const d=await r.json();

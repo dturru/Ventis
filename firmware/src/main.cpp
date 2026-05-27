@@ -434,6 +434,11 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .dodo-mascot.pixel-art .wing-up-l,.dodo-mascot.pixel-art .wing-up-r{display:none;}
 .dodo-mascot.pixel-art .tint,.dodo-mascot.pixel-art .sweat{display:none;}
 .dodo-mascot.pixel-art.distress .tint,.dodo-mascot.pixel-art.distress .sweat{display:block;}
+#dodo-pixel-v2 .dodo-side-r,#dodo-pixel-v2 .dodo-side-l{display:none;}
+#dodo-pixel-v2.facing-right .body-group,#dodo-pixel-v2.facing-right .feet,#dodo-pixel-v2.facing-right .wing-down-l,#dodo-pixel-v2.facing-right .wing-down-r,#dodo-pixel-v2.facing-right .wing-up-l,#dodo-pixel-v2.facing-right .wing-up-r{display:none;}
+#dodo-pixel-v2.facing-right .dodo-side-r{display:block;}
+#dodo-pixel-v2.facing-left .body-group,#dodo-pixel-v2.facing-left .feet,#dodo-pixel-v2.facing-left .wing-down-l,#dodo-pixel-v2.facing-left .wing-down-r,#dodo-pixel-v2.facing-left .wing-up-l,#dodo-pixel-v2.facing-left .wing-up-r{display:none;}
+#dodo-pixel-v2.facing-left .dodo-side-l{display:block;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
@@ -672,6 +677,145 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
   </div>
   <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2" hidden>
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <defs>
+        <g id="dodo-side-template">
+          <!-- feathers -->
+          <rect x="9" y="1" width="1" height="2" fill="#155026"/>
+          <rect x="11" y="1" width="1" height="2" fill="#155026"/>
+          <rect x="9" y="3" width="3" height="1" fill="#155026"/>
+          <!-- head (left side of frame, oval) -->
+          <rect x="6" y="4" width="9" height="1" fill="#0d4520"/>
+          <rect x="5" y="5" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="5" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="15" y="5" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="6" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="6" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="6" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="7" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="7" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="7" y="7" width="3" height="1" fill="#2a8a48"/>
+          <rect x="10" y="7" width="6" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="7" width="1" height="1" fill="#0d4520"/>
+          <!-- eye (one visible, on side facing beak) -->
+          <rect x="4" y="8" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="8" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="8" width="2" height="1" fill="#ffffff"/>
+          <rect x="14" y="8" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="8" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="9" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="9" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="9" width="1" height="1" fill="#ffffff"/>
+          <rect x="13" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="14" y="9" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="9" width="1" height="1" fill="#0d4520"/>
+          <!-- head narrows + beak protrudes right -->
+          <rect x="5" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="10" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="15" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="16" y="10" width="3" height="1" fill="#fbbf24"/>
+          <rect x="19" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="11" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="11" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="14" y="11" width="1" height="1" fill="#0d4520"/>
+          <rect x="15" y="11" width="6" height="1" fill="#fbbf24"/>
+          <rect x="21" y="11" width="1" height="1" fill="#0d4520"/>
+          <!-- beak max + hook starts -->
+          <rect x="7" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="12" width="5" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="14" y="12" width="7" height="1" fill="#fbbf24"/>
+          <rect x="21" y="12" width="1" height="1" fill="#a16207"/>
+          <rect x="22" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="13" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="13" width="3" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="13" width="1" height="1" fill="#0d4520"/>
+          <rect x="13" y="13" width="7" height="1" fill="#fbbf24"/>
+          <rect x="20" y="13" width="2" height="1" fill="#a16207"/>
+          <rect x="9" y="14" width="1" height="1" fill="#0d4520"/>
+          <rect x="10" y="14" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="11" y="14" width="1" height="1" fill="#0d4520"/>
+          <rect x="12" y="14" width="7" height="1" fill="#fbbf24"/>
+          <rect x="19" y="14" width="2" height="1" fill="#a16207"/>
+          <!-- hook tip downward -->
+          <rect x="10" y="15" width="1" height="1" fill="#0d4520"/>
+          <rect x="11" y="15" width="6" height="1" fill="#a16207"/>
+          <!-- neck -->
+          <rect x="8" y="16" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="16" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="16" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="17" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="17" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="17" y="17" width="1" height="1" fill="#0d4520"/>
+          <!-- body egg -->
+          <rect x="6" y="18" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="18" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="18" y="18" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="19" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="19" width="13" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="19" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="20" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="20" width="15" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="20" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="21" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="21" width="15" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="21" width="1" height="1" fill="#0d4520"/>
+          <!-- belly shadow -->
+          <rect x="4" y="22" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="22" width="8" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="22" width="6" height="1" fill="#093b1a"/>
+          <rect x="19" y="22" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="22" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="23" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="23" width="8" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="23" width="6" height="1" fill="#093b1a"/>
+          <rect x="19" y="23" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="23" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="24" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="24" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="24" width="7" height="1" fill="#093b1a"/>
+          <rect x="19" y="24" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="24" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="25" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="25" width="6" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="25" width="6" height="1" fill="#093b1a"/>
+          <rect x="18" y="25" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="25" width="1" height="1" fill="#0d4520"/>
+          <!-- wing on body side (single visible wing) -->
+          <rect x="7" y="20" width="6" height="1" fill="#155026"/>
+          <rect x="6" y="21" width="7" height="1" fill="#155026"/>
+          <rect x="13" y="21" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="22" width="6" height="1" fill="#155026"/>
+          <rect x="6" y="23" width="6" height="1" fill="#155026"/>
+          <rect x="7" y="24" width="5" height="1" fill="#0d4520"/>
+          <!-- body narrows -->
+          <rect x="5" y="26" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="26" width="13" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="26" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="27" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="27" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="18" y="27" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="28" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="28" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="17" y="28" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="29" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="29" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="29" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="30" width="7" height="1" fill="#0d4520"/>
+          <!-- legs staggered + feet -->
+          <rect x="9" y="31" width="2" height="3" fill="#d97706"/>
+          <rect x="13" y="31" width="2" height="3" fill="#d97706"/>
+          <rect x="8" y="34" width="4" height="1" fill="#d97706"/>
+          <rect x="12" y="34" width="4" height="1" fill="#d97706"/>
+          <rect x="8" y="35" width="4" height="1" fill="#0d4520"/>
+          <rect x="12" y="35" width="4" height="1" fill="#0d4520"/>
+        </g>
+      </defs>
+      <g class="dodo-side-r">
+        <use href="#dodo-side-template"/>
+      </g>
+      <g class="dodo-side-l" transform="translate(32 0) scale(-1 1)">
+        <use href="#dodo-side-template"/>
+      </g>
       <g class="wing-down-l">
         <rect x="3" y="21" width="2" height="1" fill="#0d4520"/>
         <rect x="3" y="22" width="2" height="1" fill="#155026"/>

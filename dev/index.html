@@ -80,11 +80,38 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 #dodo-pixel-v2.facing-left .body-group,#dodo-pixel-v2.facing-left .feet,#dodo-pixel-v2.facing-left .wing-down-l,#dodo-pixel-v2.facing-left .wing-down-r,#dodo-pixel-v2.facing-left .wing-up-l,#dodo-pixel-v2.facing-left .wing-up-r{display:none;}
 #dodo-pixel-v2.facing-left .dodo-side-l{display:block;}
 body.demo-mode .tile-sheets{display:none;}
+header .location{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;}
+.dodi-callout-tile{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--green-light);border-color:#bedfc4;transition:background .4s,border-color .4s;}
+.dodi-callout-tile.amber{background:var(--amber-light);border-color:#e8d28a;}
+.dodi-callout-tile.red{background:var(--red-light);border-color:#e8a8a8;}
+.dodi-text{flex:1;min-width:0;}
+.dodi-label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);}
+.dodi-callout-tile.amber .dodi-label{color:var(--amber);}
+.dodi-callout-tile.red .dodi-label{color:var(--red);}
+.dodi-title{font-size:17px;font-weight:700;color:var(--fg);margin-top:2px;line-height:1.2;}
+.dodi-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+.co2-tile{text-align:left;padding:16px;}
+.co2-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.co2-badge{padding:5px 12px;border-radius:14px;font-size:11px;font-weight:700;color:white;background:var(--green);letter-spacing:.6px;flex-shrink:0;}
+.co2-badge.amber{background:var(--amber);}
+.co2-badge.red{background:var(--red);}
+.co2-tile .co2-label{text-align:left;}
+.co2-tile .co2-value{font-size:48px;line-height:1;margin:6px 0 4px;color:var(--green);}
+.co2-tile.amber .co2-value{color:var(--amber);}
+.co2-tile.red .co2-value{color:var(--red);}
+.co2-tile .co2-unit{text-align:left;}
+.co2-chart-mini{width:100%;height:60px;display:block;margin-top:6px;}
+.metric-tile{text-align:left;}
+.metric-tile .metric-value{font-size:24px;font-weight:600;margin-top:4px;color:var(--fg);}
+.insight-tile.always-on{display:block;background:var(--green-light);border-color:#bedfc4;}
+.insight-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.insight-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
+.insight-badge{font-size:10px;color:var(--green);font-weight:700;letter-spacing:.8px;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
-<header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
-<div class="dodo-wrap">
+<header><h1>Ventis</h1><span class="location" id="location">DORM ROOM</span></header>
+<div class="tile dodi-callout-tile" id="dodi-callout">
   <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2">
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
       <defs>
@@ -423,23 +450,31 @@ body.demo-mode .tile-sheets{display:none;}
       </g>
     </svg>
   </div>
+  <div class="dodi-text">
+    <div class="dodi-label" id="dodi-label">AIR IS FRESH</div>
+    <div class="dodi-title" id="dodi-title">Dodi is happy</div>
+    <div class="dodi-sub" id="dodi-sub">Air quality is great</div>
+  </div>
 </div>
 <div class="tile co2-tile" id="co2-tile">
-  <div class="co2-label">CO2</div>
-  <div class="co2-value"><span id="co2">--</span></div>
-  <div class="co2-unit">ppm</div>
-  <div class="co2-status" id="co2-status">--</div>
+  <div class="co2-header">
+    <div>
+      <div class="co2-label">CO2</div>
+      <div class="co2-value"><span id="co2">--</span></div>
+      <div class="co2-unit">ppm <span id="co2-sub" class="co2-status" id="co2-status"></span></div>
+    </div>
+    <div class="co2-badge" id="co2-badge">GOOD</div>
+  </div>
+  <svg id="chart" class="co2-chart-mini" viewBox="0 0 600 80" preserveAspectRatio="none"></svg>
 </div>
 <div class="row">
-  <div class="tile">
-    <div class="metric-label">Indoor</div>
+  <div class="tile metric-tile">
+    <div class="metric-label">TEMP</div>
     <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
-    <div class="metric-sub"><span id="humidity">--</span>% RH</div>
   </div>
-  <div class="tile">
-    <div class="metric-label">Outdoor</div>
-    <div class="metric-value"><span id="tempOut">--</span>&deg;F</div>
-    <div class="metric-sub">&nbsp;</div>
+  <div class="tile metric-tile">
+    <div class="metric-label">HUMIDITY</div>
+    <div class="metric-value"><span id="humidity">--</span>%</div>
   </div>
 </div>
 <div class="tile fan-tile">
@@ -452,14 +487,12 @@ body.demo-mode .tile-sheets{display:none;}
     <div class="fan-duty-label">duty</div>
   </div>
 </div>
-<div class="tile chart-tile">
-  <h3>Last 5 minutes</h3>
-  <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
-</div>
-<button class="btn-insight" id="btn-insight" onclick="getInsight()">Generate AI Insight</button>
-<div class="tile insight-tile" id="insight-tile">
-  <div class="insight-text" id="insight-text"></div>
-  <div class="insight-meta" id="insight-meta"></div>
+<div class="tile insight-tile always-on" id="insight-tile">
+  <div class="insight-header">
+    <span class="insight-dot"></span>
+    <span class="insight-badge">AI INSIGHT &middot; ON-DEVICE</span>
+  </div>
+  <div class="insight-text" id="insight-text">Reading the room...</div>
 </div>
 <div class="tile">
   <div class="metric-label" style="margin-bottom:10px;">Manual Override</div>
@@ -495,10 +528,16 @@ async function refreshData(){
     document.getElementById('co2').textContent=d.co2;
     const tt=tier(d.co2);
     const tile=document.getElementById('co2-tile');tile.classList.remove('green','amber','red');tile.classList.add(tt);
-    const st=document.getElementById('co2-status');st.textContent=tierLabel(tt);st.classList.remove('green','amber','red');st.classList.add(tt);
+    const badge=document.getElementById('co2-badge');badge.textContent={green:'GOOD',amber:'AMBER',red:'HIGH'}[tt];badge.classList.remove('green','amber','red');badge.classList.add(tt);
+    document.getElementById('co2-sub').textContent=tt==='red'?'· over ASHRAE 1,000':'';
+    const calloutText={green:{label:'AIR IS FRESH',title:'Dodi is happy',sub:'Air quality is great'},amber:{label:'AIR IS GETTING STUFFY',title:'Dodi is concerned',sub:'Crack a window soon'},red:{label:'AIR IS STUFFY',title:'Dodi is uncomfortable',sub:'Opening the window will help'}}[tt];
+    const callout=document.getElementById('dodi-callout');callout.classList.remove('green','amber','red');callout.classList.add(tt);
+    document.getElementById('dodi-label').textContent=calloutText.label;
+    document.getElementById('dodi-title').textContent=calloutText.title;
+    document.getElementById('dodi-sub').textContent=calloutText.sub;
+    if(tt!==lastDodiState){lastDodiState=tt;getInsight(true);}
     document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
     document.getElementById('humidity').textContent=d.humidity.toFixed(0);
-    document.getElementById('tempOut').textContent=(d.tempOut*9/5+32).toFixed(1);
     const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
     document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
@@ -523,7 +562,7 @@ async function refreshHistory(){
 }
 function renderChart(samples){
   if(!samples||samples.length<2)return;
-  const W=600,H=160;
+  const W=600,H=80;
   const maxCo2=Math.max(1200,...samples.map(s=>s.co2));
   const minCo2=400;
   const tMin=samples[0].t,tMax=samples[samples.length-1].t;
@@ -552,21 +591,19 @@ async function setMode(mode){
   if(USE_MOCK)return;
   try{await fetch('/control?mode='+mode,{method:'POST'});refreshData();}catch(e){}
 }
-async function getInsight(){
-  const btn=document.getElementById('btn-insight');
-  btn.disabled=true;btn.textContent='Thinking...';
+let lastInsightAt=0;
+let lastDodiState='';
+async function getInsight(force){
+  const now=Date.now();
+  if(!force&&(now-lastInsightAt<25000))return;
+  lastInsightAt=now;
   try{
     const r=await fetch(USE_MOCK?'/mock-insight.json':'/insight',{method:'POST'});
     const d=await r.json();
     document.getElementById('insight-text').textContent=d.text;
-    const src=d.source==='live'?'Live - ':'Offline - ';
-    document.getElementById('insight-meta').textContent=src+d.generated_at;
-    document.getElementById('insight-tile').classList.add('visible');
   }catch(e){
-    document.getElementById('insight-text').textContent='Insight unavailable.';
-    document.getElementById('insight-tile').classList.add('visible');
+    document.getElementById('insight-text').textContent='Insight unavailable right now.';
   }
-  btn.disabled=false;btn.textContent='Generate AI Insight';
 }
 async function startLog(){
   const label=document.getElementById('log-label').value||'unlabeled';

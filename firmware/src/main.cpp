@@ -446,7 +446,9 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .dodo-mascot.pixel-art{width:64px;height:72px;}
 .dodo-mascot.pixel-art svg{shape-rendering:crispEdges;}
 .dodo-mascot.pixel-art .wing-up-l,.dodo-mascot.pixel-art .wing-up-r{display:none;}
-</style></head><body>
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head><body>
 <header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
 <div class="dodo-wrap">
   <div class="dodo-mascot calm" id="dodo" aria-label="Dodi the dodo, your air quality mascot">
@@ -873,6 +875,10 @@ async function stopLog(){
 refreshData();refreshHistory();
 setInterval(refreshData,2000);
 setInterval(refreshHistory,10000);
+window.addEventListener('load',()=>{
+  if(typeof gsap==='undefined'){console.warn('[Dodi] GSAP unavailable — pixel-art Dodi in static mode');return;}
+  if(typeof initDodiTimelines==='function'){initDodiTimelines();}
+});
 </script>
 </body></html>)raw";
 

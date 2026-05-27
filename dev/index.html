@@ -86,6 +86,8 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .dodo-mascot.pixel-art{width:64px;height:72px;}
 .dodo-mascot.pixel-art svg{shape-rendering:crispEdges;}
 .dodo-mascot.pixel-art .wing-up-l,.dodo-mascot.pixel-art .wing-up-r{display:none;}
+.dodo-mascot.pixel-art .tint,.dodo-mascot.pixel-art .sweat{display:none;}
+.dodo-mascot.pixel-art.distress .tint,.dodo-mascot.pixel-art.distress .sweat{display:block;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
@@ -207,6 +209,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
         <rect x="27" y="23" width="1" height="1" fill="#155026"/>
         <rect x="28" y="23" width="1" height="1" fill="#0d4520"/>
       </g>
+      <g class="body-group">
       <!-- FEATHERS (rows 0-3) -->
       <rect x="12" y="1" width="1" height="2" fill="#155026"/>
       <rect x="16" y="1" width="1" height="2" fill="#155026"/>
@@ -352,6 +355,15 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
         <rect x="21" y="11" width="1" height="1" fill="#1a1a1a"/>
         <rect x="23" y="11" width="1" height="1" fill="#1a1a1a"/>
       </g>
+      <!-- DISTRESS OVERLAYS (tint + sweat drop, hidden unless .distress) -->
+      <rect class="tint" x="0" y="0" width="32" height="36" fill="#9da010" opacity="0.32"/>
+      <g class="sweat">
+        <rect x="4" y="5" width="1" height="1" fill="#7dd3fc"/>
+        <rect x="3" y="6" width="2" height="1" fill="#7dd3fc"/>
+        <rect x="3" y="7" width="3" height="1" fill="#7dd3fc"/>
+        <rect x="4" y="8" width="2" height="1" fill="#3b82f6"/>
+      </g>
+      </g>
       <!-- FEET (rows 32-35, separate group so distress shake won't move them) -->
       <g class="feet">
         <rect x="10" y="32" width="3" height="1" fill="#d97706"/>
@@ -447,6 +459,12 @@ async function refreshData(){
       dodo.classList.remove('calm','alert','distress');dodo.classList.add(stateMap[tt]);
       dodo.classList.toggle('flapping',!!d.fanOn);
     }
+    const dodoPx=document.getElementById('dodo-pixel');
+    if(dodoPx){
+      const stateMap={green:'calm',amber:'alert',red:'distress'};
+      dodoPx.classList.remove('calm','alert','distress');dodoPx.classList.add(stateMap[tt]);
+      dodoPx.classList.toggle('flapping',!!d.fanOn);
+    }
     const logIdle=document.getElementById('log-idle');const logActive=document.getElementById('log-active');
     if(d.logEnabled){
       logIdle.style.display='none';logActive.classList.add('visible');
@@ -515,6 +533,32 @@ async function stopLog(){
 refreshData();refreshHistory();
 setInterval(refreshData,2000);
 setInterval(refreshHistory,10000);
+function initDodiTimelines(){
+  const dodi=document.getElementById('dodo-pixel');
+  if(!dodi)return;
+  const body=dodi.querySelector('.body-group');
+  const wUL=dodi.querySelector('.wing-up-l'),wUR=dodi.querySelector('.wing-up-r');
+  const wDL=dodi.querySelector('.wing-down-l'),wDR=dodi.querySelector('.wing-down-r');
+  if(body)gsap.to(body,{y:-1,duration:1.25,yoyo:true,repeat:-1,ease:'sine.inOut'});
+  let flapTl=null,shakeTl=null,up=false;
+  function setWings(showUp){
+    if(!wUL||!wUR||!wDL||!wDR)return;
+    wUL.style.display=showUp?'block':'';
+    wUR.style.display=showUp?'block':'';
+    wDL.style.display=showUp?'none':'';
+    wDR.style.display=showUp?'none':'';
+  }
+  function startFlap(){if(flapTl)return;flapTl=gsap.to({},{duration:0.09,repeat:-1,onRepeat:()=>{up=!up;setWings(up);}});}
+  function stopFlap(){if(!flapTl)return;flapTl.kill();flapTl=null;up=false;setWings(false);}
+  function startShake(){if(shakeTl||!body)return;shakeTl=gsap.to(body,{x:0.4,duration:0.07,yoyo:true,repeat:-1,ease:'sine.inOut'});}
+  function stopShake(){if(!shakeTl)return;shakeTl.kill();shakeTl=null;if(body)gsap.set(body,{x:0});}
+  function sync(){
+    dodi.classList.contains('flapping')?startFlap():stopFlap();
+    dodi.classList.contains('distress')?startShake():stopShake();
+  }
+  new MutationObserver(sync).observe(dodi,{attributes:true,attributeFilter:['class']});
+  sync();
+}
 window.addEventListener('load',()=>{
   if(typeof gsap==='undefined'){console.warn('[Dodi] GSAP unavailable — pixel-art Dodi in static mode');return;}
   if(typeof initDodiTimelines==='function'){initDodiTimelines();}

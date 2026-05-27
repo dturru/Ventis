@@ -500,7 +500,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
       </g>
     </svg>
   </div>
-  <div class="dodo-mascot pixel-art" id="dodo-pixel" hidden>
+  <div class="dodo-mascot pixel-art calm" id="dodo-pixel" hidden>
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
       <!-- WINGS (drawn first so body renders on top of inner edge) -->
       <g class="wing-down-l">
@@ -685,6 +685,31 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
       <rect x="10" y="28" width="12" height="1" fill="#1e6e3a"/>
       <rect x="22" y="28" width="1" height="1" fill="#0d4520"/>
       <rect x="10" y="29" width="12" height="1" fill="#0d4520"/>
+      <!-- EYES (3 state groups, visibility toggled by existing .dodo-mascot.<state> .eyes-<state> CSS) -->
+      <g class="eyes-calm">
+        <rect x="8" y="9" width="3" height="3" fill="#ffffff"/>
+        <rect x="21" y="9" width="3" height="3" fill="#ffffff"/>
+        <rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="22" y="10" width="1" height="1" fill="#1a1a1a"/>
+      </g>
+      <g class="eyes-alert">
+        <rect x="8" y="8" width="3" height="4" fill="#ffffff"/>
+        <rect x="21" y="8" width="3" height="4" fill="#ffffff"/>
+        <rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="22" y="10" width="1" height="1" fill="#1a1a1a"/>
+      </g>
+      <g class="eyes-distress">
+        <rect x="8" y="9" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="10" y="9" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="9" y="10" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="8" y="11" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="10" y="11" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="21" y="9" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="23" y="9" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="22" y="10" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="21" y="11" width="1" height="1" fill="#1a1a1a"/>
+        <rect x="23" y="11" width="1" height="1" fill="#1a1a1a"/>
+      </g>
       <!-- FEET (rows 32-35, separate group so distress shake won't move them) -->
       <g class="feet">
         <rect x="10" y="32" width="3" height="1" fill="#d97706"/>

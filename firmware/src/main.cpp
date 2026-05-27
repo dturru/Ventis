@@ -422,8 +422,82 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .log-active-info{display:flex;flex-direction:column;}
 .log-active-label{font-weight:600;color:var(--green);font-size:14px;}
 .log-active-rows{font-size:12px;color:var(--muted);margin-top:2px;}
+.dodo-wrap{display:flex;justify-content:center;margin-bottom:-14px;z-index:2;position:relative;}
+.dodo-mascot{width:80px;height:88px;position:relative;}
+.dodo-mascot svg{width:100%;height:100%;display:block;overflow:visible;}
+.dodo-mascot .eyes-calm,.dodo-mascot .eyes-alert,.dodo-mascot .eyes-distress{display:none;}
+.dodo-mascot.calm .eyes-calm{display:block;}
+.dodo-mascot.alert .eyes-alert{display:block;}
+.dodo-mascot.distress .eyes-distress{display:block;}
+.dodo-mascot .body{transform-origin:center;animation:dodo-bobble 2.5s ease-in-out infinite;}
+.dodo-mascot .wing-l{transform-origin:14px 52px;animation:wing-idle-l 3s ease-in-out infinite;}
+.dodo-mascot .wing-r{transform-origin:66px 52px;animation:wing-idle-r 3s ease-in-out infinite;}
+@keyframes dodo-bobble{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+@keyframes wing-idle-l{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-5deg);}}
+@keyframes wing-idle-r{0%,100%{transform:rotate(0deg);}50%{transform:rotate(5deg);}}
+.dodo-mascot.flapping .wing-l{animation:wing-flap-l 0.18s ease-in-out infinite;}
+.dodo-mascot.flapping .wing-r{animation:wing-flap-r 0.18s ease-in-out infinite;}
+.dodo-mascot.flapping .body{animation:futile-fly 0.36s ease-in-out infinite;}
+@keyframes wing-flap-l{0%,100%{transform:rotate(-30deg);}50%{transform:rotate(40deg);}}
+@keyframes wing-flap-r{0%,100%{transform:rotate(30deg);}50%{transform:rotate(-40deg);}}
+@keyframes futile-fly{0%,100%{transform:translateY(0);}50%{transform:translateY(-1.5px);}}
+.dodo-mascot .gas-mask{opacity:0;transform:translateY(-50px);transition:opacity 0.3s ease-out 0.35s,transform 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.35s;}
+.dodo-mascot.distress .gas-mask{opacity:1;transform:translateY(0);}
 </style></head><body>
 <header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
+<div class="dodo-wrap">
+  <div class="dodo-mascot calm" id="dodo" aria-label="Dodi the dodo, your air quality mascot">
+    <svg viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="30" cy="84" rx="5" ry="2.5" fill="#d97706"/>
+      <ellipse cx="50" cy="84" rx="5" ry="2.5" fill="#d97706"/>
+      <ellipse class="wing wing-l" cx="10" cy="56" rx="6" ry="11" fill="#155026"/>
+      <ellipse class="wing wing-r" cx="70" cy="56" rx="6" ry="11" fill="#155026"/>
+      <g class="body">
+        <ellipse cx="40" cy="62" rx="24" ry="20" fill="#1e6e3a" stroke="#0d4520" stroke-width="1.5"/>
+        <ellipse cx="40" cy="32" rx="26" ry="24" fill="#1e6e3a" stroke="#0d4520" stroke-width="1.5"/>
+        <ellipse cx="40" cy="6" rx="2.5" ry="5" fill="#155026"/>
+        <ellipse cx="34" cy="9" rx="2" ry="4" fill="#155026" transform="rotate(-20 34 9)"/>
+        <ellipse cx="46" cy="9" rx="2" ry="4" fill="#155026" transform="rotate(20 46 9)"/>
+        <path d="M 30,38 Q 25,42 26,48 Q 28,52 34,52 L 46,52 Q 52,52 54,48 Q 55,42 50,38 Z" fill="#fbbf24" stroke="#a16207" stroke-width="1.2"/>
+        <ellipse cx="30" cy="50" rx="3" ry="1.5" fill="#d97706"/>
+        <circle cx="33" cy="44" r="0.9" fill="#a16207"/>
+        <g class="eyes-calm">
+          <circle cx="22" cy="28" r="4" fill="white" stroke="#0d4520" stroke-width="0.8"/>
+          <circle cx="58" cy="28" r="4" fill="white" stroke="#0d4520" stroke-width="0.8"/>
+          <circle cx="22" cy="29" r="2" fill="#1a1a1a"/>
+          <circle cx="58" cy="29" r="2" fill="#1a1a1a"/>
+          <circle cx="23" cy="27.5" r="0.7" fill="white"/>
+          <circle cx="59" cy="27.5" r="0.7" fill="white"/>
+        </g>
+        <g class="eyes-alert">
+          <ellipse cx="22" cy="28" rx="4" ry="5" fill="white" stroke="#0d4520" stroke-width="0.8"/>
+          <ellipse cx="58" cy="28" rx="4" ry="5" fill="white" stroke="#0d4520" stroke-width="0.8"/>
+          <circle cx="22" cy="30" r="1.5" fill="#1a1a1a"/>
+          <circle cx="58" cy="30" r="1.5" fill="#1a1a1a"/>
+        </g>
+        <g class="eyes-distress">
+          <path d="M 17,23 L 27,33 M 27,23 L 17,33" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <path d="M 53,23 L 63,33 M 63,23 L 53,33" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </g>
+      </g>
+      <g class="gas-mask">
+        <path d="M 12,32 Q 8,42 14,54 Q 26,64 40,64 Q 54,64 66,54 Q 72,42 68,32 Q 60,26 40,26 Q 20,26 12,32 Z" fill="#2a2a2a" stroke="#0d0d0d" stroke-width="1.5"/>
+        <circle cx="22" cy="36" r="8" fill="#1a1a1a" stroke="#0d0d0d" stroke-width="1.5"/>
+        <circle cx="22" cy="36" r="5.5" fill="#3a3a3a"/>
+        <circle cx="23" cy="35" r="1.5" fill="white" opacity="0.6"/>
+        <circle cx="58" cy="36" r="8" fill="#1a1a1a" stroke="#0d0d0d" stroke-width="1.5"/>
+        <circle cx="58" cy="36" r="5.5" fill="#3a3a3a"/>
+        <circle cx="59" cy="35" r="1.5" fill="white" opacity="0.6"/>
+        <rect x="32" y="60" width="16" height="14" fill="#3a3a3a" stroke="#0d0d0d" stroke-width="1" rx="2"/>
+        <line x1="35" y1="64" x2="45" y2="64" stroke="#666" stroke-width="1.2"/>
+        <line x1="35" y1="68" x2="45" y2="68" stroke="#666" stroke-width="1.2"/>
+        <line x1="35" y1="72" x2="45" y2="72" stroke="#666" stroke-width="1.2"/>
+        <rect x="2" y="36" width="6" height="4" fill="#1a1a1a"/>
+        <rect x="72" y="36" width="6" height="4" fill="#1a1a1a"/>
+      </g>
+    </svg>
+  </div>
+</div>
 <div class="tile co2-tile" id="co2-tile">
   <div class="co2-label">CO2</div>
   <div class="co2-value"><span id="co2">--</span></div>
@@ -501,6 +575,12 @@ async function refreshData(){
     const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
     document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
+    const dodo=document.getElementById('dodo');
+    if(dodo){
+      const stateMap={green:'calm',amber:'alert',red:'distress'};
+      dodo.classList.remove('calm','alert','distress');dodo.classList.add(stateMap[tt]);
+      dodo.classList.toggle('flapping',!!d.fanOn);
+    }
     const logIdle=document.getElementById('log-idle');const logActive=document.getElementById('log-active');
     if(d.logEnabled){
       logIdle.style.display='none';logActive.classList.add('visible');

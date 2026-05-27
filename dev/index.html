@@ -831,9 +831,39 @@ function initDodiTimelines(){
   new MutationObserver(sync).observe(dodi,{attributes:true,attributeFilter:['class']});
   sync();
 }
+function initDodiV2LookAround(){
+  const dodi=document.getElementById('dodo-pixel-v2');
+  if(!dodi)return;
+  const dirs=['','facing-right','','facing-left'];
+  const durs=[4,2,4,2];
+  let idx=0,cycler=null,paused=false;
+  function step(){
+    if(paused)return;
+    dodi.classList.remove('facing-right','facing-left');
+    if(dirs[idx])dodi.classList.add(dirs[idx]);
+    const d=durs[idx];
+    idx=(idx+1)%dirs.length;
+    cycler=gsap.delayedCall(d,step);
+  }
+  function sync(){
+    const shouldPause=dodi.classList.contains('distress')||dodi.classList.contains('alert');
+    if(shouldPause&&!paused){
+      paused=true;
+      if(cycler)cycler.kill();
+      dodi.classList.remove('facing-right','facing-left');
+    }else if(!shouldPause&&paused){
+      paused=false;
+      idx=0;
+      step();
+    }
+  }
+  new MutationObserver(sync).observe(dodi,{attributes:true,attributeFilter:['class']});
+  step();
+}
 window.addEventListener('load',()=>{
   if(typeof gsap==='undefined'){console.warn('[Dodi] GSAP unavailable — pixel-art Dodi in static mode');return;}
   if(typeof initDodiTimelines==='function'){initDodiTimelines();}
+  if(typeof initDodiV2LookAround==='function'){initDodiV2LookAround();}
 });
 </script>
 </body></html>

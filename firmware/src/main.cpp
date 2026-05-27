@@ -443,6 +443,8 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 @keyframes futile-fly{0%,100%{transform:translateY(0);}50%{transform:translateY(-1.5px);}}
 .dodo-mascot .gas-mask{opacity:0;transform:translateY(-50px);transition:opacity 0.3s ease-out 0.35s,transform 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.35s;}
 .dodo-mascot.distress .gas-mask{opacity:1;transform:translateY(0);}
+.dodo-mascot.pixel-art{width:64px;height:72px;}
+.dodo-mascot.pixel-art svg{shape-rendering:crispEdges;}
 </style></head><body>
 <header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
 <div class="dodo-wrap">
@@ -494,6 +496,139 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
         <line x1="35" y1="72" x2="45" y2="72" stroke="#666" stroke-width="1.2"/>
         <rect x="2" y="36" width="6" height="4" fill="#1a1a1a"/>
         <rect x="72" y="36" width="6" height="4" fill="#1a1a1a"/>
+      </g>
+    </svg>
+  </div>
+  <div class="dodo-mascot pixel-art" id="dodo-pixel" hidden>
+    <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <!-- FEATHERS (rows 0-3) -->
+      <rect x="12" y="1" width="1" height="2" fill="#155026"/>
+      <rect x="16" y="1" width="1" height="2" fill="#155026"/>
+      <rect x="20" y="1" width="1" height="2" fill="#155026"/>
+      <rect x="11" y="3" width="3" height="1" fill="#155026"/>
+      <rect x="15" y="3" width="3" height="1" fill="#155026"/>
+      <rect x="19" y="3" width="3" height="1" fill="#155026"/>
+      <!-- HEAD TOP (rows 4-6) -->
+      <rect x="10" y="4" width="12" height="1" fill="#0d4520"/>
+      <rect x="9" y="5" width="1" height="1" fill="#0d4520"/>
+      <rect x="10" y="5" width="12" height="1" fill="#1e6e3a"/>
+      <rect x="22" y="5" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="6" width="1" height="1" fill="#0d4520"/>
+      <rect x="9" y="6" width="14" height="1" fill="#1e6e3a"/>
+      <rect x="23" y="6" width="1" height="1" fill="#0d4520"/>
+      <!-- HEAD WIDENING + HIGHLIGHTS (rows 7-8) -->
+      <rect x="7" y="7" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="7" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="7" width="4" height="1" fill="#2a8a48"/>
+      <rect x="16" y="7" width="8" height="1" fill="#1e6e3a"/>
+      <rect x="24" y="7" width="1" height="1" fill="#0d4520"/>
+      <rect x="6" y="8" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="8" width="5" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="8" width="4" height="1" fill="#2a8a48"/>
+      <rect x="16" y="8" width="9" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="8" width="1" height="1" fill="#0d4520"/>
+      <!-- HEAD BULK (rows 9-11, eye-level zone reserved for step 3) -->
+      <rect x="6" y="9" width="1" height="3" fill="#0d4520"/>
+      <rect x="7" y="9" width="18" height="3" fill="#1e6e3a"/>
+      <rect x="25" y="9" width="1" height="3" fill="#0d4520"/>
+      <!-- BEAK START (row 12) -->
+      <rect x="6" y="12" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="12" width="7" height="1" fill="#1e6e3a"/>
+      <rect x="14" y="12" width="4" height="1" fill="#fbbf24"/>
+      <rect x="18" y="12" width="7" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="12" width="1" height="1" fill="#0d4520"/>
+      <!-- BEAK WIDENS (row 13) -->
+      <rect x="6" y="13" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="13" width="6" height="1" fill="#1e6e3a"/>
+      <rect x="13" y="13" width="6" height="1" fill="#fbbf24"/>
+      <rect x="19" y="13" width="6" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="13" width="1" height="1" fill="#0d4520"/>
+      <!-- BEAK PEAK + SIDE STROKES (row 14) -->
+      <rect x="7" y="14" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="14" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="14" width="1" height="1" fill="#a16207"/>
+      <rect x="13" y="14" width="6" height="1" fill="#fbbf24"/>
+      <rect x="19" y="14" width="1" height="1" fill="#a16207"/>
+      <rect x="20" y="14" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="24" y="14" width="1" height="1" fill="#0d4520"/>
+      <!-- BEAK + NOSTRIL (row 15) -->
+      <rect x="8" y="15" width="1" height="1" fill="#0d4520"/>
+      <rect x="9" y="15" width="3" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="15" width="1" height="1" fill="#a16207"/>
+      <rect x="13" y="15" width="2" height="1" fill="#fbbf24"/>
+      <rect x="15" y="15" width="1" height="1" fill="#a16207"/>
+      <rect x="16" y="15" width="3" height="1" fill="#fbbf24"/>
+      <rect x="19" y="15" width="1" height="1" fill="#a16207"/>
+      <rect x="20" y="15" width="3" height="1" fill="#1e6e3a"/>
+      <rect x="23" y="15" width="1" height="1" fill="#0d4520"/>
+      <!-- BEAK BASE + TONGUE TIPS (row 16) -->
+      <rect x="9" y="16" width="1" height="1" fill="#0d4520"/>
+      <rect x="10" y="16" width="2" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="16" width="1" height="1" fill="#a16207"/>
+      <rect x="13" y="16" width="1" height="1" fill="#d97706"/>
+      <rect x="14" y="16" width="4" height="1" fill="#fbbf24"/>
+      <rect x="18" y="16" width="1" height="1" fill="#d97706"/>
+      <rect x="19" y="16" width="1" height="1" fill="#a16207"/>
+      <rect x="20" y="16" width="2" height="1" fill="#1e6e3a"/>
+      <rect x="22" y="16" width="1" height="1" fill="#0d4520"/>
+      <!-- BEAK BOTTOM STROKE (row 17) -->
+      <rect x="9" y="17" width="1" height="1" fill="#0d4520"/>
+      <rect x="10" y="17" width="2" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="17" width="7" height="1" fill="#a16207"/>
+      <rect x="19" y="17" width="2" height="1" fill="#1e6e3a"/>
+      <rect x="21" y="17" width="1" height="1" fill="#0d4520"/>
+      <!-- HEAD-BODY TRANSITION (row 18) -->
+      <rect x="8" y="18" width="1" height="1" fill="#0d4520"/>
+      <rect x="9" y="18" width="14" height="1" fill="#1e6e3a"/>
+      <rect x="23" y="18" width="1" height="1" fill="#0d4520"/>
+      <!-- BODY WIDENING (row 19) -->
+      <rect x="7" y="19" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="19" width="16" height="1" fill="#1e6e3a"/>
+      <rect x="24" y="19" width="1" height="1" fill="#0d4520"/>
+      <!-- BODY WIDEST (rows 20-21) -->
+      <rect x="6" y="20" width="1" height="2" fill="#0d4520"/>
+      <rect x="7" y="20" width="18" height="2" fill="#1e6e3a"/>
+      <rect x="25" y="20" width="1" height="2" fill="#0d4520"/>
+      <!-- BELLY SHADOW (rows 22-25) -->
+      <rect x="6" y="22" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="22" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="11" y="22" width="10" height="1" fill="#093b1a"/>
+      <rect x="21" y="22" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="22" width="1" height="1" fill="#0d4520"/>
+      <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="23" width="3" height="1" fill="#1e6e3a"/>
+      <rect x="10" y="23" width="12" height="1" fill="#093b1a"/>
+      <rect x="22" y="23" width="3" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+      <rect x="6" y="24" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="24" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="11" y="24" width="10" height="1" fill="#093b1a"/>
+      <rect x="21" y="24" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="25" y="24" width="1" height="1" fill="#0d4520"/>
+      <rect x="7" y="25" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="25" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="12" y="25" width="8" height="1" fill="#093b1a"/>
+      <rect x="20" y="25" width="4" height="1" fill="#1e6e3a"/>
+      <rect x="24" y="25" width="1" height="1" fill="#0d4520"/>
+      <!-- BODY NARROWS (rows 26-29) -->
+      <rect x="7" y="26" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="26" width="16" height="1" fill="#1e6e3a"/>
+      <rect x="24" y="26" width="1" height="1" fill="#0d4520"/>
+      <rect x="8" y="27" width="1" height="1" fill="#0d4520"/>
+      <rect x="9" y="27" width="14" height="1" fill="#1e6e3a"/>
+      <rect x="23" y="27" width="1" height="1" fill="#0d4520"/>
+      <rect x="9" y="28" width="1" height="1" fill="#0d4520"/>
+      <rect x="10" y="28" width="12" height="1" fill="#1e6e3a"/>
+      <rect x="22" y="28" width="1" height="1" fill="#0d4520"/>
+      <rect x="10" y="29" width="12" height="1" fill="#0d4520"/>
+      <!-- FEET (rows 32-35, separate group so distress shake won't move them) -->
+      <g class="feet">
+        <rect x="10" y="32" width="3" height="1" fill="#d97706"/>
+        <rect x="19" y="32" width="3" height="1" fill="#d97706"/>
+        <rect x="9" y="33" width="5" height="2" fill="#d97706"/>
+        <rect x="18" y="33" width="5" height="2" fill="#d97706"/>
+        <rect x="10" y="35" width="3" height="1" fill="#0d4520"/>
+        <rect x="19" y="35" width="3" height="1" fill="#0d4520"/>
       </g>
     </svg>
   </div>

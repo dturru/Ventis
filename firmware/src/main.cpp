@@ -163,15 +163,19 @@ void logToSheets() {
 // ── RGB LED ──────────────────────────────────────────────────────────────────
 
 void updateLed(uint16_t co2, bool valid) {
+    // ledc PWM — analogWrite is unreliable on GPIO 17 on ESP32 Arduino.
+    // Channels 0=R, 1=G at 5 kHz / 8-bit. Initialized once on first call.
+    static bool ledcReady = false;
+    if (!ledcReady) {
+        ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LED_R, 0);
+        ledcSetup(1, 5000, 8); ledcAttachPin(PIN_LED_G, 1);
+        ledcReady = true;
+    }
     if (!valid || logEnabled) {
-        analogWrite(PIN_LED_R, 0);
-        analogWrite(PIN_LED_G, 0);
-        analogWrite(PIN_LED_B, 0);
+        ledcWrite(0, 0); ledcWrite(1, 0); digitalWrite(PIN_LED_B, LOW);
         return;
     }
-    // Green <800 | Amber 800-999 | Red ≥1000. Hysteresis 20 ppm on the
-    // downward edges prevents flicker when readings jitter around the
-    // thresholds (sensor noise is typically ±5-10 ppm).
+    // Green <800 | Amber 800-999 | Red ≥1000. 20 ppm hysteresis on downward edges.
     static uint8_t state = 0;  // 0=green, 1=amber, 2=red
     if (state == 0) {
         if (co2 >= CO2_ALARM_PPM)       state = 2;
@@ -182,17 +186,10 @@ void updateLed(uint16_t co2, bool valid) {
     } else {
         if (co2 < CO2_ALARM_PPM - 20)         state = 1;
     }
-    if (state == 2) {
-        analogWrite(PIN_LED_R, 255);
-        analogWrite(PIN_LED_G, 0);
-    } else if (state == 1) {
-        analogWrite(PIN_LED_R, 60);
-        analogWrite(PIN_LED_G, 220);
-    } else {
-        analogWrite(PIN_LED_R, 0);
-        analogWrite(PIN_LED_G, 220);
-    }
-    analogWrite(PIN_LED_B, 0);
+    if (state == 2) {       ledcWrite(0, 255); ledcWrite(1, 0); }
+    else if (state == 1) {  ledcWrite(0, 15);  ledcWrite(1, 255); }  // amber: aggressive R dim
+    else {                  ledcWrite(0, 0);   ledcWrite(1, 255); }
+    digitalWrite(PIN_LED_B, LOW);
 }
 
 // ── OLED ─────────────────────────────────────────────────────────────────────

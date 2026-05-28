@@ -187,9 +187,11 @@ void updateLed(uint16_t co2, bool valid) {
         if (co2 < CO2_ALARM_PPM - 20)         state = 1;
     }
     if (state == 2) {       ledcWrite(0, 255); ledcWrite(1, 0); }
-    else if (state == 1) {  ledcWrite(0, 15);  ledcWrite(1, 255); }  // amber: aggressive R dim
+    else if (state == 1) {  ledcWrite(0, 3);   ledcWrite(1, 255); }  // amber: ~1% R against 100% G
     else {                  ledcWrite(0, 0);   ledcWrite(1, 255); }
     digitalWrite(PIN_LED_B, LOW);
+    static uint8_t lastLogged = 255;
+    if (state != lastLogged) { Serial.printf("[LED] state=%d co2=%u\n", state, co2); lastLogged = state; }
 }
 
 // ── OLED ─────────────────────────────────────────────────────────────────────

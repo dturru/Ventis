@@ -43,8 +43,9 @@
 #define HUMIDITY_THRESHOLD 65.0f  // %RH — fan ON above this level
 
 // Sensor read intervals (ms)
-#define INTERVAL_SCD40    5000   // SCD40 periodic measurement cadence
-#define INTERVAL_DS18B20  30000  // Outdoor temp — no need to read this fast
+#define INTERVAL_SCD40    5000   // SCD40 periodic measurement cadence (hardware floor — NDIR cycle)
+#define INTERVAL_DS18B20  10000  // Outdoor temp poll. NOTE: if outdoor node moves to battery, revert to 30000+ to extend C3 runtime.
+#define INTERVAL_OLED     1000   // OLED redraw cadence (decoupled from sensor read — repaints cached readings + live state)
 
 // Google Sheets logger
 #define SHEETS_URL   "https://script.google.com/macros/s/AKfycbwBiCM6SlmVnw8-vi2htEFvyK16HTt9hWD-U46EZVeYU6-Zm8fLjJlekcMcTeHTh_II/exec"

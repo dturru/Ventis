@@ -634,7 +634,7 @@ async function stopLog(){
   try{await fetch('/log/stop');refreshData();}catch(e){}
 }
 refreshData();refreshHistory();
-setInterval(refreshData,2000);
+setInterval(refreshData,1000);
 setInterval(refreshHistory,10000);
 function initDodiTimelines(){
   const dodi=document.getElementById('dodo-pixel-v2');

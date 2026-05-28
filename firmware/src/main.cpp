@@ -1004,7 +1004,7 @@ async function stopLog(){
   try{await fetch('/log/stop');refreshData();}catch(e){}
 }
 refreshData();refreshHistory();
-setInterval(refreshData,2000);
+setInterval(refreshData,1000);
 setInterval(refreshHistory,10000);
 function initDodiTimelines(){
   const dodi=document.getElementById('dodo-pixel-v2');
@@ -1351,8 +1351,11 @@ void loop() {
     // RGB LED
     updateLed(readings.co2, readings.valid);
 
-    // Update display every SCD40 cycle
-    if (now - lastScd40Read < 100) {
+    // OLED redraws on its own cadence (decoupled from SCD40) so fan / state
+    // transitions land within 1s on the screen even though sensor data is 5s.
+    static unsigned long lastOledUpdate = 0;
+    if (now - lastOledUpdate >= INTERVAL_OLED) {
+        lastOledUpdate = now;
         updateOled();
     }
 }

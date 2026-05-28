@@ -163,14 +163,9 @@ void logToSheets() {
 // ── RGB LED ──────────────────────────────────────────────────────────────────
 
 void updateLed(uint16_t co2, bool valid) {
-    // ledc PWM — analogWrite is unreliable on GPIO 17 on ESP32 Arduino.
-    // Channels 0=R, 1=G at 5 kHz / 8-bit. Initialized once on first call.
-    static bool ledcReady = false;
-    if (!ledcReady) {
-        ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LED_R, 0);
-        ledcSetup(1, 5000, 8); ledcAttachPin(PIN_LED_G, 1);
-        ledcReady = true;
-    }
+    // ledc PWM — channels 0=R, 1=G initialized in setup() so the pin mux
+    // is owned by LEDC from boot (calling pinMode after ledcAttachPin
+    // sometimes leaves the pin stuck in digital mode on ESP32 Arduino).
     if (!valid || logEnabled) {
         ledcWrite(0, 0); ledcWrite(1, 0); digitalWrite(PIN_LED_B, LOW);
         return;
@@ -1176,15 +1171,15 @@ void setup() {
     Serial.begin(115200);
 
     pinMode(PIN_RELAY,      OUTPUT);
-    pinMode(PIN_LED_R,      OUTPUT);
-    pinMode(PIN_LED_G,      OUTPUT);
+    // R and G are handled by LEDC (PWM) — do NOT call pinMode on them, it
+    // can cause the pin mux to stay in digital mode and ignore ledcAttachPin.
+    ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LED_R, 0); ledcWrite(0, 0);
+    ledcSetup(1, 5000, 8); ledcAttachPin(PIN_LED_G, 1); ledcWrite(1, 0);
     pinMode(PIN_LED_B,      OUTPUT);
     pinMode(PIN_SWITCH_ON,  INPUT_PULLUP);
     pinMode(PIN_FAN_TACH,   INPUT);  // ext 10kΩ pull-up provides logic high
 
     digitalWrite(PIN_RELAY,  RELAY_OFF);
-    digitalWrite(PIN_LED_R,  LOW);
-    digitalWrite(PIN_LED_G,  LOW);
     digitalWrite(PIN_LED_B,  LOW);
 
     // Fan PWM — Noctua 4-pin native 25 kHz input

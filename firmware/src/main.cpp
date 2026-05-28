@@ -163,19 +163,29 @@ void logToSheets() {
 // ── RGB LED ──────────────────────────────────────────────────────────────────
 
 void updateLed(uint16_t co2, bool valid) {
+    // ledc PWM — channels 2=R, 3=G (timer 1). Channels 0 + 1 are off-limits:
+    // channel 0 belongs to fan PWM, channel 1 shares timer 0 with channel 0.
     if (!valid || logEnabled) {
-        digitalWrite(PIN_LED_R, LOW);
-        digitalWrite(PIN_LED_G, LOW);
-        digitalWrite(PIN_LED_B, LOW);
+        ledcWrite(2, 0); ledcWrite(3, 0); digitalWrite(PIN_LED_B, LOW);
         return;
     }
-    // Green <800 | Yellow 800-999 | Red ≥1000 (common cathode: HIGH = on)
-    bool red    = co2 >= CO2_ALARM_PPM;
-    bool yellow = co2 >= CO2_THRESHOLD && !red;
-    bool green  = !red && !yellow;
-    digitalWrite(PIN_LED_R, (red || yellow) ? HIGH : LOW);
-    digitalWrite(PIN_LED_G, (green || yellow) ? HIGH : LOW);
+    // Green <800 | Amber 800-999 | Red ≥1000. 20 ppm hysteresis on downward edges.
+    static uint8_t state = 0;  // 0=green, 1=amber, 2=red
+    if (state == 0) {
+        if (co2 >= CO2_ALARM_PPM)       state = 2;
+        else if (co2 >= CO2_THRESHOLD)  state = 1;
+    } else if (state == 1) {
+        if (co2 >= CO2_ALARM_PPM)             state = 2;
+        else if (co2 < CO2_THRESHOLD - 20)    state = 0;
+    } else {
+        if (co2 < CO2_ALARM_PPM - 20)         state = 1;
+    }
+    if (state == 2) {       ledcWrite(2, 255); ledcWrite(3, 0); }
+    else if (state == 1) {  ledcWrite(2, 60);  ledcWrite(3, 255); }  // amber: balanced R/G
+    else {                  ledcWrite(2, 0);   ledcWrite(3, 255); }
     digitalWrite(PIN_LED_B, LOW);
+    static uint8_t lastLogged = 255;
+    if (state != lastLogged) { Serial.printf("[LED] state=%d co2=%u\n", state, co2); lastLogged = state; }
 }
 
 // ── OLED ─────────────────────────────────────────────────────────────────────
@@ -389,14 +399,19 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
 .metric-value{font-size:22px;font-weight:600;margin-top:4px;color:var(--fg);}
 .metric-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.fan-tile{display:flex;align-items:center;justify-content:space-between;}
+.fan-tile{display:flex;align-items:center;justify-content:space-between;background:var(--green);color:#fff;border-color:var(--green);}
+.fan-tile.idle{background:var(--tile);color:var(--fg);border-color:var(--border);}
 .fan-status{display:flex;flex-direction:column;}
-.fan-state{font-weight:700;font-size:16px;letter-spacing:.3px;}
-.fan-state.on{color:var(--green);}
-.fan-state.off{color:var(--muted);}
-.fan-reason{font-size:12px;color:var(--muted);margin-top:2px;}
-.fan-duty{font-size:24px;font-weight:700;color:var(--green);}
-.fan-duty-label{font-size:10px;color:var(--muted);text-align:right;text-transform:uppercase;letter-spacing:.5px;}
+.fan-state{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;}
+.fan-duty{font-size:26px;font-weight:700;letter-spacing:-.3px;margin-top:2px;}
+.fan-duty-suffix{font-size:14px;font-weight:500;opacity:.75;margin-left:4px;}
+.fan-reason{font-size:11px;opacity:.75;margin-top:2px;}
+.fan-icon-wrap{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fan-tile.idle .fan-icon-wrap{background:var(--tile-alt);}
+.fan-icon{width:26px;height:26px;color:#fff;}
+.fan-tile.idle .fan-icon{color:var(--muted);}
+.fan-tile.running .fan-icon{animation:fan-spin var(--fan-spin-dur,1.4s) linear infinite;}
+@keyframes fan-spin{to{transform:rotate(360deg);}}
 .chart-tile h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px;}
 #chart{width:100%;height:160px;display:block;}
 .controls{display:flex;gap:8px;}
@@ -422,118 +437,443 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .log-active-info{display:flex;flex-direction:column;}
 .log-active-label{font-weight:600;color:var(--green);font-size:14px;}
 .log-active-rows{font-size:12px;color:var(--muted);margin-top:2px;}
-.dodo-wrap{display:flex;justify-content:center;margin-bottom:-14px;z-index:2;position:relative;}
+.dodo-wrap{display:flex;justify-content:center;margin-bottom:-6px;z-index:2;position:relative;}
 .dodo-mascot{width:80px;height:88px;position:relative;}
 .dodo-mascot svg{width:100%;height:100%;display:block;overflow:visible;}
 .dodo-mascot .eyes-calm,.dodo-mascot .eyes-alert,.dodo-mascot .eyes-distress{display:none;}
 .dodo-mascot.calm .eyes-calm{display:block;}
 .dodo-mascot.alert .eyes-alert{display:block;}
 .dodo-mascot.distress .eyes-distress{display:block;}
-.dodo-mascot .body{transform-origin:center;animation:dodo-bobble 2.5s ease-in-out infinite;}
-.dodo-mascot .wing-l{transform-origin:14px 52px;animation:wing-idle-l 3s ease-in-out infinite;}
-.dodo-mascot .wing-r{transform-origin:66px 52px;animation:wing-idle-r 3s ease-in-out infinite;}
-@keyframes dodo-bobble{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
-@keyframes wing-idle-l{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-5deg);}}
-@keyframes wing-idle-r{0%,100%{transform:rotate(0deg);}50%{transform:rotate(5deg);}}
-.dodo-mascot.flapping .wing-l{animation:wing-flap-l 0.18s ease-in-out infinite;}
-.dodo-mascot.flapping .wing-r{animation:wing-flap-r 0.18s ease-in-out infinite;}
-.dodo-mascot.flapping .body{animation:futile-fly 0.36s ease-in-out infinite;}
-@keyframes wing-flap-l{0%,100%{transform:rotate(-30deg);}50%{transform:rotate(40deg);}}
-@keyframes wing-flap-r{0%,100%{transform:rotate(30deg);}50%{transform:rotate(-40deg);}}
-@keyframes futile-fly{0%,100%{transform:translateY(0);}50%{transform:translateY(-1.5px);}}
-.dodo-mascot .gas-mask{opacity:0;transform:translateY(-50px);transition:opacity 0.3s ease-out 0.35s,transform 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.35s;}
-.dodo-mascot.distress .gas-mask{opacity:1;transform:translateY(0);}
-</style></head><body>
-<header><h1>Ventis</h1><span class="live"><span class="pulse"></span>LIVE</span></header>
-<div class="dodo-wrap">
-  <div class="dodo-mascot calm" id="dodo" aria-label="Dodi the dodo, your air quality mascot">
-    <svg viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="30" cy="84" rx="5" ry="2.5" fill="#d97706"/>
-      <ellipse cx="50" cy="84" rx="5" ry="2.5" fill="#d97706"/>
-      <ellipse class="wing wing-l" cx="10" cy="56" rx="6" ry="11" fill="#155026"/>
-      <ellipse class="wing wing-r" cx="70" cy="56" rx="6" ry="11" fill="#155026"/>
-      <g class="body">
-        <ellipse cx="40" cy="62" rx="24" ry="20" fill="#1e6e3a" stroke="#0d4520" stroke-width="1.5"/>
-        <ellipse cx="40" cy="32" rx="26" ry="24" fill="#1e6e3a" stroke="#0d4520" stroke-width="1.5"/>
-        <ellipse cx="40" cy="6" rx="2.5" ry="5" fill="#155026"/>
-        <ellipse cx="34" cy="9" rx="2" ry="4" fill="#155026" transform="rotate(-20 34 9)"/>
-        <ellipse cx="46" cy="9" rx="2" ry="4" fill="#155026" transform="rotate(20 46 9)"/>
-        <path d="M 30,38 Q 25,42 26,48 Q 28,52 34,52 L 46,52 Q 52,52 54,48 Q 55,42 50,38 Z" fill="#fbbf24" stroke="#a16207" stroke-width="1.2"/>
-        <ellipse cx="30" cy="50" rx="3" ry="1.5" fill="#d97706"/>
-        <circle cx="33" cy="44" r="0.9" fill="#a16207"/>
+.dodo-mascot.pixel-art{width:64px;height:72px;}
+.dodo-mascot.pixel-art svg{shape-rendering:crispEdges;}
+.dodo-mascot.pixel-art .wing-up-l,.dodo-mascot.pixel-art .wing-up-r{display:none;}
+.dodo-mascot.pixel-art .tint,.dodo-mascot.pixel-art .sweat{display:none;}
+.dodo-mascot.pixel-art.distress .tint,.dodo-mascot.pixel-art.distress .sweat{display:block;}
+#dodo-pixel-v2 .dodo-side-r,#dodo-pixel-v2 .dodo-side-l{display:none;}
+#dodo-pixel-v2.facing-right .body-group,#dodo-pixel-v2.facing-right .feet,#dodo-pixel-v2.facing-right .wing-down-l,#dodo-pixel-v2.facing-right .wing-down-r,#dodo-pixel-v2.facing-right .wing-up-l,#dodo-pixel-v2.facing-right .wing-up-r{display:none;}
+#dodo-pixel-v2.facing-right .dodo-side-r{display:block;}
+#dodo-pixel-v2.facing-left .body-group,#dodo-pixel-v2.facing-left .feet,#dodo-pixel-v2.facing-left .wing-down-l,#dodo-pixel-v2.facing-left .wing-down-r,#dodo-pixel-v2.facing-left .wing-up-l,#dodo-pixel-v2.facing-left .wing-up-r{display:none;}
+#dodo-pixel-v2.facing-left .dodo-side-l{display:block;}
+body.demo-mode .tile-sheets{display:none;}
+header .location{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;}
+.dodi-callout-tile{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--green-light);border-color:#bedfc4;transition:background .4s,border-color .4s;}
+.dodi-callout-tile.amber{background:var(--amber-light);border-color:#e8d28a;}
+.dodi-callout-tile.red{background:var(--red-light);border-color:#e8a8a8;}
+.dodi-text{flex:1;min-width:0;}
+.dodi-label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);}
+.dodi-callout-tile.amber .dodi-label{color:var(--amber);}
+.dodi-callout-tile.red .dodi-label{color:var(--red);}
+.dodi-title{font-size:17px;font-weight:700;color:var(--fg);margin-top:2px;line-height:1.2;}
+.dodi-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+.co2-tile{text-align:left;padding:16px;}
+.co2-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.co2-badge{padding:5px 12px;border-radius:14px;font-size:11px;font-weight:700;color:white;background:var(--green);letter-spacing:.6px;flex-shrink:0;}
+.co2-badge.amber{background:var(--amber);}
+.co2-badge.red{background:var(--red);}
+.co2-tile .co2-label{text-align:left;}
+.co2-tile .co2-value{font-size:48px;line-height:1;margin:6px 0 4px;color:var(--green);}
+.co2-tile.amber .co2-value{color:var(--amber);}
+.co2-tile.red .co2-value{color:var(--red);}
+.co2-tile .co2-unit{text-align:left;}
+.co2-chart-mini{width:100%;height:60px;display:block;margin-top:6px;}
+.metric-tile{text-align:left;}
+.metric-tile .metric-value{font-size:24px;font-weight:600;margin-top:4px;color:var(--fg);}
+.insight-tile.always-on{display:block;background:var(--green-light);border-color:#bedfc4;}
+.insight-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.insight-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
+.insight-badge{font-size:10px;color:var(--green);font-weight:700;letter-spacing:.8px;}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head><body>
+<header><h1>Ventis</h1><span class="location" id="location">DORM ROOM</span></header>
+<div class="tile dodi-callout-tile" id="dodi-callout">
+  <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2">
+    <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <defs>
+        <g id="dodo-side-template">
+          <!-- feathers -->
+          <rect x="9" y="1" width="1" height="2" fill="#155026"/>
+          <rect x="11" y="1" width="1" height="2" fill="#155026"/>
+          <rect x="9" y="3" width="3" height="1" fill="#155026"/>
+          <!-- head (left side of frame, oval) -->
+          <rect x="6" y="4" width="9" height="1" fill="#0d4520"/>
+          <rect x="5" y="5" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="5" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="15" y="5" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="6" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="6" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="6" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="7" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="7" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="7" y="7" width="3" height="1" fill="#2a8a48"/>
+          <rect x="10" y="7" width="6" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="7" width="1" height="1" fill="#0d4520"/>
+          <!-- eye (one visible, on side facing beak) -->
+          <rect x="4" y="8" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="8" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="8" width="2" height="1" fill="#ffffff"/>
+          <rect x="14" y="8" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="8" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="9" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="9" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="9" width="1" height="1" fill="#ffffff"/>
+          <rect x="13" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="14" y="9" width="2" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="9" width="1" height="1" fill="#0d4520"/>
+          <!-- head narrows + beak protrudes right -->
+          <rect x="5" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="10" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="15" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="16" y="10" width="3" height="1" fill="#fbbf24"/>
+          <rect x="19" y="10" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="11" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="11" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="14" y="11" width="1" height="1" fill="#0d4520"/>
+          <rect x="15" y="11" width="6" height="1" fill="#fbbf24"/>
+          <rect x="21" y="11" width="1" height="1" fill="#0d4520"/>
+          <!-- beak max + hook starts -->
+          <rect x="7" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="12" width="5" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="14" y="12" width="7" height="1" fill="#fbbf24"/>
+          <rect x="21" y="12" width="1" height="1" fill="#a16207"/>
+          <rect x="22" y="12" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="13" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="13" width="3" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="13" width="1" height="1" fill="#0d4520"/>
+          <rect x="13" y="13" width="7" height="1" fill="#fbbf24"/>
+          <rect x="20" y="13" width="2" height="1" fill="#a16207"/>
+          <rect x="9" y="14" width="1" height="1" fill="#0d4520"/>
+          <rect x="10" y="14" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="11" y="14" width="1" height="1" fill="#0d4520"/>
+          <rect x="12" y="14" width="7" height="1" fill="#fbbf24"/>
+          <rect x="19" y="14" width="2" height="1" fill="#a16207"/>
+          <!-- hook tip downward -->
+          <rect x="10" y="15" width="1" height="1" fill="#0d4520"/>
+          <rect x="11" y="15" width="6" height="1" fill="#a16207"/>
+          <!-- neck -->
+          <rect x="8" y="16" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="16" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="16" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="17" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="17" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="17" y="17" width="1" height="1" fill="#0d4520"/>
+          <!-- body egg -->
+          <rect x="6" y="18" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="18" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="18" y="18" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="19" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="19" width="13" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="19" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="20" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="20" width="15" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="20" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="21" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="21" width="15" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="21" width="1" height="1" fill="#0d4520"/>
+          <!-- belly shadow -->
+          <rect x="4" y="22" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="22" width="8" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="22" width="6" height="1" fill="#093b1a"/>
+          <rect x="19" y="22" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="22" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="23" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="23" width="8" height="1" fill="#1e6e3a"/>
+          <rect x="13" y="23" width="6" height="1" fill="#093b1a"/>
+          <rect x="19" y="23" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="23" width="1" height="1" fill="#0d4520"/>
+          <rect x="4" y="24" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="24" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="24" width="7" height="1" fill="#093b1a"/>
+          <rect x="19" y="24" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="20" y="24" width="1" height="1" fill="#0d4520"/>
+          <rect x="5" y="25" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="25" width="6" height="1" fill="#1e6e3a"/>
+          <rect x="12" y="25" width="6" height="1" fill="#093b1a"/>
+          <rect x="18" y="25" width="1" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="25" width="1" height="1" fill="#0d4520"/>
+          <!-- wing on body side (single visible wing) -->
+          <rect x="7" y="20" width="6" height="1" fill="#155026"/>
+          <rect x="6" y="21" width="7" height="1" fill="#155026"/>
+          <rect x="13" y="21" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="22" width="6" height="1" fill="#155026"/>
+          <rect x="6" y="23" width="6" height="1" fill="#155026"/>
+          <rect x="7" y="24" width="5" height="1" fill="#0d4520"/>
+          <!-- body narrows -->
+          <rect x="5" y="26" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="26" width="13" height="1" fill="#1e6e3a"/>
+          <rect x="19" y="26" width="1" height="1" fill="#0d4520"/>
+          <rect x="6" y="27" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="27" width="11" height="1" fill="#1e6e3a"/>
+          <rect x="18" y="27" width="1" height="1" fill="#0d4520"/>
+          <rect x="7" y="28" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="28" width="9" height="1" fill="#1e6e3a"/>
+          <rect x="17" y="28" width="1" height="1" fill="#0d4520"/>
+          <rect x="8" y="29" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="29" width="7" height="1" fill="#1e6e3a"/>
+          <rect x="16" y="29" width="1" height="1" fill="#0d4520"/>
+          <rect x="9" y="30" width="7" height="1" fill="#0d4520"/>
+          <!-- legs staggered + feet -->
+          <rect x="9" y="31" width="2" height="3" fill="#d97706"/>
+          <rect x="13" y="31" width="2" height="3" fill="#d97706"/>
+          <rect x="8" y="34" width="4" height="1" fill="#d97706"/>
+          <rect x="12" y="34" width="4" height="1" fill="#d97706"/>
+          <rect x="8" y="35" width="4" height="1" fill="#0d4520"/>
+          <rect x="12" y="35" width="4" height="1" fill="#0d4520"/>
+        </g>
+      </defs>
+      <g class="dodo-side-r">
+        <use href="#dodo-side-template"/>
+      </g>
+      <g class="dodo-side-l" transform="translate(32 0) scale(-1 1)">
+        <use href="#dodo-side-template"/>
+      </g>
+      <g class="wing-down-l">
+        <rect x="3" y="21" width="2" height="1" fill="#0d4520"/>
+        <rect x="3" y="22" width="2" height="1" fill="#155026"/>
+        <rect x="5" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="24" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="25" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="25" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="26" width="2" height="1" fill="#155026"/>
+        <rect x="6" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="27" width="2" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-down-r">
+        <rect x="27" y="21" width="2" height="1" fill="#0d4520"/>
+        <rect x="26" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="22" width="2" height="1" fill="#155026"/>
+        <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="24" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="25" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="25" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="26" width="2" height="1" fill="#155026"/>
+        <rect x="28" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="27" width="2" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-up-l">
+        <rect x="3" y="19" width="2" height="1" fill="#0d4520"/>
+        <rect x="3" y="20" width="2" height="1" fill="#155026"/>
+        <rect x="5" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="21" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="21" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="22" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="3" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="4" y="24" width="1" height="1" fill="#155026"/>
+        <rect x="5" y="24" width="1" height="1" fill="#0d4520"/>
+      </g>
+      <g class="wing-up-r">
+        <rect x="27" y="19" width="2" height="1" fill="#0d4520"/>
+        <rect x="26" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="20" width="2" height="1" fill="#155026"/>
+        <rect x="25" y="21" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="21" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="22" width="3" height="1" fill="#155026"/>
+        <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="26" y="23" width="3" height="1" fill="#155026"/>
+        <rect x="26" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="27" y="24" width="1" height="1" fill="#155026"/>
+        <rect x="28" y="24" width="1" height="1" fill="#0d4520"/>
+      </g>
+      <g class="body-group">
+        <!-- FEATHERS (y=0-3) -->
+        <rect x="13" y="1" width="1" height="2" fill="#155026"/>
+        <rect x="15" y="1" width="1" height="2" fill="#155026"/>
+        <rect x="17" y="1" width="1" height="2" fill="#155026"/>
+        <rect x="13" y="3" width="5" height="1" fill="#155026"/>
+        <!-- HEAD TOP (y=4-6) -->
+        <rect x="9" y="4" width="14" height="1" fill="#0d4520"/>
+        <rect x="8" y="5" width="1" height="1" fill="#0d4520"/>
+        <rect x="9" y="5" width="14" height="1" fill="#1e6e3a"/>
+        <rect x="23" y="5" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="6" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="6" width="16" height="1" fill="#1e6e3a"/>
+        <rect x="24" y="6" width="1" height="1" fill="#0d4520"/>
+        <!-- HEAD with HIGHLIGHT (y=7) -->
+        <rect x="7" y="7" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="7" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="10" y="7" width="4" height="1" fill="#2a8a48"/>
+        <rect x="14" y="7" width="10" height="1" fill="#1e6e3a"/>
+        <rect x="24" y="7" width="1" height="1" fill="#0d4520"/>
+        <!-- HEAD bulk - EYE ZONE RESERVED (y=8-10) -->
+        <rect x="7" y="8" width="1" height="2" fill="#0d4520"/>
+        <rect x="8" y="8" width="16" height="2" fill="#1e6e3a"/>
+        <rect x="24" y="8" width="1" height="2" fill="#0d4520"/>
+        <rect x="8" y="10" width="1" height="1" fill="#0d4520"/>
+        <rect x="9" y="10" width="14" height="1" fill="#1e6e3a"/>
+        <rect x="23" y="10" width="1" height="1" fill="#0d4520"/>
+        <!-- HEAD narrows (y=11) -->
+        <rect x="9" y="11" width="1" height="1" fill="#0d4520"/>
+        <rect x="10" y="11" width="12" height="1" fill="#1e6e3a"/>
+        <rect x="22" y="11" width="1" height="1" fill="#0d4520"/>
+        <!-- HEAD BOTTOM with beak protrusion (y=12) -->
+        <rect x="10" y="12" width="1" height="1" fill="#0d4520"/>
+        <rect x="11" y="12" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="13" y="12" width="6" height="1" fill="#fbbf24"/>
+        <rect x="19" y="12" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="21" y="12" width="1" height="1" fill="#0d4520"/>
+        <!-- BEAK protrudes below head (y=13-15) - HOOKED tip -->
+        <rect x="12" y="13" width="1" height="1" fill="#0d4520"/>
+        <rect x="13" y="13" width="6" height="1" fill="#fbbf24"/>
+        <rect x="19" y="13" width="1" height="1" fill="#0d4520"/>
+        <rect x="13" y="14" width="1" height="1" fill="#0d4520"/>
+        <rect x="14" y="14" width="3" height="1" fill="#fbbf24"/>
+        <rect x="17" y="14" width="1" height="1" fill="#a16207"/>
+        <rect x="18" y="14" width="1" height="1" fill="#0d4520"/>
+        <rect x="14" y="15" width="1" height="1" fill="#0d4520"/>
+        <rect x="15" y="15" width="3" height="1" fill="#a16207"/>
+        <!-- NECK - thin distinct between head and body (y=16-17) -->
+        <rect x="11" y="16" width="1" height="1" fill="#0d4520"/>
+        <rect x="12" y="16" width="8" height="1" fill="#1e6e3a"/>
+        <rect x="20" y="16" width="1" height="1" fill="#0d4520"/>
+        <rect x="10" y="17" width="1" height="1" fill="#0d4520"/>
+        <rect x="11" y="17" width="10" height="1" fill="#1e6e3a"/>
+        <rect x="21" y="17" width="1" height="1" fill="#0d4520"/>
+        <!-- BODY widens into egg shape (y=18-21) -->
+        <rect x="9" y="18" width="1" height="1" fill="#0d4520"/>
+        <rect x="10" y="18" width="12" height="1" fill="#1e6e3a"/>
+        <rect x="22" y="18" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="19" width="1" height="1" fill="#0d4520"/>
+        <rect x="9" y="19" width="14" height="1" fill="#1e6e3a"/>
+        <rect x="23" y="19" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="20" width="16" height="1" fill="#1e6e3a"/>
+        <rect x="24" y="20" width="1" height="1" fill="#0d4520"/>
+        <rect x="6" y="21" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="21" width="18" height="1" fill="#1e6e3a"/>
+        <rect x="25" y="21" width="1" height="1" fill="#0d4520"/>
+        <!-- BELLY SHADOW (y=22-25) -->
+        <rect x="6" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="22" width="3" height="1" fill="#1e6e3a"/>
+        <rect x="10" y="22" width="12" height="1" fill="#093b1a"/>
+        <rect x="22" y="22" width="3" height="1" fill="#1e6e3a"/>
+        <rect x="25" y="22" width="1" height="1" fill="#0d4520"/>
+        <rect x="6" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="23" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="9" y="23" width="14" height="1" fill="#093b1a"/>
+        <rect x="23" y="23" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="25" y="23" width="1" height="1" fill="#0d4520"/>
+        <rect x="6" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="24" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="9" y="24" width="14" height="1" fill="#093b1a"/>
+        <rect x="23" y="24" width="2" height="1" fill="#1e6e3a"/>
+        <rect x="25" y="24" width="1" height="1" fill="#0d4520"/>
+        <rect x="7" y="25" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="25" width="3" height="1" fill="#1e6e3a"/>
+        <rect x="11" y="25" width="10" height="1" fill="#093b1a"/>
+        <rect x="21" y="25" width="3" height="1" fill="#1e6e3a"/>
+        <rect x="24" y="25" width="1" height="1" fill="#0d4520"/>
+        <!-- BODY narrows (y=26-30) -->
+        <rect x="7" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="26" width="16" height="1" fill="#1e6e3a"/>
+        <rect x="24" y="26" width="1" height="1" fill="#0d4520"/>
+        <rect x="8" y="27" width="1" height="1" fill="#0d4520"/>
+        <rect x="9" y="27" width="14" height="1" fill="#1e6e3a"/>
+        <rect x="23" y="27" width="1" height="1" fill="#0d4520"/>
+        <rect x="9" y="28" width="1" height="1" fill="#0d4520"/>
+        <rect x="10" y="28" width="12" height="1" fill="#1e6e3a"/>
+        <rect x="22" y="28" width="1" height="1" fill="#0d4520"/>
+        <rect x="10" y="29" width="1" height="1" fill="#0d4520"/>
+        <rect x="11" y="29" width="10" height="1" fill="#1e6e3a"/>
+        <rect x="21" y="29" width="1" height="1" fill="#0d4520"/>
+        <rect x="11" y="30" width="10" height="1" fill="#0d4520"/>
+        <!-- EYES (3 state groups, visibility toggled by .dodo-mascot.<state> .eyes-<state> CSS) -->
         <g class="eyes-calm">
-          <circle cx="22" cy="28" r="4" fill="white" stroke="#0d4520" stroke-width="0.8"/>
-          <circle cx="58" cy="28" r="4" fill="white" stroke="#0d4520" stroke-width="0.8"/>
-          <circle cx="22" cy="29" r="2" fill="#1a1a1a"/>
-          <circle cx="58" cy="29" r="2" fill="#1a1a1a"/>
-          <circle cx="23" cy="27.5" r="0.7" fill="white"/>
-          <circle cx="59" cy="27.5" r="0.7" fill="white"/>
+          <rect x="10" y="9" width="3" height="3" fill="#ffffff"/>
+          <rect x="19" y="9" width="3" height="3" fill="#ffffff"/>
+          <rect x="11" y="10" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="20" y="10" width="1" height="1" fill="#1a1a1a"/>
         </g>
         <g class="eyes-alert">
-          <ellipse cx="22" cy="28" rx="4" ry="5" fill="white" stroke="#0d4520" stroke-width="0.8"/>
-          <ellipse cx="58" cy="28" rx="4" ry="5" fill="white" stroke="#0d4520" stroke-width="0.8"/>
-          <circle cx="22" cy="30" r="1.5" fill="#1a1a1a"/>
-          <circle cx="58" cy="30" r="1.5" fill="#1a1a1a"/>
+          <rect x="10" y="8" width="3" height="4" fill="#ffffff"/>
+          <rect x="19" y="8" width="3" height="4" fill="#ffffff"/>
+          <rect x="11" y="10" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="20" y="10" width="1" height="1" fill="#1a1a1a"/>
         </g>
         <g class="eyes-distress">
-          <path d="M 17,23 L 27,33 M 27,23 L 17,33" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-          <path d="M 53,23 L 63,33 M 63,23 L 53,33" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <rect x="10" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="12" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="11" y="10" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="10" y="11" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="12" y="11" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="19" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="21" y="9" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="20" y="10" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="19" y="11" width="1" height="1" fill="#1a1a1a"/>
+          <rect x="21" y="11" width="1" height="1" fill="#1a1a1a"/>
         </g>
       </g>
-      <g class="gas-mask">
-        <path d="M 12,32 Q 8,42 14,54 Q 26,64 40,64 Q 54,64 66,54 Q 72,42 68,32 Q 60,26 40,26 Q 20,26 12,32 Z" fill="#2a2a2a" stroke="#0d0d0d" stroke-width="1.5"/>
-        <circle cx="22" cy="36" r="8" fill="#1a1a1a" stroke="#0d0d0d" stroke-width="1.5"/>
-        <circle cx="22" cy="36" r="5.5" fill="#3a3a3a"/>
-        <circle cx="23" cy="35" r="1.5" fill="white" opacity="0.6"/>
-        <circle cx="58" cy="36" r="8" fill="#1a1a1a" stroke="#0d0d0d" stroke-width="1.5"/>
-        <circle cx="58" cy="36" r="5.5" fill="#3a3a3a"/>
-        <circle cx="59" cy="35" r="1.5" fill="white" opacity="0.6"/>
-        <rect x="32" y="60" width="16" height="14" fill="#3a3a3a" stroke="#0d0d0d" stroke-width="1" rx="2"/>
-        <line x1="35" y1="64" x2="45" y2="64" stroke="#666" stroke-width="1.2"/>
-        <line x1="35" y1="68" x2="45" y2="68" stroke="#666" stroke-width="1.2"/>
-        <line x1="35" y1="72" x2="45" y2="72" stroke="#666" stroke-width="1.2"/>
-        <rect x="2" y="36" width="6" height="4" fill="#1a1a1a"/>
-        <rect x="72" y="36" width="6" height="4" fill="#1a1a1a"/>
+      <!-- LEGS + FEET (separate group, excluded from distress shake) -->
+      <g class="feet">
+        <rect x="11" y="31" width="3" height="3" fill="#d97706"/>
+        <rect x="18" y="31" width="3" height="3" fill="#d97706"/>
+        <rect x="10" y="34" width="5" height="1" fill="#d97706"/>
+        <rect x="17" y="34" width="5" height="1" fill="#d97706"/>
+        <rect x="10" y="35" width="5" height="1" fill="#0d4520"/>
+        <rect x="17" y="35" width="5" height="1" fill="#0d4520"/>
       </g>
     </svg>
   </div>
+  <div class="dodi-text">
+    <div class="dodi-label" id="dodi-label">AIR IS FRESH</div>
+    <div class="dodi-title" id="dodi-title">Dodi is happy</div>
+    <div class="dodi-sub" id="dodi-sub">Air quality is great</div>
+  </div>
 </div>
 <div class="tile co2-tile" id="co2-tile">
-  <div class="co2-label">CO2</div>
-  <div class="co2-value"><span id="co2">--</span></div>
-  <div class="co2-unit">ppm</div>
-  <div class="co2-status" id="co2-status">--</div>
+  <div class="co2-header">
+    <div>
+      <div class="co2-label">CO2</div>
+      <div class="co2-value"><span id="co2">--</span></div>
+      <div class="co2-unit">ppm <span id="co2-sub" class="co2-status" id="co2-status"></span></div>
+    </div>
+    <div class="co2-badge" id="co2-badge">GOOD</div>
+  </div>
+  <svg id="chart" class="co2-chart-mini" viewBox="0 0 600 80" preserveAspectRatio="none"></svg>
 </div>
 <div class="row">
-  <div class="tile">
-    <div class="metric-label">Indoor</div>
+  <div class="tile metric-tile">
+    <div class="metric-label">TEMP</div>
     <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
-    <div class="metric-sub"><span id="humidity">--</span>% RH</div>
   </div>
-  <div class="tile">
-    <div class="metric-label">Outdoor</div>
-    <div class="metric-value"><span id="tempOut">--</span>&deg;F</div>
-    <div class="metric-sub">&nbsp;</div>
+  <div class="tile metric-tile">
+    <div class="metric-label">HUMIDITY</div>
+    <div class="metric-value"><span id="humidity">--</span>%</div>
   </div>
 </div>
-<div class="tile fan-tile">
+<div class="tile fan-tile idle" id="fan-tile">
   <div class="fan-status">
-    <div class="fan-state" id="fan-state">--</div>
+    <div class="fan-state" id="fan-state">FAN IDLE</div>
+    <div class="fan-duty"><span id="fan-duty">0%</span><span class="fan-duty-suffix">duty</span></div>
     <div class="fan-reason" id="fan-reason">&nbsp;</div>
   </div>
-  <div>
-    <div class="fan-duty" id="fan-duty">0%</div>
-    <div class="fan-duty-label">duty</div>
+  <div class="fan-icon-wrap">
+    <svg class="fan-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="3" fill="currentColor"/>
+      <ellipse cx="16" cy="7" rx="2.5" ry="6" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="25" cy="16" rx="6" ry="2.5" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="16" cy="25" rx="2.5" ry="6" fill="currentColor" opacity="0.9"/>
+      <ellipse cx="7" cy="16" rx="6" ry="2.5" fill="currentColor" opacity="0.9"/>
+    </svg>
   </div>
 </div>
-<div class="tile chart-tile">
-  <h3>Last 5 minutes</h3>
-  <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
-</div>
-<button class="btn-insight" id="btn-insight" onclick="getInsight()">Generate AI Insight</button>
-<div class="tile insight-tile" id="insight-tile">
-  <div class="insight-text" id="insight-text"></div>
-  <div class="insight-meta" id="insight-meta"></div>
+<div class="tile insight-tile always-on" id="insight-tile">
+  <div class="insight-header">
+    <span class="insight-dot"></span>
+    <span class="insight-badge">AI INSIGHT &middot; ON-DEVICE</span>
+  </div>
+  <div class="insight-text" id="insight-text">Reading the room...</div>
 </div>
 <div class="tile">
   <div class="metric-label" style="margin-bottom:10px;">Manual Override</div>
@@ -543,7 +883,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
     <button data-mode="off" onclick="setMode('off')">Off</button>
   </div>
 </div>
-<div class="tile">
+<div class="tile tile-sheets">
   <div class="metric-label" style="margin-bottom:10px;">Sheets Logging</div>
   <div class="log-row" id="log-idle">
     <input class="log-input" type="text" id="log-label" placeholder="run label (e.g. dorm_baseline)">
@@ -559,27 +899,44 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 </div>
 <script>
 const USE_MOCK=location.search.includes('mock=1');
+if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
-function tier(ppm){if(ppm>=1000)return 'red';if(ppm>=800)return 'amber';return 'green';}
+let _lastTier='green';
+function tier(ppm){
+  // Hysteresis (20 ppm on downward edges) — prevents UI flicker when CO2 jitters near thresholds.
+  if(_lastTier==='green'){if(ppm>=1000)_lastTier='red';else if(ppm>=800)_lastTier='amber';}
+  else if(_lastTier==='amber'){if(ppm>=1000)_lastTier='red';else if(ppm<780)_lastTier='green';}
+  else{if(ppm<980)_lastTier='amber';}
+  return _lastTier;
+}
 function tierLabel(t){return t==='red'?'Elevated - flush recommended':t==='amber'?'Approaching threshold':'Healthy';}
 async function refreshData(){
   try{const r=await fetch(DATA_URL);const d=await r.json();
     document.getElementById('co2').textContent=d.co2;
     const tt=tier(d.co2);
     const tile=document.getElementById('co2-tile');tile.classList.remove('green','amber','red');tile.classList.add(tt);
-    const st=document.getElementById('co2-status');st.textContent=tierLabel(tt);st.classList.remove('green','amber','red');st.classList.add(tt);
+    const badge=document.getElementById('co2-badge');badge.textContent={green:'GOOD',amber:'AMBER',red:'HIGH'}[tt];badge.classList.remove('green','amber','red');badge.classList.add(tt);
+    document.getElementById('co2-sub').textContent=tt==='red'?'· over ASHRAE 1,000':'';
+    const calloutText={green:{label:'AIR IS FRESH',title:'Dodi is happy',sub:'Air quality is great'},amber:{label:'AIR IS GETTING STUFFY',title:'Dodi is concerned',sub:'Crack a window soon'},red:{label:'AIR IS STUFFY',title:'Dodi is uncomfortable',sub:'Opening the window will help'}}[tt];
+    const callout=document.getElementById('dodi-callout');callout.classList.remove('green','amber','red');callout.classList.add(tt);
+    document.getElementById('dodi-label').textContent=calloutText.label;
+    document.getElementById('dodi-title').textContent=calloutText.title;
+    document.getElementById('dodi-sub').textContent=calloutText.sub;
+    if(tt!==lastDodiState){lastDodiState=tt;getInsight(true);}
     document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
     document.getElementById('humidity').textContent=d.humidity.toFixed(0);
-    document.getElementById('tempOut').textContent=(d.tempOut*9/5+32).toFixed(1);
-    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'RUNNING':'IDLE';fs.classList.remove('on','off');fs.classList.add(d.fanOn?'on':'off');
+    const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'FAN RUNNING':'FAN IDLE';
+    const fanTile=document.getElementById('fan-tile');fanTile.classList.toggle('running',!!d.fanOn);fanTile.classList.toggle('idle',!d.fanOn);
+    const dutyPct=Math.round((d.duty||0)/255*100);
+    fanTile.style.setProperty('--fan-spin-dur',(0.5+(1-dutyPct/100)*2.5).toFixed(2)+'s');
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
-    document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
-    const dodo=document.getElementById('dodo');
-    if(dodo){
+    document.getElementById('fan-duty').textContent=dutyPct+'%';
+    const dodoPx=document.getElementById('dodo-pixel-v2');
+    if(dodoPx){
       const stateMap={green:'calm',amber:'alert',red:'distress'};
-      dodo.classList.remove('calm','alert','distress');dodo.classList.add(stateMap[tt]);
-      dodo.classList.toggle('flapping',!!d.fanOn);
+      dodoPx.classList.remove('calm','alert','distress');dodoPx.classList.add(stateMap[tt]);
+      dodoPx.classList.toggle('flapping',!!d.fanOn);
     }
     const logIdle=document.getElementById('log-idle');const logActive=document.getElementById('log-active');
     if(d.logEnabled){
@@ -596,7 +953,7 @@ async function refreshHistory(){
 }
 function renderChart(samples){
   if(!samples||samples.length<2)return;
-  const W=600,H=160;
+  const W=600,H=80;
   const maxCo2=Math.max(1200,...samples.map(s=>s.co2));
   const minCo2=400;
   const tMin=samples[0].t,tMax=samples[samples.length-1].t;
@@ -610,6 +967,8 @@ function renderChart(samples){
   s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#e8f5e9" opacity="0.7"/>`;
   s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
   s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
+  s+=`<text x="4" y="${y(1000)-3}" font-size="14" font-weight="600" fill="#5e6b5e">1000</text>`;
+  s+=`<text x="4" y="${y(800)+14}" font-size="14" font-weight="600" fill="#5e6b5e">800</text>`;
   const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
   s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   const last=samples[samples.length-1];
@@ -621,21 +980,19 @@ async function setMode(mode){
   if(USE_MOCK)return;
   try{await fetch('/control?mode='+mode,{method:'POST'});refreshData();}catch(e){}
 }
-async function getInsight(){
-  const btn=document.getElementById('btn-insight');
-  btn.disabled=true;btn.textContent='Thinking...';
+let lastInsightAt=0;
+let lastDodiState='';
+async function getInsight(force){
+  const now=Date.now();
+  if(!force&&(now-lastInsightAt<25000))return;
+  lastInsightAt=now;
   try{
     const r=await fetch(USE_MOCK?'/mock-insight.json':'/insight',{method:'POST'});
     const d=await r.json();
     document.getElementById('insight-text').textContent=d.text;
-    const src=d.source==='live'?'Live - ':'Offline - ';
-    document.getElementById('insight-meta').textContent=src+d.generated_at;
-    document.getElementById('insight-tile').classList.add('visible');
   }catch(e){
-    document.getElementById('insight-text').textContent='Insight unavailable.';
-    document.getElementById('insight-tile').classList.add('visible');
+    document.getElementById('insight-text').textContent='Insight unavailable right now.';
   }
-  btn.disabled=false;btn.textContent='Generate AI Insight';
 }
 async function startLog(){
   const label=document.getElementById('log-label').value||'unlabeled';
@@ -649,6 +1006,66 @@ async function stopLog(){
 refreshData();refreshHistory();
 setInterval(refreshData,2000);
 setInterval(refreshHistory,10000);
+function initDodiTimelines(){
+  const dodi=document.getElementById('dodo-pixel-v2');
+  if(!dodi)return;
+  const body=dodi.querySelector('.body-group');
+  const wUL=dodi.querySelector('.wing-up-l'),wUR=dodi.querySelector('.wing-up-r');
+  const wDL=dodi.querySelector('.wing-down-l'),wDR=dodi.querySelector('.wing-down-r');
+  if(body)gsap.to(body,{y:-1,duration:1.25,yoyo:true,repeat:-1,ease:'sine.inOut'});
+  let flapTl=null,shakeTl=null,up=false;
+  function setWings(showUp){
+    if(!wUL||!wUR||!wDL||!wDR)return;
+    wUL.style.display=showUp?'block':'';
+    wUR.style.display=showUp?'block':'';
+    wDL.style.display=showUp?'none':'';
+    wDR.style.display=showUp?'none':'';
+  }
+  function startFlap(){if(flapTl)return;flapTl=gsap.to({},{duration:0.09,repeat:-1,onRepeat:()=>{up=!up;setWings(up);}});}
+  function stopFlap(){if(!flapTl)return;flapTl.kill();flapTl=null;up=false;setWings(false);}
+  function startShake(){if(shakeTl||!body)return;shakeTl=gsap.to(body,{x:0.4,duration:0.07,yoyo:true,repeat:-1,ease:'sine.inOut'});}
+  function stopShake(){if(!shakeTl)return;shakeTl.kill();shakeTl=null;if(body)gsap.set(body,{x:0});}
+  function sync(){
+    dodi.classList.contains('flapping')?startFlap():stopFlap();
+    dodi.classList.contains('distress')?startShake():stopShake();
+  }
+  new MutationObserver(sync).observe(dodi,{attributes:true,attributeFilter:['class']});
+  sync();
+}
+function initDodiV2LookAround(){
+  const dodi=document.getElementById('dodo-pixel-v2');
+  if(!dodi)return;
+  const dirs=['','facing-right','','facing-left'];
+  const durs=[4,2,4,2];
+  let idx=0,cycler=null,paused=false;
+  function step(){
+    if(paused)return;
+    dodi.classList.remove('facing-right','facing-left');
+    if(dirs[idx])dodi.classList.add(dirs[idx]);
+    const d=durs[idx];
+    idx=(idx+1)%dirs.length;
+    cycler=gsap.delayedCall(d,step);
+  }
+  function sync(){
+    const shouldPause=dodi.classList.contains('distress')||dodi.classList.contains('alert');
+    if(shouldPause&&!paused){
+      paused=true;
+      if(cycler)cycler.kill();
+      dodi.classList.remove('facing-right','facing-left');
+    }else if(!shouldPause&&paused){
+      paused=false;
+      idx=0;
+      step();
+    }
+  }
+  new MutationObserver(sync).observe(dodi,{attributes:true,attributeFilter:['class']});
+  step();
+}
+window.addEventListener('load',()=>{
+  if(typeof gsap==='undefined'){console.warn('[Dodi] GSAP unavailable — pixel-art Dodi in static mode');return;}
+  if(typeof initDodiTimelines==='function'){initDodiTimelines();}
+  if(typeof initDodiV2LookAround==='function'){initDodiV2LookAround();}
+});
 </script>
 </body></html>)raw";
 
@@ -753,15 +1170,16 @@ void setup() {
     Serial.begin(115200);
 
     pinMode(PIN_RELAY,      OUTPUT);
-    pinMode(PIN_LED_R,      OUTPUT);
-    pinMode(PIN_LED_G,      OUTPUT);
+    // R and G use LEDC channels 2 + 3 (timer 1) — keep clear of channel 0
+    // which the fan PWM owns (timer 0). Do NOT call pinMode on R/G, it
+    // can leave the pin mux stuck in digital mode and ignore ledcAttachPin.
+    ledcSetup(2, 5000, 8); ledcAttachPin(PIN_LED_R, 2); ledcWrite(2, 0);
+    ledcSetup(3, 5000, 8); ledcAttachPin(PIN_LED_G, 3); ledcWrite(3, 0);
     pinMode(PIN_LED_B,      OUTPUT);
     pinMode(PIN_SWITCH_ON,  INPUT_PULLUP);
     pinMode(PIN_FAN_TACH,   INPUT);  // ext 10kΩ pull-up provides logic high
 
     digitalWrite(PIN_RELAY,  RELAY_OFF);
-    digitalWrite(PIN_LED_R,  LOW);
-    digitalWrite(PIN_LED_G,  LOW);
     digitalWrite(PIN_LED_B,  LOW);
 
     // Fan PWM — Noctua 4-pin native 25 kHz input

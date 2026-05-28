@@ -163,11 +163,10 @@ void logToSheets() {
 // ── RGB LED ──────────────────────────────────────────────────────────────────
 
 void updateLed(uint16_t co2, bool valid) {
-    // ledc PWM — channels 0=R, 1=G initialized in setup() so the pin mux
-    // is owned by LEDC from boot (calling pinMode after ledcAttachPin
-    // sometimes leaves the pin stuck in digital mode on ESP32 Arduino).
+    // ledc PWM — channels 2=R, 3=G (timer 1). Channels 0 + 1 are off-limits:
+    // channel 0 belongs to fan PWM, channel 1 shares timer 0 with channel 0.
     if (!valid || logEnabled) {
-        ledcWrite(0, 0); ledcWrite(1, 0); digitalWrite(PIN_LED_B, LOW);
+        ledcWrite(2, 0); ledcWrite(3, 0); digitalWrite(PIN_LED_B, LOW);
         return;
     }
     // Green <800 | Amber 800-999 | Red ≥1000. 20 ppm hysteresis on downward edges.
@@ -181,9 +180,9 @@ void updateLed(uint16_t co2, bool valid) {
     } else {
         if (co2 < CO2_ALARM_PPM - 20)         state = 1;
     }
-    if (state == 2) {       ledcWrite(0, 255); ledcWrite(1, 0); }
-    else if (state == 1) {  ledcWrite(0, 3);   ledcWrite(1, 255); }  // amber: ~1% R against 100% G
-    else {                  ledcWrite(0, 0);   ledcWrite(1, 255); }
+    if (state == 2) {       ledcWrite(2, 255); ledcWrite(3, 0); }
+    else if (state == 1) {  ledcWrite(2, 60);  ledcWrite(3, 255); }  // amber: balanced R/G
+    else {                  ledcWrite(2, 0);   ledcWrite(3, 255); }
     digitalWrite(PIN_LED_B, LOW);
     static uint8_t lastLogged = 255;
     if (state != lastLogged) { Serial.printf("[LED] state=%d co2=%u\n", state, co2); lastLogged = state; }
@@ -1171,10 +1170,11 @@ void setup() {
     Serial.begin(115200);
 
     pinMode(PIN_RELAY,      OUTPUT);
-    // R and G are handled by LEDC (PWM) — do NOT call pinMode on them, it
-    // can cause the pin mux to stay in digital mode and ignore ledcAttachPin.
-    ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LED_R, 0); ledcWrite(0, 0);
-    ledcSetup(1, 5000, 8); ledcAttachPin(PIN_LED_G, 1); ledcWrite(1, 0);
+    // R and G use LEDC channels 2 + 3 (timer 1) — keep clear of channel 0
+    // which the fan PWM owns (timer 0). Do NOT call pinMode on R/G, it
+    // can leave the pin mux stuck in digital mode and ignore ledcAttachPin.
+    ledcSetup(2, 5000, 8); ledcAttachPin(PIN_LED_R, 2); ledcWrite(2, 0);
+    ledcSetup(3, 5000, 8); ledcAttachPin(PIN_LED_G, 3); ledcWrite(3, 0);
     pinMode(PIN_LED_B,      OUTPUT);
     pinMode(PIN_SWITCH_ON,  INPUT_PULLUP);
     pinMode(PIN_FAN_TACH,   INPUT);  // ext 10kΩ pull-up provides logic high

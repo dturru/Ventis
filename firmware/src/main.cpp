@@ -414,7 +414,7 @@ h1{font-size:22px;font-weight:700;color:var(--green);letter-spacing:-.3px;}
 .fan-tile.idle .fan-icon-wrap{background:var(--tile-alt);}
 .fan-icon{width:26px;height:26px;color:#fff;}
 .fan-tile.idle .fan-icon{color:var(--muted);}
-.fan-tile.running .fan-icon{animation:fan-spin 1.4s linear infinite;}
+.fan-tile.running .fan-icon{animation:fan-spin var(--fan-spin-dur,1.4s) linear infinite;}
 @keyframes fan-spin{to{transform:rotate(360deg);}}
 .chart-tile h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px;}
 #chart{width:100%;height:160px;display:block;}
@@ -932,8 +932,10 @@ async function refreshData(){
     document.getElementById('humidity').textContent=d.humidity.toFixed(0);
     const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'FAN RUNNING':'FAN IDLE';
     const fanTile=document.getElementById('fan-tile');fanTile.classList.toggle('running',!!d.fanOn);fanTile.classList.toggle('idle',!d.fanOn);
+    const dutyPct=Math.round((d.duty||0)/255*100);
+    fanTile.style.setProperty('--fan-spin-dur',(0.5+(1-dutyPct/100)*2.5).toFixed(2)+'s');
     document.getElementById('fan-reason').textContent=d.fanOn?d.reason:'';
-    document.getElementById('fan-duty').textContent=Math.round((d.duty||0)/255*100)+'%';
+    document.getElementById('fan-duty').textContent=dutyPct+'%';
     const dodoPx=document.getElementById('dodo-pixel-v2');
     if(dodoPx){
       const stateMap={green:'calm',amber:'alert',red:'distress'};
@@ -969,7 +971,8 @@ function renderChart(samples){
   s+=`<rect x="0" y="${yAmber}" width="${W}" height="${H-yAmber}" fill="#e8f5e9" opacity="0.7"/>`;
   s+=`<line x1="0" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
   s+=`<line x1="0" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
-  [800,1000].forEach(v=>{if(v>=minCo2&&v<=maxCo2)s+=`<text x="4" y="${y(v)-2}" font-size="9" font-weight="600" fill="#5e6b5e">${v}</text>`;});
+  s+=`<text x="4" y="${y(1000)-3}" font-size="14" font-weight="600" fill="#5e6b5e">1000</text>`;
+  s+=`<text x="4" y="${y(800)+14}" font-size="14" font-weight="600" fill="#5e6b5e">800</text>`;
   const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
   s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   const last=samples[samples.length-1];

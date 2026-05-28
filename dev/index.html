@@ -108,7 +108,8 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
 .co2-chart-mini{width:100%;height:60px;display:block;margin-top:6px;}
 .metric-tile{text-align:left;}
 .metric-tile .metric-value{font-size:24px;font-weight:600;margin-top:4px;color:var(--fg);}
-.insight-tile.always-on{display:block;background:var(--green-light);border-color:#bedfc4;}
+.insight-tile.always-on{display:block;background:var(--green-light);border-color:#bedfc4;cursor:pointer;user-select:none;}
+.insight-tile.always-on:active{opacity:.7;}
 .insight-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
 .insight-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
 .insight-badge{font-size:10px;color:var(--green);font-weight:700;letter-spacing:.8px;}
@@ -634,6 +635,11 @@ async function stopLog(){
   try{await fetch('/log/stop');refreshData();}catch(e){}
 }
 refreshData();refreshHistory();
+getInsight(true);  // explicit page-load fetch (independent of state change)
+document.getElementById('insight-tile').addEventListener('click',()=>{
+  document.getElementById('insight-text').textContent='Thinking...';
+  getInsight(true);
+});
 setInterval(refreshData,1000);
 setInterval(refreshHistory,10000);
 function initDodiTimelines(){

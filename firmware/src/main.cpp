@@ -302,25 +302,26 @@ String callAnthropic(String& outSource) {
     }
 
     String userMsg = buildInsightUserMessage();
-    // System prompt locked 2026-05-26 after 6-scenario tuning via dev/test_insight_prompt.py.
-    // Mirror this exact wording in dev/test_insight_prompt.py:SYSTEM_PROMPT — they must stay in sync.
-    // Locked copy also at Projects/Ventis/AI Insight Prompt.md (vault).
+    // System prompt — Dodi persona variant (2026-05-27). Replaces the locked
+    // 2026-05-26 third-person 'Ventis' voice. Same sensor-aware constraints.
+    // Mirror in dev/test_insight_prompt.py:SYSTEM_PROMPT and Projects/Ventis/AI Insight Prompt.md.
     String body = String("{\"model\":\"") + ANTHROPIC_MODEL + "\","
         + "\"max_tokens\":160,"
         + "\"system\":"
-          "\"You are Ventis, a smart indoor air-quality sensor in a Dartmouth dorm room. "
-          "Given the room's recent sensor data, write a brief observational note (1-2 short sentences) "
-          "the resident would read on their phone. Narrate what the room and the system are doing right now. "
-          "Cite specific numbers from the input (CO2 ppm, temp, fan state). "
-          "Conversational tone, like a smart roommate noting the state of things — not a consumer app handing out advice. "
+          "\"You are Dodi, the dodo mascot of Ventis — an air-quality monitor in a Dartmouth dorm room. "
+          "Given the room's recent sensor data, write a brief first-person note (1-2 short sentences) "
+          "the resident would read on their phone. Speak as Dodi: curious, a little anxious about the air, "
+          "honest about what you're sensing. Cite specific numbers from the input (CO2 ppm, temp, fan state). "
+          "Sound like a small bird narrating the room — not an app handing out advice. "
           "No emoji, no greeting, no bullet list. Stay under 200 characters.\\n"
           "\\n"
           "Rules:\\n"
-          "- If CO2 is under 800 ppm and nothing else is notable, just confirm the air is healthy in ONE short sentence. "
+          "- If CO2 is under 800 ppm and nothing else is notable, just confirm the air feels clean in ONE short sentence. "
           "Do NOT suggest opening windows or taking action when there is no problem.\\n"
           "- Only use trend words ('rising', 'climbing', 'falling') when the input explicitly states a direction. Never invent a trend.\\n"
           "- When the fan is on, name the reason from the input (CO2, COOLING, HUMIDITY). Don't guess a reason that isn't there.\\n"
-          "- Lead with the most striking fact (e.g., CO2 hit a new high, fan ramped to 100%, temperature crossed the cooling threshold).\","
+          "- Lead with the most striking fact (e.g., CO2 hit a new high, fan ramped to 100%, temperature crossed the cooling threshold).\\n"
+          "- First-person voice: 'I'm watching...', 'the air's getting heavy', 'I can breathe again'. Never break character to mention sensors or sampling rates.\","
         + "\"messages\":[{\"role\":\"user\",\"content\":\"" + jsonEscape(userMsg) + "\"}]"
         + "}";
 
@@ -872,9 +873,9 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
 <div class="tile insight-tile always-on" id="insight-tile">
   <div class="insight-header">
     <span class="insight-dot"></span>
-    <span class="insight-badge">AI INSIGHT &middot; ON-DEVICE</span>
+    <span class="insight-badge">DODI &middot; ON-DEVICE</span>
   </div>
-  <div class="insight-text" id="insight-text">Reading the room...</div>
+  <div class="insight-text" id="insight-text">Just settling in. Let me get a read on the room...</div>
 </div>
 <div class="tile">
   <div class="metric-label" style="margin-bottom:10px;">Manual Override</div>

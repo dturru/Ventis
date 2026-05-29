@@ -29,11 +29,12 @@ AsyncWebServer    server(80);
 // ── State ────────────────────────────────────────────────────────────────────
 
 struct Readings {
-    uint16_t co2        = 0;
-    float    tempIn     = 0.0f;   // °C, from SCD40
-    float    humidity   = 0.0f;   // %RH
-    float    tempOut    = 0.0f;   // °C, from DS18B20
-    bool     valid      = false;
+    uint16_t co2          = 0;
+    float    tempIn       = 0.0f;   // °C, from SCD40
+    float    humidity     = 0.0f;   // %RH
+    float    tempOut      = 0.0f;   // °C, from wireless C3 or wired DS18B20
+    bool     tempOutValid = false;  // false when no fresh outdoor source — disables COOLING mode
+    bool     valid        = false;
 } readings;
 
 enum FanReason { NONE, COOLING, CO2_HIGH, HUMIDITY_HIGH, MANUAL };
@@ -50,6 +51,16 @@ struct FanState {
 } fan;
 
 OverrideMode override_mode = OVR_AUTO;  // set via POST /control?mode=auto|on|off
+
+// User-set indoor cooling setpoint. Fan triggers COOLING only when indoor > setpoint
+// AND outdoor is colder by COOLING_DELTA_C. Default 75°F (23.89°C). Range 60-90°F.
+float coolingSetpointC = 23.89f;
+const float SETPOINT_MIN_F = 60.0f;
+const float SETPOINT_MAX_F = 90.0f;
+
+// User-set manual-mode fan duty (0-255). Default 255 = 100% to preserve old behavior.
+// Only takes effect when override_mode == OVR_ON; ignored in auto and off modes.
+uint8_t manualDuty = FAN_DUTY_MAX;
 
 // History ring buffer — 60 samples × 5s cadence = 5 min rolling window
 #define HISTORY_SIZE 60
@@ -68,19 +79,42 @@ bool          historyFull = false;
 unsigned long lastScd40Read   = 0;
 unsigned long lastDs18b20Read = 0;
 
-float         tempOutWired     = 0.0f;   // from wired DS18B20
+float         tempOutWired     = 0.0f;   // from wired DS18B20 (currently NOT wired on v1 hub)
+bool          tempOutWiredValid = false;  // set true on first successful DS18B20 read
+unsigned long lastWiredOkMs    = 0;      // millis() of most recent successful DS18B20 read
 float         tempOutWireless  = 0.0f;   // from C3 outdoor node
 unsigned long lastOutdoorPostMs = 0;      // 0 = never received
 
 bool          oledOk           = false;   // set by probe in setup(); guards all OLED I2C ops
 unsigned long lastLogMs        = 0;
 bool          logEnabled       = false;
+
+// Latest insight cache — populated by /insight POST handler AND by periodic
+// auto-trigger in loop(). Served via /data so viewer clients see live content
+// even when no controller has tapped. Source surfaces "live" (Anthropic ok),
+// "fallback" (rule-based degradation when WiFi/API failed), or "init" (boot,
+// no insight generated yet). Dashboard maps these to a visible chip so judges
+// see graceful degradation as a feature, not a bug.
+String cachedInsightText   = "Just booting up. First reading in a moment.";
+String cachedInsightSource = "init";
+char   cachedInsightTs[25] = "boot";
+
+// Auto-regen: one boot trigger ~8s after first valid SCD40 reading, then every
+// AUTO_INSIGHT_INTERVAL_MS. Keeps viewer dashboards fresh even when controller
+// hasn't tapped. Each call blocks loop() ~2-3s for the Anthropic round-trip;
+// SCD40 5s cadence absorbs that, AsyncTCP /data polling continues uninterrupted.
+unsigned long lastAutoInsightMs    = 0;
+unsigned long firstValidReadingMs  = 0;
+bool          autoInsightBootDone  = false;
+const unsigned long AUTO_INSIGHT_INTERVAL_MS   = 60000;  // 60s between periodic auto-regens
+const unsigned long AUTO_INSIGHT_BOOT_DELAY_MS = 8000;   // wait 8s after first reading before first auto
 char          runLabel[64]     = "unlabeled";
 uint32_t      logRowCount      = 0;
 
-// /insight is deferred from the AsyncWebServer handler to loop() — the HTTPS POST to
-// Anthropic takes ~2-3s and would block AsyncTCP's event loop if run inline.
-AsyncWebServerRequest* pendingInsightReq = nullptr;
+// /insight is handled synchronously in the AsyncWebServer handler — see setupServer().
+// Previous async/loop-dispatch architecture had a dangling-pointer + TCP-tear-down
+// bug that dropped responses to the browser. Sync handler trades 2-3s of /data
+// polling pause for end-to-end reliability.
 
 // ── Control logic ─────────────────────────────────────────────────────────────
 
@@ -94,7 +128,11 @@ FanState evaluateFan(const Readings &r) {
     if (r.humidity > HUMIDITY_THRESHOLD) {
         s.on = true; s.reason = HUMIDITY_HIGH; return s;
     }
-    if ((r.tempIn - r.tempOut) > COOLING_DELTA_C) {
+    // Cool only when (a) we have valid outdoor reading, (b) indoor is above the
+    // user's comfort setpoint, AND (c) outdoor air is actually colder by ΔT.
+    if (r.tempOutValid
+        && r.tempIn > coolingSetpointC
+        && (r.tempIn - r.tempOut) > COOLING_DELTA_C) {
         s.on = true; s.reason = COOLING; return s;
     }
     return s;
@@ -114,8 +152,9 @@ const char *reasonStr(FanReason r) {
 // NF-P12 Redux doesn't fully stop at duty 0, so relay + PWM both matter.
 uint8_t computeDuty(const FanState &f, const Readings &r) {
     if (!f.on) return 0;
-    if (f.reason == MANUAL) return FAN_DUTY_MAX;
+    if (f.reason == MANUAL) return manualDuty;  // user-set 0-255 via dashboard slider
     if (f.reason == CO2_HIGH && r.co2 >= CO2_ALARM_PPM) return FAN_DUTY_MAX;
+    if (f.reason == COOLING) return FAN_DUTY_MAX;
     return FAN_DUTY_MID;
 }
 
@@ -181,7 +220,7 @@ void updateLed(uint16_t co2, bool valid) {
         if (co2 < CO2_ALARM_PPM - 20)         state = 1;
     }
     if (state == 2) {       ledcWrite(2, 255); ledcWrite(3, 0); }
-    else if (state == 1) {  ledcWrite(2, 60);  ledcWrite(3, 255); }  // amber: balanced R/G
+    else if (state == 1) {  ledcWrite(2, 255); ledcWrite(3, 40);  }  // amber: red-dominant, small green for warm tint
     else {                  ledcWrite(2, 0);   ledcWrite(3, 255); }
     digitalWrite(PIN_LED_B, LOW);
     static uint8_t lastLogged = 255;
@@ -199,7 +238,8 @@ void updateOled() {
 
     oled.printf("CO2:  %4u ppm\n",   readings.co2);
     oled.printf("IN:   %.1fF  %.0f%%\n", toF(readings.tempIn), readings.humidity);
-    oled.printf("OUT:  %.1fF\n",      toF(readings.tempOut));
+    if (readings.tempOutValid) oled.printf("OUT:  %.1fF\n", toF(readings.tempOut));
+    else                       oled.printf("OUT:  --  offline\n");
     oled.printf("FAN:  %s  %s\n",
         fan.on ? "ON " : "OFF",
         fan.on ? reasonStr(fan.reason) : "");
@@ -234,9 +274,16 @@ String fallbackInsight() {
 
 // Compact sensor snapshot the model sees. Keep this dense — every line is tokens.
 String buildInsightUserMessage() {
+    float setpointF = coolingSetpointC * 9.0f / 5.0f + 32.0f;
+    float indoorF   = toF(readings.tempIn);
+    float outdoorF  = toF(readings.tempOut);
+
+    String outStr = readings.tempOutValid
+        ? "outdoor " + String(outdoorF, 1) + "F"
+        : "outdoor probe offline (cooling disabled)";
     String msg = "Now: CO2 " + String(readings.co2) + " ppm, indoor "
-               + String(toF(readings.tempIn), 1) + "F / " + String((int)readings.humidity)
-               + "% RH, outdoor " + String(toF(readings.tempOut), 1) + "F.\n";
+               + String(indoorF, 1) + "F / " + String((int)readings.humidity)
+               + "% RH, " + outStr + ". Cooling setpoint " + String(setpointF, 0) + "F.\n";
 
     uint8_t count = historyFull ? HISTORY_SIZE : historyHead;
     if (count >= 2) {
@@ -244,9 +291,27 @@ String buildInsightUserMessage() {
         uint8_t lastIdx  = (historyHead == 0 ? HISTORY_SIZE - 1 : historyHead - 1);
         uint16_t startCo2 = history[startIdx].co2;
         uint16_t endCo2   = history[lastIdx].co2;
-        const char* dir = (endCo2 > startCo2 + 50) ? "rising"
-                        : (endCo2 + 50 < startCo2) ? "falling" : "stable";
-        msg += "CO2 last ~5 min: " + String(startCo2) + " -> " + String(endCo2) + " ppm (" + dir + ").\n";
+        int16_t  delta    = (int16_t)endCo2 - (int16_t)startCo2;
+        uint32_t spanMs   = history[lastIdx].t_ms - history[startIdx].t_ms;
+        uint32_t spanMin  = spanMs / 60000;  // integer minutes
+        if (spanMin == 0) spanMin = 1;
+
+        uint16_t peakCo2 = startCo2;
+        for (uint8_t i = 0; i < count; i++) {
+            uint8_t idx = (startIdx + i) % HISTORY_SIZE;
+            if (history[idx].co2 > peakCo2) peakCo2 = history[idx].co2;
+        }
+
+        const char* dir = (delta >  50) ? "climbing"
+                        : (delta < -50) ? "falling"  : "steady";
+        msg += "Last " + String(spanMin) + " min: " + String(startCo2) + " -> " + String(endCo2)
+             + " ppm (" + (delta >= 0 ? "+" : "") + String(delta) + ", " + dir + ", peak " + String(peakCo2) + ").\n";
+
+        int rate = (int)(delta * 60L / (long)spanMs * 1000);  // ppm/min, signed
+        if (delta >  200) msg += "Trend note: rose " + String(delta) + " ppm in " + String(spanMin) + " min — fast climb.\n";
+        if (delta < -200) msg += "Trend note: dropped " + String(-delta) + " ppm in " + String(spanMin) + " min — fast flush.\n";
+        if (peakCo2 >= endCo2 + 150 && delta < 0) msg += "Trend note: recovering from a peak of " + String(peakCo2) + " ppm.\n";
+        if (endCo2 == peakCo2 && delta > 100)     msg += "Trend note: currently at the highest reading in this window.\n";
     }
 
     msg += "Fan: ";
@@ -259,7 +324,35 @@ String buildInsightUserMessage() {
         msg += String(", reason ") + reasonStr(fan.reason);
         msg += ", duty " + String((int)(computeDuty(fan, readings) * 100 / 255)) + "%";
     }
-    msg += ").";
+    msg += ").\n";
+
+    // Ventilation tradeoff — explicit physics framing so the model reasons about
+    // the decision (vent or hold), not just narrates the snapshot. Skipped when
+    // outdoor probe is offline (can't reason about a tradeoff without both sides).
+    if (readings.tempOutValid) {
+        float dT_indoor_outdoor = indoorF - outdoorF;   // + means outdoor is cooler
+        float dT_indoor_setpoint = indoorF - setpointF; // + means above target
+        bool co2Elevated = readings.co2 >= CO2_THRESHOLD;
+        bool wantCooling = dT_indoor_setpoint > 0.5f;
+
+        String trade = "Tradeoff: ";
+        if (dT_indoor_outdoor > 2.0f) {
+            trade += "outdoor is " + String(dT_indoor_outdoor, 0) + "F cooler than the room";
+            if (wantCooling)      trade += " — venting both cools toward the " + String(setpointF, 0) + "F target AND dilutes CO2 in one motion (low-cost vent).";
+            else if (co2Elevated) trade += " — venting now would dilute the CO2 but also cool the room below the " + String(setpointF, 0) + "F target.";
+            else                  trade += " — air is clean and the room's at or below target; no reason to vent right now.";
+        } else if (dT_indoor_outdoor < -2.0f) {
+            trade += "outdoor is " + String(-dT_indoor_outdoor, 0) + "F warmer than the room";
+            if (co2Elevated)      trade += " — venting would dilute the CO2 but warm the room (CO2 cost vs heat cost; CO2 usually wins).";
+            else                  trade += " — venting now would warm the room with no CO2 benefit; holding is the right call.";
+        } else {
+            trade += "outdoor and indoor are within ~2F";
+            if (co2Elevated)      trade += " — venting helps CO2 with negligible thermal impact (free vent).";
+            else                  trade += " — nothing to do, conditions are matched.";
+        }
+        msg += trade + "\n";
+    }
+
     return msg;
 }
 
@@ -302,33 +395,37 @@ String callAnthropic(String& outSource) {
     }
 
     String userMsg = buildInsightUserMessage();
-    // System prompt — Dodi persona variant (2026-05-27). Replaces the locked
-    // 2026-05-26 third-person 'Ventis' voice. Same sensor-aware constraints.
-    // Mirror in dev/test_insight_prompt.py:SYSTEM_PROMPT and Projects/Ventis/AI Insight Prompt.md.
+    // System prompt — Dodi 'dry observer' persona (2026-05-28 v2). Replaces the
+    // cockney-spy voice after Opus 4.7 external review flagged it as a liability
+    // with the AI-native jury (signals 'toy', causes mental discount of substance).
+    // New voice: technically literate, first-person, lightly warm, no slang.
+    // Pixel-art is unchanged. Mirror in dev/test_insight_prompt.py:SYSTEM_PROMPT
+    // and Projects/Ventis/AI Insight Prompt.md once locked.
     String body = String("{\"model\":\"") + ANTHROPIC_MODEL + "\","
         + "\"max_tokens\":160,"
         + "\"system\":"
-          "\"You are Dodi, the dodo mascot of Ventis — an air-quality monitor in a Dartmouth dorm room. "
-          "Given the room's recent sensor data, write a brief first-person note (1-2 short sentences) "
-          "the resident would read on their phone. Speak as Dodi: curious, a little anxious about the air, "
-          "honest about what you're sensing. Cite specific numbers from the input (CO2 ppm, temp, fan state). "
-          "Sound like a small bird narrating the room — not an app handing out advice. "
-          "No emoji, no greeting, no bullet list. Stay under 200 characters.\\n"
+          "\"You are Dodi — an on-device air-quality monitor watching the room from inside a Dartmouth dorm. "
+          "Speak in a calm, observant first-person voice: dry, technically literate, briefly warm, no slang. "
+          "Sound like a quiet operator narrating their decisions out loud — not a chatbot, not a mascot, not a character. "
+          "Given the room's recent sensor data, write a brief note (1-2 short sentences) the resident would read on their phone. "
+          "Cite specific numbers from the input (CO2 ppm, temp, fan state). "
+          "No emoji, no greeting, no bullet list, no exclamation points. Stay under 200 characters.\\n"
           "\\n"
           "Rules:\\n"
-          "- If CO2 is under 800 ppm and nothing else is notable, just confirm the air feels clean in ONE short sentence. "
-          "Do NOT suggest opening windows or taking action when there is no problem.\\n"
-          "- Only use trend words ('rising', 'climbing', 'falling') when the input explicitly states a direction. Never invent a trend.\\n"
-          "- When the fan is on, name the reason from the input (CO2, COOLING, HUMIDITY). Don't guess a reason that isn't there.\\n"
-          "- Lead with the most striking fact (e.g., CO2 hit a new high, fan ramped to 100%, temperature crossed the cooling threshold).\\n"
-          "- First-person voice: 'I'm watching...', 'the air's getting heavy', 'I can breathe again'. Never break character to mention sensors or sampling rates.\","
+          "- If a 'Tradeoff:' line is present, USE IT to explain the decision in physical terms — this is the most important signal in the input. Examples of the kind of reasoning to surface: 'Outside is 18 cooler and the room is 3 above target — venting now cools you and clears the CO2 in one shot.' 'Outside is warmer than the room. Venting would heat you up, so holding the fan even with CO2 at 910 — the heat cost isn't worth it yet.' 'Outside and inside are within two degrees — free vent, no thermal penalty.' Reason out loud about WHY, not just WHAT.\\n"
+          "- If CO2 is under 800 ppm and nothing else is notable, confirm the air is clean in ONE short sentence ('Holding at 640. Room is clean.'). Do NOT suggest opening windows or taking action when there is no problem.\\n"
+          "- When the input has a 'Trend note' line, weave it in ('Up 320 in five minutes — someone joined the room.', 'Down 280 in five minutes, working through it.', 'Just hit a new high at 1,180. Fan on, flushing.'). Trend notes are second only to Tradeoff in importance.\\n"
+          "- Use trend words ('climbing', 'rising', 'falling', 'dropping') only when the input states a direction in the 'Last N min' line. Never invent a trend.\\n"
+          "- When the fan is on, name the reason from the input (CO2, COOLING, HUMIDITY) plainly and tie it to the tradeoff ('Fan on for CO2 — outdoor is cool enough to help', 'Cooling — outside is 18 cooler', 'Drying the room out').\\n"
+          "- Lead with the decision when the tradeoff line is interesting; lead with the most striking fact otherwise (new high, ramp to 100%, crossed cooling line, outside flipped to help).\\n"
+          "- Voice cues to AVOID: 'mate', 'guy', 'guv', 'right then', 'got eyes on it', 'situation', exclamation marks, theatrical phrasing. Voice cues to USE: short declaratives, concrete numbers, calm present-tense reasoning.\","
         + "\"messages\":[{\"role\":\"user\",\"content\":\"" + jsonEscape(userMsg) + "\"}]"
         + "}";
 
     WiFiClientSecure client;
     client.setInsecure();   // demo: skip cert check. For prod, bundle Anthropic root cert.
     HTTPClient http;
-    http.setTimeout(15000);
+    http.setTimeout(5000);  // 5s — keep AsyncTCP handler under 8s task watchdog
     if (!http.begin(client, "https://api.anthropic.com/v1/messages")) {
         Serial.println("[insight] http.begin failed");
         outSource = "fallback";
@@ -484,10 +581,58 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
 .insight-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
 .insight-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
 .insight-badge{font-size:10px;color:var(--green);font-weight:700;letter-spacing:.8px;}
+.insight-status{font-size:9px;font-weight:700;letter-spacing:.6px;padding:2px 6px;border-radius:4px;margin-left:auto;}
+.insight-status[data-state="live"]{background:#e5f3e8;color:#1e6e3a;}
+.insight-status[data-state="fallback"]{background:#fff7e0;color:#7a5a00;}
+.insight-status[data-state="init"]{background:#eef2f4;color:#5c6b73;}
+.insight-latency{font-size:9px;color:var(--muted);font-weight:500;margin-left:6px;}
+.outdoor-banner{display:none;background:#fff7e0;border:1px solid #e8d28a;color:#7a5a00;padding:10px 14px;border-radius:8px;margin:0 0 14px 0;font-size:13px;font-weight:600;}
+.outdoor-banner.visible{display:block;}
+.setpoint-row{display:flex;align-items:center;justify-content:center;gap:14px;}
+.setpoint-btn{width:44px;height:44px;border-radius:8px;border:1px solid var(--border);background:var(--tile-alt);color:var(--fg);font-size:22px;font-weight:600;cursor:pointer;font-family:inherit;line-height:1;transition:all .12s;}
+.setpoint-btn:hover{border-color:var(--green);color:var(--green);}
+.setpoint-btn:active{background:var(--green);color:#fff;}
+.setpoint-value{font-size:30px;font-weight:600;color:var(--fg);min-width:90px;text-align:center;}
+.setpoint-sub{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;}
+.temp-tile{cursor:pointer;transition:background .15s;}
+.temp-tile:hover{background:var(--tile-alt);}
+.setpoint-chev{display:inline-block;font-size:10px;color:var(--muted);margin-left:4px;transition:transform .2s;}
+.temp-tile.expanded .setpoint-chev{transform:rotate(180deg);}
+.setpoint-pop{max-height:0;overflow:hidden;opacity:0;transition:max-height .25s ease,opacity .2s,margin-top .2s;}
+.temp-tile.expanded .setpoint-pop{max-height:200px;opacity:1;margin-top:14px;}
+.setpoint-pop-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;text-align:center;}
+.manual-tile{cursor:pointer;transition:background .15s;}
+.manual-tile:hover{background:var(--tile-alt);}
+.manual-tile.expanded .setpoint-chev{transform:rotate(180deg);}
+.manual-pop{max-height:0;overflow:hidden;opacity:0;transition:max-height .25s ease,opacity .2s,margin-top .2s;}
+.manual-tile.expanded .manual-pop{max-height:200px;opacity:1;margin-top:14px;}
+.viewer-badge{display:none;background:#eef2f4;border:1px solid #cdd6da;color:#5c6b73;padding:6px 12px;border-radius:14px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin:0 0 14px 0;text-align:center;}
+body.viewer .viewer-badge{display:block;}
+body.viewer .controls,
+body.viewer .manual-pop,
+body.viewer .setpoint-chev,
+body.viewer .tile-sheets,
+body.viewer #manual-tile,
+body.viewer #temp-tile{cursor:default;}
+body.viewer .controls,
+body.viewer .tile-sheets{display:none !important;}
+body.viewer .setpoint-chev{visibility:hidden;}
+body.viewer #manual-tile{display:none !important;}
+body.viewer .insight-tile.always-on{cursor:default;}
+body.viewer .insight-tile.always-on:active{opacity:1;}
+.duty-row{margin-top:14px;}
+.duty-label{font-size:13px;color:var(--fg);font-weight:500;margin-bottom:8px;}
+.duty-label #duty-val{color:var(--green);font-weight:700;margin-left:4px;}
+.duty-slider{width:100%;-webkit-appearance:none;appearance:none;height:6px;background:var(--tile-alt);border-radius:3px;outline:none;}
+.duty-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.duty-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.duty-sub{font-size:11px;color:var(--muted);margin-top:6px;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
 <header><h1>Ventis</h1><span class="location" id="location">DORM ROOM</span></header>
+<div class="viewer-badge">&#128065; Live view &middot; controls disabled</div>
+<div class="outdoor-banner" id="outdoor-banner">&#9888; Outdoor sensor offline &mdash; cooling mode disabled until C3 node reports.</div>
 <div class="tile dodi-callout-tile" id="dodi-callout">
   <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2">
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -845,9 +990,18 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
   <svg id="chart" class="co2-chart-mini" viewBox="0 0 600 80" preserveAspectRatio="none"></svg>
 </div>
 <div class="row">
-  <div class="tile metric-tile">
-    <div class="metric-label">TEMP</div>
+  <div class="tile metric-tile temp-tile" id="temp-tile" onclick="toggleSetpoint()">
+    <div class="metric-label">TEMP <span class="setpoint-chev" id="setpoint-chev">&#9662;</span></div>
     <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
+    <div class="setpoint-pop" id="setpoint-pop">
+      <div class="setpoint-pop-label">Cooling setpoint</div>
+      <div class="setpoint-row">
+        <button class="setpoint-btn" onclick="event.stopPropagation();adjustSetpoint(-1)">&minus;</button>
+        <div class="setpoint-value"><span id="setpoint-val">75</span>&deg;F</div>
+        <button class="setpoint-btn" onclick="event.stopPropagation();adjustSetpoint(1)">+</button>
+      </div>
+      <div class="setpoint-sub">Fan cools when indoor &gt; setpoint &amp; outdoor is colder</div>
+    </div>
   </div>
   <div class="tile metric-tile">
     <div class="metric-label">HUMIDITY</div>
@@ -874,15 +1028,27 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
   <div class="insight-header">
     <span class="insight-dot"></span>
     <span class="insight-badge">DODI &middot; ON-DEVICE</span>
+    <span class="insight-status" id="insight-status" data-state="init">INIT</span>
+    <span class="insight-latency" id="insight-latency"></span>
   </div>
   <div class="insight-text" id="insight-text">Just settling in. Let me get a read on the room...</div>
 </div>
-<div class="tile">
-  <div class="metric-label" style="margin-bottom:10px;">Manual Override</div>
+<div class="tile manual-tile" id="manual-tile" onclick="toggleManual()">
+  <div class="metric-label" style="margin-bottom:10px;">Manual Override <span class="setpoint-chev" id="manual-chev">&#9662;</span></div>
   <div class="controls">
-    <button data-mode="auto" class="active" onclick="setMode('auto')">Auto</button>
-    <button data-mode="on" onclick="setMode('on')">On</button>
-    <button data-mode="off" onclick="setMode('off')">Off</button>
+    <button data-mode="auto" class="active" onclick="event.stopPropagation();setMode('auto')">Auto</button>
+    <button data-mode="on" onclick="event.stopPropagation();setMode('on')">On</button>
+    <button data-mode="off" onclick="event.stopPropagation();setMode('off')">Off</button>
+  </div>
+  <div class="manual-pop" id="manual-pop">
+    <div class="duty-row">
+      <div class="duty-label">Manual fan speed <span id="duty-val">100</span>%</div>
+      <input type="range" id="duty-slider" class="duty-slider" min="0" max="100" step="5" value="100"
+             onclick="event.stopPropagation()"
+             oninput="event.stopPropagation();onDutySlide(this.value)"
+             onchange="event.stopPropagation();onDutyCommit(this.value)">
+      <div class="duty-sub">Active when override is ON</div>
+    </div>
   </div>
 </div>
 <div class="tile tile-sheets">
@@ -901,6 +1067,8 @@ header .location{font-size:10px;color:var(--muted);text-transform:uppercase;lett
 </div>
 <script>
 const USE_MOCK=location.search.includes('mock=1');
+const IS_CONTROLLER=location.search.includes('ctl=1');
+if(!IS_CONTROLLER)document.body.classList.add('viewer');
 if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
@@ -925,9 +1093,23 @@ async function refreshData(){
     document.getElementById('dodi-label').textContent=calloutText.label;
     document.getElementById('dodi-title').textContent=calloutText.title;
     document.getElementById('dodi-sub').textContent=calloutText.sub;
-    if(tt!==lastDodiState){lastDodiState=tt;getInsight(true);}
+    if(tt!==lastDodiState){lastDodiState=tt;if(IS_CONTROLLER)getInsight(true);}
     document.getElementById('tempIn').textContent=(d.tempIn*9/5+32).toFixed(1);
     document.getElementById('humidity').textContent=d.humidity.toFixed(0);
+    document.getElementById('outdoor-banner').classList.toggle('visible',d.tempOutValid===false);
+    if(typeof d.setpointF==='number'){document.getElementById('setpoint-val').textContent=Math.round(d.setpointF);}
+    if(typeof d.manualDutyPct==='number' && !dutyDragging){
+      document.getElementById('duty-slider').value=d.manualDutyPct;
+      document.getElementById('duty-val').textContent=d.manualDutyPct;
+    }
+    if(!IS_CONTROLLER && typeof d.insightText==='string' && d.insightText.length>0){
+      document.getElementById('insight-text').textContent=d.insightText;
+    }
+    if(typeof d.insightSource==='string'){
+      const st=document.getElementById('insight-status');
+      const label={live:'LIVE',fallback:'OFFLINE',init:'INIT'}[d.insightSource]||d.insightSource.toUpperCase();
+      st.textContent=label;st.setAttribute('data-state',d.insightSource);
+    }
     const fs=document.getElementById('fan-state');fs.textContent=d.fanOn?'FAN RUNNING':'FAN IDLE';
     const fanTile=document.getElementById('fan-tile');fanTile.classList.toggle('running',!!d.fanOn);fanTile.classList.toggle('idle',!d.fanOn);
     const dutyPct=Math.round((d.duty||0)/255*100);
@@ -978,22 +1160,63 @@ function renderChart(samples){
   document.getElementById('chart').innerHTML=s;
 }
 async function setMode(mode){
+  if(!IS_CONTROLLER)return;  // viewer guard — UI is hidden but belt-and-suspenders
   document.querySelectorAll('.controls button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
   if(USE_MOCK)return;
   try{await fetch('/control?mode='+mode,{method:'POST'});refreshData();}catch(e){}
 }
+let dutyDragging=false;
+let dutyCommitTimer=null;
+function onDutySlide(v){
+  dutyDragging=true;
+  document.getElementById('duty-val').textContent=v;
+}
+function onDutyCommit(v){
+  dutyDragging=false;
+  if(!IS_CONTROLLER||USE_MOCK)return;
+  clearTimeout(dutyCommitTimer);
+  dutyCommitTimer=setTimeout(()=>{
+    fetch('/control?duty='+v,{method:'POST'}).catch(e=>{});
+  },120);
+}
+function toggleSetpoint(){
+  if(!IS_CONTROLLER)return;
+  document.getElementById('temp-tile').classList.toggle('expanded');
+}
+function toggleManual(){
+  if(!IS_CONTROLLER)return;
+  document.getElementById('manual-tile').classList.toggle('expanded');
+}
+async function adjustSetpoint(delta){
+  if(!IS_CONTROLLER)return;
+  const el=document.getElementById('setpoint-val');
+  let v=parseInt(el.textContent,10);if(isNaN(v))v=75;
+  v=Math.max(60,Math.min(90,v+delta));
+  el.textContent=v;  // optimistic UI
+  if(USE_MOCK)return;
+  try{await fetch('/control?setpoint='+v,{method:'POST'});refreshData();}catch(e){}
+}
 let lastInsightAt=0;
 let lastDodiState='';
+let insightInFlight=false;
 async function getInsight(force){
   const now=Date.now();
   if(!force&&(now-lastInsightAt<25000))return;
+  if(insightInFlight)return;  // single-flight: don't race the firmware into 429s
+  insightInFlight=true;
   lastInsightAt=now;
+  const t0=performance.now();
   try{
     const r=await fetch(USE_MOCK?'/mock-insight.json':'/insight',{method:'POST'});
+    if(r.status===429){return;}  // queued elsewhere — leave 'Thinking...' visible
     const d=await r.json();
     document.getElementById('insight-text').textContent=d.text;
+    const ms=Math.round(performance.now()-t0);
+    document.getElementById('insight-latency').textContent=ms+' ms';
   }catch(e){
     document.getElementById('insight-text').textContent='Insight unavailable right now.';
+  }finally{
+    insightInFlight=false;
   }
 }
 async function startLog(){
@@ -1006,11 +1229,13 @@ async function stopLog(){
   try{await fetch('/log/stop');refreshData();}catch(e){}
 }
 refreshData();refreshHistory();
-getInsight(true);  // explicit page-load fetch (independent of state change)
-document.getElementById('insight-tile').addEventListener('click',()=>{
-  document.getElementById('insight-text').textContent='Thinking...';
-  getInsight(true);
-});
+if(IS_CONTROLLER){
+  getInsight(true);  // controller-only page-load fetch (prevents N-judges × Anthropic-calls on booth load)
+  document.getElementById('insight-tile').addEventListener('click',()=>{
+    document.getElementById('insight-text').textContent='Thinking...';
+    getInsight(true);
+  });
+}
 setInterval(refreshData,1000);
 setInterval(refreshHistory,10000);
 function initDodiTimelines(){
@@ -1078,7 +1303,9 @@ window.addEventListener('load',()=>{
 
 void setupServer() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *req) {
-        req->send(200, "text/html", INDEX_HTML);
+        AsyncWebServerResponse *res = req->beginResponse(200, "text/html", INDEX_HTML);
+        res->addHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        req->send(res);
     });
 
     server.on("/data", HTTP_GET, [](AsyncWebServerRequest *req) {
@@ -1086,7 +1313,13 @@ void setupServer() {
         json += "\"co2\":"      + String(readings.co2)           + ",";
         json += "\"tempIn\":"   + String(readings.tempIn, 2)     + ",";
         json += "\"humidity\":" + String(readings.humidity, 2)   + ",";
-        json += "\"tempOut\":"  + String(readings.tempOut, 2)    + ",";
+        json += "\"tempOut\":"      + String(readings.tempOut, 2)    + ",";
+        json += "\"tempOutValid\":" + String(readings.tempOutValid ? "true" : "false") + ",";
+        json += "\"setpointF\":"    + String(coolingSetpointC * 9.0f / 5.0f + 32.0f, 1) + ",";
+        json += "\"manualDutyPct\":"+ String((int)((manualDuty * 100) / 255)) + ",";
+        json += "\"insightText\":\""+ jsonEscape(cachedInsightText) + "\",";
+        json += "\"insightTs\":\""  + String(cachedInsightTs) + "\",";
+        json += "\"insightSource\":\""+ cachedInsightSource + "\",";
         json += "\"fanOn\":"    + String(fan.on ? "true" : "false") + ",";
         json += "\"reason\":\"" + String(reasonStr(fan.reason))  + "\",";
         json += "\"duty\":"     + String(computeDuty(fan, readings)) + ",";
@@ -1152,23 +1385,71 @@ void setupServer() {
             else if (m == "on")   override_mode = OVR_ON;
             else if (m == "off")  override_mode = OVR_OFF;
         }
+        if (req->hasParam("setpoint")) {
+            float f = req->getParam("setpoint")->value().toFloat();
+            if (f >= SETPOINT_MIN_F && f <= SETPOINT_MAX_F) {
+                coolingSetpointC = (f - 32.0f) * 5.0f / 9.0f;
+                Serial.printf("[setpoint] %.1fF (%.2fC)\n", f, coolingSetpointC);
+            }
+        }
+        if (req->hasParam("duty")) {
+            int pct = req->getParam("duty")->value().toInt();
+            if (pct < 0) pct = 0; if (pct > 100) pct = 100;
+            manualDuty = (uint8_t)((pct * 255) / 100);
+            Serial.printf("[manualDuty] %d%% (raw %u)\n", pct, manualDuty);
+        }
         req->send(200, "application/json", "{\"ok\":true}");
     });
 
-    // Defer to loop() — the Anthropic call takes ~2-3s and would block AsyncTCP.
-    // Frontend keeps the connection open; loop() calls req->send() when the API returns.
+    // Synchronous: do the Anthropic call inline. Blocks the AsyncTCP task for
+    // 2-3s, which briefly pauses /data polling — acceptable for booth demo and
+    // far more reliable than the previous stash-pointer-and-send-later pattern
+    // (which dropped TCP responses when the connection went idle during the call).
     server.on("/insight", HTTP_POST, [](AsyncWebServerRequest *req) {
-        if (pendingInsightReq != nullptr) {
-            // Another insight call is already in flight — refuse politely.
-            req->send(429, "application/json",
-                "{\"text\":\"Already thinking — try again in a moment.\","
-                "\"source\":\"fallback\",\"generated_at\":\"\"}");
-            return;
-        }
-        pendingInsightReq = req;
+        Serial.println("[insight] handling (sync)");
+        String source;
+        String text = callAnthropic(source);
+        struct tm t;
+        if (getLocalTime(&t)) strftime(cachedInsightTs, sizeof(cachedInsightTs), "%Y-%m-%dT%H:%M:%S", &t);
+        cachedInsightText   = text;
+        cachedInsightSource = source;
+        String json = "{\"text\":\"" + jsonEscape(text)
+                    + "\",\"generated_at\":\"" + String(cachedInsightTs)
+                    + "\",\"source\":\"" + source + "\"}";
+        req->send(200, "application/json", json);
+        Serial.printf("[insight] sent (source=%s, %u bytes)\n", source.c_str(), json.length());
+    });
+    // Read-only cache lookup for viewer clients (no Anthropic call, no rate-limit cost).
+    server.on("/insight", HTTP_GET, [](AsyncWebServerRequest *req) {
+        String json = "{\"text\":\"" + jsonEscape(cachedInsightText)
+                    + "\",\"generated_at\":\"" + String(cachedInsightTs)
+                    + "\",\"source\":\"" + cachedInsightSource + "\"}";
+        req->send(200, "application/json", json);
     });
 
     server.begin();
+}
+
+// Periodic + boot auto-regen of the insight cache. Keeps viewer dashboards
+// fresh even with no controller tapping. Blocks loop() ~2-3s per call.
+void maybeAutoInsight(unsigned long now) {
+    if (!readings.valid || WiFi.status() != WL_CONNECTED) return;
+    if (firstValidReadingMs == 0) firstValidReadingMs = now;
+
+    bool bootDue = !autoInsightBootDone && (now - firstValidReadingMs >= AUTO_INSIGHT_BOOT_DELAY_MS);
+    bool periodicDue = autoInsightBootDone && (now - lastAutoInsightMs >= AUTO_INSIGHT_INTERVAL_MS);
+    if (!bootDue && !periodicDue) return;
+
+    Serial.println(bootDue ? "[insight] auto-trigger (boot)" : "[insight] auto-trigger (periodic)");
+    String source;
+    String text = callAnthropic(source);
+    struct tm t;
+    if (getLocalTime(&t)) strftime(cachedInsightTs, sizeof(cachedInsightTs), "%Y-%m-%dT%H:%M:%S", &t);
+    cachedInsightText   = text;
+    cachedInsightSource = source;
+    lastAutoInsightMs   = millis();  // refresh after the 2-3s blocking call
+    autoInsightBootDone = true;
+    Serial.printf("[insight] auto-cached (source=%s)\n", source.c_str());
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -1278,23 +1559,6 @@ void setup() {
 void loop() {
     unsigned long now = millis();
 
-    // /insight — deferred Anthropic call. Blocks loop() for ~2-3s on a live API call;
-    // SCD40 (5s cadence) and the slow DS18B20 read (30s) tolerate this. Watchdog default is 5s.
-    if (pendingInsightReq != nullptr) {
-        AsyncWebServerRequest* req = pendingInsightReq;
-        pendingInsightReq = nullptr;  // clear first — re-entry safe
-        String source;
-        String text = callAnthropic(source);
-        char ts[25] = "now";
-        struct tm t;
-        if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
-        String json = "{\"text\":\"" + jsonEscape(text)
-                    + "\",\"generated_at\":\"" + String(ts)
-                    + "\",\"source\":\"" + source + "\"}";
-        req->send(200, "application/json", json);
-        now = millis();  // refresh — we just spent a few seconds on the API call
-    }
-
     // Read SCD40
     if (now - lastScd40Read >= INTERVAL_SCD40) {
         lastScd40Read = now;
@@ -1314,20 +1578,26 @@ void loop() {
         }
     }
 
-    // Read DS18B20
-    if (now - lastDs18b20Read >= INTERVAL_DS18B20) {
+    // Read DS18B20 (only if a probe was found at boot — v1 hub has no wired probe)
+    if (now - lastDs18b20Read >= INTERVAL_DS18B20 && ds18b20.getDeviceCount() > 0) {
         lastDs18b20Read = now;
         ds18b20.requestTemperatures();
         float t = ds18b20.getTempCByIndex(0);
         if (t != DEVICE_DISCONNECTED_C) {
-            tempOutWired = t;
+            tempOutWired      = t;
+            tempOutWiredValid = true;
+            lastWiredOkMs     = now;
         }
     }
 
-    // Prefer wireless when fresh; fall back to wired if C3 is silent
+    // Prefer wireless when fresh; fall back to wired if C3 is silent; mark invalid if neither
     bool wirelessFresh = lastOutdoorPostMs > 0 &&
                          (now - lastOutdoorPostMs < OUTDOOR_STALE_MS);
-    readings.tempOut = wirelessFresh ? tempOutWireless : tempOutWired;
+    bool wiredFresh    = tempOutWiredValid &&
+                         (now - lastWiredOkMs < OUTDOOR_STALE_MS);
+    if (wirelessFresh)   { readings.tempOut = tempOutWireless; readings.tempOutValid = true; }
+    else if (wiredFresh) { readings.tempOut = tempOutWired;    readings.tempOutValid = true; }
+    else                 { readings.tempOutValid = false; }
 
     // Control logic — web override > physical switch > auto
     if (override_mode == OVR_ON) {
@@ -1365,4 +1635,8 @@ void loop() {
         lastOledUpdate = now;
         updateOled();
     }
+
+    // Auto-regen insight (boot + every 60s). Last in loop iteration so it doesn't
+    // delay LED/OLED/control updates above. Blocks loop ~2-3s per fire.
+    maybeAutoInsight(now);
 }

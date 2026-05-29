@@ -37,7 +37,7 @@
 #define OLED_HEIGHT   64
 
 // Control thresholds
-#define COOLING_DELTA_C    1.7f   // ~3°F — fan ON if indoor temp exceeds outdoor by this much
+#define COOLING_DELTA_C    2.8f   // ~5°F — fan ON only if indoor exceeds outdoor by this much (matches Firmware v2 spec; 5°F is the honest floor for felt convective cooling + keeps headroom above the 3°F hysteresis floor)
 #define CO2_THRESHOLD      800    // ppm — fan ON above this level
 #define CO2_ALARM_PPM      1000   // ppm — red LED alarm
 #define HUMIDITY_THRESHOLD 65.0f  // %RH — fan ON above this level

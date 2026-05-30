@@ -627,12 +627,41 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
 .duty-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
 .duty-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
 .duty-sub{font-size:11px;color:var(--muted);margin-top:6px;}
+/* --- sidebar nav + views (F1) --- */
+.hamburger{background:none;border:none;font-size:22px;color:var(--green);cursor:pointer;padding:2px 8px;line-height:1;margin-right:2px;}
+.sidebar{position:fixed;top:0;left:0;height:100%;width:226px;background:var(--tile);border-right:1px solid var(--border);box-shadow:2px 0 14px rgba(0,0,0,.08);transform:translateX(-100%);transition:transform .22s ease;z-index:50;padding:18px 0;}
+.sidebar.open{transform:translateX(0);}
+.sidebar-title{font-size:13px;font-weight:700;color:var(--green);letter-spacing:.5px;padding:0 20px 14px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:13px 20px;font-size:15px;color:var(--fg);cursor:pointer;font-weight:500;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--tile-alt);}
+.nav-item.active{color:var(--green);border-left-color:var(--green);background:var(--green-light);}
+.nav-ico{width:18px;text-align:center;}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40;}
+.scrim.open{opacity:1;pointer-events:auto;}
+.view{display:none;}
+.view.active{display:block;}
+body.viewer .nav-controls{display:none;}
+#trend-chart{width:100%;height:240px;display:block;}
+.trend-cap{font-size:12px;color:var(--muted);margin-top:10px;text-align:center;}
+/* --- dodi tip bubble (N1) --- */
+.dodi-bubble{position:fixed;left:50%;top:62px;transform:translateX(-50%) translateY(8px);width:calc(100% - 40px);max-width:320px;background:var(--fg);color:#fff;padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.45;box-shadow:0 6px 20px rgba(0,0,0,.24);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;}
+.dodi-bubble.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.dodi-bubble::before{content:"";position:absolute;top:-6px;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid var(--fg);}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head><body>
-<header><h1>Ventis</h1><span class="location" id="location">DORM ROOM</span></header>
+<header><button class="hamburger" onclick="toggleNav()" aria-label="menu">&#9776;</button><h1>Ventis</h1><span class="location" id="location">DORM ROOM</span></header>
 <div class="viewer-badge">&#128065; Live view &middot; controls disabled</div>
 <div class="outdoor-banner" id="outdoor-banner">&#9888; Outdoor sensor offline &mdash; cooling mode disabled until C3 node reports.</div>
+<div class="scrim" id="scrim" onclick="toggleNav()"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-title">VENTIS</div>
+  <div class="nav-item active" data-view="live" onclick="showView('live')"><span class="nav-ico">&#128065;</span>Live</div>
+  <div class="nav-item" data-view="trend" onclick="showView('trend')"><span class="nav-ico">&#128200;</span>Trends</div>
+  <div class="nav-item nav-controls" data-view="controls" onclick="showView('controls')"><span class="nav-ico">&#9881;</span>Controls</div>
+</nav>
+<div class="dodi-bubble" id="dodi-bubble"></div>
+<div class="view active" id="view-live">
 <div class="tile dodi-callout-tile" id="dodi-callout">
   <div class="dodo-mascot pixel-art calm" id="dodo-pixel-v2">
     <svg viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -978,7 +1007,7 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
     <div class="dodi-sub" id="dodi-sub">Air quality is great</div>
   </div>
 </div>
-<div class="tile co2-tile" id="co2-tile">
+<div class="tile co2-tile" id="co2-tile" onclick="dodiTip('co2')">
   <div class="co2-header">
     <div>
       <div class="co2-label">CO2</div>
@@ -990,7 +1019,7 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
   <svg id="chart" class="co2-chart-mini" viewBox="0 0 600 80" preserveAspectRatio="none"></svg>
 </div>
 <div class="row">
-  <div class="tile metric-tile temp-tile" id="temp-tile" onclick="toggleSetpoint()">
+  <div class="tile metric-tile temp-tile" id="temp-tile" onclick="toggleSetpoint();dodiTip('temp')">
     <div class="metric-label">TEMP <span class="setpoint-chev" id="setpoint-chev">&#9662;</span></div>
     <div class="metric-value"><span id="tempIn">--</span>&deg;F</div>
     <div class="setpoint-pop" id="setpoint-pop">
@@ -1008,7 +1037,7 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
     <div class="metric-value"><span id="humidity">--</span>%</div>
   </div>
 </div>
-<div class="tile fan-tile idle" id="fan-tile">
+<div class="tile fan-tile idle" id="fan-tile" onclick="dodiTip('fan')">
   <div class="fan-status">
     <div class="fan-state" id="fan-state">FAN IDLE</div>
     <div class="fan-duty"><span id="fan-duty">0%</span><span class="fan-duty-suffix">duty</span></div>
@@ -1024,7 +1053,7 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
     </svg>
   </div>
 </div>
-<div class="tile insight-tile always-on" id="insight-tile">
+<div class="tile insight-tile always-on" id="insight-tile" onclick="dodiTip('insight')">
   <div class="insight-header">
     <span class="insight-dot"></span>
     <span class="insight-badge">DODI &middot; ON-DEVICE</span>
@@ -1033,7 +1062,16 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
   </div>
   <div class="insight-text" id="insight-text">Just settling in. Let me get a read on the room...</div>
 </div>
-<div class="tile manual-tile" id="manual-tile" onclick="toggleManual()">
+</div><!-- /view-live -->
+<div class="view" id="view-trend">
+  <div class="tile">
+    <div class="metric-label" style="margin-bottom:6px;">CO&#8322; &mdash; recent history</div>
+    <svg id="trend-chart" viewBox="0 0 600 240" preserveAspectRatio="none"></svg>
+    <div class="trend-cap">Live samples &middot; shaded bands = ASHRAE zones (800 / 1000 ppm)</div>
+  </div>
+</div>
+<div class="view" id="view-controls">
+<div class="tile manual-tile" id="manual-tile" onclick="toggleManual();dodiTip('manual')">
   <div class="metric-label" style="margin-bottom:10px;">Manual Override <span class="setpoint-chev" id="manual-chev">&#9662;</span></div>
   <div class="controls">
     <button data-mode="auto" class="active" onclick="event.stopPropagation();setMode('auto')">Auto</button>
@@ -1065,6 +1103,7 @@ body.viewer .insight-tile.always-on:active{opacity:1;}
     <button class="log-btn stop" onclick="stopLog()">Stop</button>
   </div>
 </div>
+</div><!-- /view-controls -->
 <script>
 const USE_MOCK=location.search.includes('mock=1');
 const IS_CONTROLLER=location.search.includes('ctl=1');
@@ -1072,6 +1111,50 @@ if(!IS_CONTROLLER)document.body.classList.add('viewer');
 if(location.search.includes('demo'))document.body.classList.add('demo-mode');
 const DATA_URL=USE_MOCK?'/mock-data.json':'/data';
 const HIST_URL=USE_MOCK?'/mock-history.json':'/history';
+/* --- sidebar nav + views (F1) --- */
+function toggleNav(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('scrim').classList.toggle('open');}
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===v));
+  toggleNav();
+  if(v==='trend')refreshHistory();
+}
+/* --- dodi tip bubbles (N1) --- */
+const DODI_TIPS={
+  co2:"The CO₂ you're breathing back in. Past 1,000 ppm your focus quietly drops. I watch it so you don't have to.",
+  temp:"Inside versus outside. When it's cooler out there, that's my cue to pull fresh air in.",
+  fan:"How hard I'm running the fan, 0 to 100%. I only spin up when it'll actually help — no wasted noise.",
+  insight:"This is me, thinking. I read the room every few seconds and say what I'd do and why — all on the chip, no server.",
+  manual:"Auto means I'm driving. Switch to manual to take the wheel — set a target and I'll hold it."
+};
+let _bubbleTimer=null;
+function dodiTip(key){
+  const b=document.getElementById('dodi-bubble');if(!b||!DODI_TIPS[key])return;
+  b.textContent=DODI_TIPS[key];b.classList.add('show');
+  clearTimeout(_bubbleTimer);_bubbleTimer=setTimeout(()=>b.classList.remove('show'),5200);
+}
+/* --- trend view chart (F3) — larger version of the live sparkline --- */
+function renderTrendChart(samples){
+  if(!samples||samples.length<2)return;
+  const W=600,H=240,padL=34,padB=16;
+  const maxCo2=Math.max(1200,...samples.map(s=>s.co2)),minCo2=400;
+  const tMin=samples[0].t,tMax=samples[samples.length-1].t,tRange=tMax-tMin||1;
+  const x=t=>padL+((t-tMin)/tRange)*(W-padL);
+  const y=ppm=>(H-padB)-((ppm-minCo2)/(maxCo2-minCo2))*(H-padB);
+  const yRed=y(1000),yAmber=y(800);let s='';
+  s+=`<rect x="${padL}" y="0" width="${W-padL}" height="${yRed}" fill="#ffebee" opacity="0.6"/>`;
+  s+=`<rect x="${padL}" y="${yRed}" width="${W-padL}" height="${yAmber-yRed}" fill="#fff7e0" opacity="0.6"/>`;
+  s+=`<rect x="${padL}" y="${yAmber}" width="${W-padL}" height="${(H-padB)-yAmber}" fill="#e8f5e9" opacity="0.6"/>`;
+  s+=`<line x1="${padL}" y1="${yRed}" x2="${W}" y2="${yRed}" stroke="#c62828" stroke-dasharray="4 4" opacity="0.5"/>`;
+  s+=`<line x1="${padL}" y1="${yAmber}" x2="${W}" y2="${yAmber}" stroke="#b87900" stroke-dasharray="4 4" opacity="0.5"/>`;
+  s+=`<text x="2" y="${yRed+4}" font-size="13" fill="#5e6b5e">1000</text>`;
+  s+=`<text x="6" y="${yAmber+4}" font-size="13" fill="#5e6b5e">800</text>`;
+  const pts=samples.map(p=>`${x(p.t).toFixed(1)},${y(p.co2).toFixed(1)}`).join(' ');
+  s+=`<polyline points="${pts}" fill="none" stroke="#1e6e3a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const last=samples[samples.length-1];
+  s+=`<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.co2).toFixed(1)}" r="5" fill="#1e6e3a"/>`;
+  document.getElementById('trend-chart').innerHTML=s;
+}
 let _lastTier='green';
 function tier(ppm){
   // Hysteresis (20 ppm on downward edges) — prevents UI flicker when CO2 jitters near thresholds.
@@ -1133,7 +1216,7 @@ async function refreshData(){
   }catch(e){}
 }
 async function refreshHistory(){
-  try{const r=await fetch(HIST_URL);const d=await r.json();renderChart(d.samples);}catch(e){}
+  try{const r=await fetch(HIST_URL);const d=await r.json();renderChart(d.samples);renderTrendChart(d.samples);}catch(e){}
 }
 function renderChart(samples){
   if(!samples||samples.length<2)return;

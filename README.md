@@ -31,6 +31,32 @@ Ventis/
 
 ---
 
+## `main.cpp` at a glance — what each block is
+
+`firmware/src/main.cpp` is one file (~1,725 lines) but it's cleanly divided by
+`// ── Section ──` header comments. Here's what each block is and its category:
+
+| Lines | Section | What it does | Category |
+|---|---|---|---|
+| 1–18 | includes + helpers | libraries (WiFi, SCD40, SSD1306 OLED, async web server) + `toF()` | setup |
+| 21–28 | **Sensors** | SCD40 / DS18B20 / OLED / web-server object declarations | sensors |
+| 29–118 | **State** | global `readings` struct, mode switch, history ring buffer, insight timers | state |
+| 119–177 | **Control logic** | fan decision (`evaluateFan`), duty %, **fan PWM output**, history push | control |
+| 178–201 | **Google Sheets logger** | POSTs readings to the Sheets web-app for data logging | networking |
+| 202–229 | **RGB LED** | CO₂-colored status LED — green / amber / red | hardware |
+| 230–253 | **OLED** | draws the 128×64 status screen (CO₂, temp, fan, IP) | hardware |
+| 254–466 | **/insight helpers** | builds Dodi's AI text; calls the Anthropic API (offline fallback if no key/WiFi) | backend (AI) |
+| **469–1385** | **`INDEX_HTML`** | **the dashboard — HTML + CSS + JS served to phones** | **FRONTEND** |
+| 1387–1537 | setupServer + auto-insight | HTTP routes: `/`, `/data`, `/history`, `/control`, `/insight`, `/log/*` | backend (API) |
+| 1538–1639 | **Setup** | boot sequence: pin/PWM init, OLED, SCD40, DS18B20, **WiFi connect + AP**, start server | wifi / init |
+| 1640–1725 | **Loop** | the heartbeat: read sensors → control → push history → log → redraw OLED → update LED | orchestration |
+
+> Line numbers drift as the file is edited — jump by searching for the `// ── ` section headers
+> (e.g. `// ── OLED ──`). **For UI work you only care about the one bold row (`INDEX_HTML`),** and
+> even then you edit `dev/index.html`, not this file. Everything else is firmware/backend.
+
+---
+
 ## Where the frontend lives (read this first)
 
 This is an **embedded** project, so there is **no React app and no `src/components/` folder**.

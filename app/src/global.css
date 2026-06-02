@@ -1,0 +1,89 @@
+:root {
+  --bg: #edf2ed;
+  --tile: #ffffff;
+  --tile-alt: #f7faf6;
+  --fg: #1f2a1f;
+  --muted: #5e6b5e;
+  --green: #1e6e3a;
+  --green-hover: #155026;
+  --green-light: #e8f5e9;
+  --amber: #b87900;
+  --amber-light: #fff7e0;
+  --red: #c62828;
+  --red-light: #ffebee;
+  --border: #d0dbd0;
+  --shadow: 0 2px 8px rgba(30, 110, 58, 0.10), 0 1px 2px rgba(30, 110, 58, 0.06);
+  --header-h: 56px;
+  --nav-h: 56px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+@keyframes pulse {
+  50% { opacity: 0.3; }
+}
+
+@keyframes fan-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dodi-fly-in {
+  0%   { transform: translate(60px, 120px) scale(0.5) rotate(20deg); opacity: 0; }
+  25%  { opacity: 1; }
+  55%  { transform: translate(-18px, -12px) scale(1.1) rotate(-6deg); }
+  75%  { transform: translate(8px, 6px) scale(0.96) rotate(3deg); }
+  88%  { transform: translate(-4px, -3px) scale(1.02) rotate(-1deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes dodi-hover {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+
+@keyframes dodi-wander {
+  0%   { transform: translate(0px, 0px) rotate(0deg); }
+  14%  { transform: translate(88px, 18px) rotate(11deg); }
+  28%  { transform: translate(65px, -18px) rotate(7deg); }
+  42%  { transform: translate(-30px, -24px) rotate(-5deg); }
+  57%  { transform: translate(-92px, 12px) rotate(-12deg); }
+  71%  { transform: translate(-68px, -20px) rotate(-8deg); }
+  85%  { transform: translate(40px, -10px) rotate(6deg); }
+  100% { transform: translate(0px, 0px) rotate(0deg); }
+}
+
+@keyframes bubble-in {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes sheet-up {
+  0%   { transform: translateY(40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}

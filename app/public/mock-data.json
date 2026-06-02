@@ -1,0 +1,18 @@
+{
+  "co2": 945,
+  "tempIn": 23.4,
+  "humidity": 53,
+  "tempOut": 20.1,
+  "tempOutValid": true,
+  "setpointF": 75,
+  "manualDutyPct": 100,
+  "insightText": "CO₂ peaked at 1,057 ppm a few minutes ago — outdoor air is a comfortable 68°F so I spun up the fan. We're back at 945 and still easing down. Should be under 900 in about 5 minutes if the window stays closed.",
+  "insightTs": 1748801740000,
+  "insightSource": "live",
+  "fanOn": true,
+  "reason": "CO₂ > 900 ppm, outdoor is cooler",
+  "duty": 140,
+  "logEnabled": false,
+  "runLabel": "",
+  "logRowCount": 0
+}

@@ -1,0 +1,965 @@
+{
+  "interval_ms": 30000,
+  "samples": [
+    {
+      "t": 1748800000000,
+      "co2": 700,
+      "tempIn": 22.2,
+      "humidity": 48,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800030000,
+      "co2": 699,
+      "tempIn": 22.4,
+      "humidity": 48,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748800060000,
+      "co2": 710,
+      "tempIn": 22.3,
+      "humidity": 50,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748800090000,
+      "co2": 716,
+      "tempIn": 22.4,
+      "humidity": 49,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748800120000,
+      "co2": 711,
+      "tempIn": 22.3,
+      "humidity": 49,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800150000,
+      "co2": 715,
+      "tempIn": 22.4,
+      "humidity": 50,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748800180000,
+      "co2": 720,
+      "tempIn": 22.5,
+      "humidity": 49,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800210000,
+      "co2": 726,
+      "tempIn": 22.4,
+      "humidity": 49,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748800240000,
+      "co2": 721,
+      "tempIn": 22.4,
+      "humidity": 49,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800270000,
+      "co2": 733,
+      "tempIn": 22.4,
+      "humidity": 51,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800300000,
+      "co2": 738,
+      "tempIn": 22.5,
+      "humidity": 51,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748800330000,
+      "co2": 733,
+      "tempIn": 22.4,
+      "humidity": 49,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800360000,
+      "co2": 740,
+      "tempIn": 22.6,
+      "humidity": 50,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800390000,
+      "co2": 738,
+      "tempIn": 22.5,
+      "humidity": 52,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800420000,
+      "co2": 749,
+      "tempIn": 22.6,
+      "humidity": 49,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748800450000,
+      "co2": 754,
+      "tempIn": 22.5,
+      "humidity": 50,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748800480000,
+      "co2": 748,
+      "tempIn": 22.5,
+      "humidity": 51,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800510000,
+      "co2": 754,
+      "tempIn": 22.6,
+      "humidity": 49,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800540000,
+      "co2": 760,
+      "tempIn": 22.7,
+      "humidity": 50,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748800570000,
+      "co2": 761,
+      "tempIn": 22.6,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800600000,
+      "co2": 754,
+      "tempIn": 22.7,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800630000,
+      "co2": 775,
+      "tempIn": 22.6,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748800660000,
+      "co2": 777,
+      "tempIn": 22.7,
+      "humidity": 52,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748800690000,
+      "co2": 794,
+      "tempIn": 22.6,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800720000,
+      "co2": 808,
+      "tempIn": 22.6,
+      "humidity": 52,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748800750000,
+      "co2": 806,
+      "tempIn": 22.7,
+      "humidity": 50,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800780000,
+      "co2": 815,
+      "tempIn": 22.7,
+      "humidity": 51,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748800810000,
+      "co2": 834,
+      "tempIn": 22.8,
+      "humidity": 53,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748800840000,
+      "co2": 850,
+      "tempIn": 22.8,
+      "humidity": 50,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800870000,
+      "co2": 858,
+      "tempIn": 22.8,
+      "humidity": 52,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748800900000,
+      "co2": 859,
+      "tempIn": 22.8,
+      "humidity": 52,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748800930000,
+      "co2": 879,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800960000,
+      "co2": 884,
+      "tempIn": 22.9,
+      "humidity": 51,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748800990000,
+      "co2": 892,
+      "tempIn": 22.8,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801020000,
+      "co2": 907,
+      "tempIn": 22.9,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801050000,
+      "co2": 919,
+      "tempIn": 23,
+      "humidity": 51,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748801080000,
+      "co2": 923,
+      "tempIn": 22.9,
+      "humidity": 51,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748801110000,
+      "co2": 932,
+      "tempIn": 22.9,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748801140000,
+      "co2": 945,
+      "tempIn": 22.9,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748801170000,
+      "co2": 954,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748801200000,
+      "co2": 974,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801230000,
+      "co2": 982,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801260000,
+      "co2": 990,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801290000,
+      "co2": 993,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748801320000,
+      "co2": 1004,
+      "tempIn": 23,
+      "humidity": 52,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801350000,
+      "co2": 1024,
+      "tempIn": 23.1,
+      "humidity": 54,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748801380000,
+      "co2": 1036,
+      "tempIn": 23.1,
+      "humidity": 53,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748801410000,
+      "co2": 1043,
+      "tempIn": 23.2,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748801440000,
+      "co2": 1049,
+      "tempIn": 23.2,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801470000,
+      "co2": 1065,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748801500000,
+      "co2": 1060,
+      "tempIn": 23.1,
+      "humidity": 53,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748801530000,
+      "co2": 1040,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748801560000,
+      "co2": 1035,
+      "tempIn": 23.2,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748801590000,
+      "co2": 1021,
+      "tempIn": 23.2,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": true
+    },
+    {
+      "t": 1748801620000,
+      "co2": 1004,
+      "tempIn": 23.2,
+      "humidity": 55,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748801650000,
+      "co2": 986,
+      "tempIn": 23.1,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": true
+    },
+    {
+      "t": 1748801680000,
+      "co2": 978,
+      "tempIn": 23.2,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": true
+    },
+    {
+      "t": 1748801710000,
+      "co2": 961,
+      "tempIn": 23.2,
+      "humidity": 55,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748801740000,
+      "co2": 947,
+      "tempIn": 23,
+      "humidity": 55,
+      "tempOut": 20,
+      "fanOn": true
+    },
+    {
+      "t": 1748801770000,
+      "co2": 925,
+      "tempIn": 23.1,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": true
+    },
+    {
+      "t": 1748801800000,
+      "co2": 911,
+      "tempIn": 23.1,
+      "humidity": 53,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748801830000,
+      "co2": 909,
+      "tempIn": 23.1,
+      "humidity": 56,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748801860000,
+      "co2": 889,
+      "tempIn": 23,
+      "humidity": 54,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748801890000,
+      "co2": 873,
+      "tempIn": 23,
+      "humidity": 55,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748801920000,
+      "co2": 862,
+      "tempIn": 23,
+      "humidity": 55,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748801950000,
+      "co2": 854,
+      "tempIn": 23,
+      "humidity": 55,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748801980000,
+      "co2": 857,
+      "tempIn": 22.9,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802010000,
+      "co2": 862,
+      "tempIn": 23.1,
+      "humidity": 54,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802040000,
+      "co2": 856,
+      "tempIn": 23,
+      "humidity": 56,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802070000,
+      "co2": 854,
+      "tempIn": 23.1,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802100000,
+      "co2": 854,
+      "tempIn": 23,
+      "humidity": 54,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802130000,
+      "co2": 847,
+      "tempIn": 23,
+      "humidity": 53,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802160000,
+      "co2": 851,
+      "tempIn": 23.2,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802190000,
+      "co2": 843,
+      "tempIn": 23.2,
+      "humidity": 56,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802220000,
+      "co2": 842,
+      "tempIn": 23.1,
+      "humidity": 54,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802250000,
+      "co2": 842,
+      "tempIn": 23.1,
+      "humidity": 54,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802280000,
+      "co2": 845,
+      "tempIn": 23.1,
+      "humidity": 54,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802310000,
+      "co2": 844,
+      "tempIn": 23.2,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802340000,
+      "co2": 848,
+      "tempIn": 23.2,
+      "humidity": 56,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802370000,
+      "co2": 843,
+      "tempIn": 23.3,
+      "humidity": 55,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802400000,
+      "co2": 846,
+      "tempIn": 23.2,
+      "humidity": 55,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748802430000,
+      "co2": 853,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802460000,
+      "co2": 862,
+      "tempIn": 23.2,
+      "humidity": 54,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748802490000,
+      "co2": 871,
+      "tempIn": 23.2,
+      "humidity": 53,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748802520000,
+      "co2": 878,
+      "tempIn": 23.3,
+      "humidity": 55,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748802550000,
+      "co2": 887,
+      "tempIn": 23.2,
+      "humidity": 56,
+      "tempOut": 20.3,
+      "fanOn": false
+    },
+    {
+      "t": 1748802580000,
+      "co2": 889,
+      "tempIn": 23.4,
+      "humidity": 55,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802610000,
+      "co2": 898,
+      "tempIn": 23.3,
+      "humidity": 54,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802640000,
+      "co2": 909,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802670000,
+      "co2": 926,
+      "tempIn": 23.3,
+      "humidity": 54,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802700000,
+      "co2": 933,
+      "tempIn": 23.4,
+      "humidity": 54,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802730000,
+      "co2": 943,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802760000,
+      "co2": 947,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802790000,
+      "co2": 959,
+      "tempIn": 23.5,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": false
+    },
+    {
+      "t": 1748802820000,
+      "co2": 961,
+      "tempIn": 23.5,
+      "humidity": 55,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802850000,
+      "co2": 975,
+      "tempIn": 23.5,
+      "humidity": 55,
+      "tempOut": 20,
+      "fanOn": false
+    },
+    {
+      "t": 1748802880000,
+      "co2": 982,
+      "tempIn": 23.5,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802910000,
+      "co2": 991,
+      "tempIn": 23.4,
+      "humidity": 52,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748802940000,
+      "co2": 998,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": false
+    },
+    {
+      "t": 1748802970000,
+      "co2": 1007,
+      "tempIn": 23.5,
+      "humidity": 55,
+      "tempOut": 20.2,
+      "fanOn": false
+    },
+    {
+      "t": 1748803000000,
+      "co2": 1008,
+      "tempIn": 23.5,
+      "humidity": 54,
+      "tempOut": 20.3,
+      "fanOn": true
+    },
+    {
+      "t": 1748803030000,
+      "co2": 1007,
+      "tempIn": 23.4,
+      "humidity": 52,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748803060000,
+      "co2": 1006,
+      "tempIn": 23.5,
+      "humidity": 53,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803090000,
+      "co2": 1004,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748803120000,
+      "co2": 998,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803150000,
+      "co2": 987,
+      "tempIn": 23.5,
+      "humidity": 53,
+      "tempOut": 20.3,
+      "fanOn": true
+    },
+    {
+      "t": 1748803180000,
+      "co2": 995,
+      "tempIn": 23.5,
+      "humidity": 54,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748803210000,
+      "co2": 983,
+      "tempIn": 23.5,
+      "humidity": 55,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803240000,
+      "co2": 987,
+      "tempIn": 23.4,
+      "humidity": 52,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803270000,
+      "co2": 978,
+      "tempIn": 23.4,
+      "humidity": 54,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803300000,
+      "co2": 972,
+      "tempIn": 23.4,
+      "humidity": 54,
+      "tempOut": 20.3,
+      "fanOn": true
+    },
+    {
+      "t": 1748803330000,
+      "co2": 971,
+      "tempIn": 23.4,
+      "humidity": 54,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803360000,
+      "co2": 967,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748803390000,
+      "co2": 961,
+      "tempIn": 23.5,
+      "humidity": 54,
+      "tempOut": 20.2,
+      "fanOn": true
+    },
+    {
+      "t": 1748803420000,
+      "co2": 963,
+      "tempIn": 23.5,
+      "humidity": 54,
+      "tempOut": 20.1,
+      "fanOn": true
+    },
+    {
+      "t": 1748803450000,
+      "co2": 955,
+      "tempIn": 23.5,
+      "humidity": 54,
+      "tempOut": 20.3,
+      "fanOn": true
+    },
+    {
+      "t": 1748803480000,
+      "co2": 952,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 20.3,
+      "fanOn": true
+    },
+    {
+      "t": 1748803510000,
+      "co2": 956,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748803540000,
+      "co2": 952,
+      "tempIn": 23.4,
+      "humidity": 53,
+      "tempOut": 19.9,
+      "fanOn": true
+    },
+    {
+      "t": 1748803570000,
+      "co2": 942,
+      "tempIn": 23.3,
+      "humidity": 53,
+      "tempOut": 20,
+      "fanOn": true
+    }
+  ]
+}

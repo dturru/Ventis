@@ -48,7 +48,9 @@
 #define INTERVAL_OLED     1000   // OLED redraw cadence (decoupled from sensor read — repaints cached readings + live state)
 
 // Google Sheets logger
-#define SHEETS_URL   "https://script.google.com/macros/s/AKfycbwBiCM6SlmVnw8-vi2htEFvyK16HTt9hWD-U46EZVeYU6-Zm8fLjJlekcMcTeHTh_II/exec"
+// 2026-06-01: repointed to the v3 schema deployment (writes the locked `telemetry` tab).
+// Old per-run-tab deployment was: AKfycbwBiCM6SlmVnw8-vi2htEFvyK16HTt9hWD-U46EZVeYU6-Zm8fLjJlekcMcTeHTh_II
+#define SHEETS_URL   "https://script.google.com/macros/s/AKfycbxGhE2Pz5Lp1xlLEwjpfPZI9cyJkNz3nbioRvHkJfGn5dgp94_JDueu67judZPQumFmWQ/exec"
 #define RUN_LABEL    "unlabeled"      // change before each run: e.g. "dorm_window_only"
 #define LOG_INTERVAL 30000            // ms between log writes (30s matches old Pi logger)
 

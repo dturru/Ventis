@@ -145,7 +145,7 @@ export function LiveView({
         source={insightSource}
         latencyMs={insightLatencyMs}
         isController={isController}
-        onTap={() => { onTip('insight'); onInsightRefresh() }}
+        onTap={() => { onTip('insight'); if (isController) onInsightRefresh() }}
       />
 
       <SessionStats samples={samples} />

@@ -15,6 +15,14 @@ outdoor-node/include/secrets.h
 *.env
 .env.local
 
+# Ventis live-sheet pull: service-account key + raw telemetry dumps.
+# The dataset is the moat — never commit it. The site uses the curated
+# site/src/data/runs.json, not these.
+*service_account*.json
+site/scripts/service_account.json
+site/scripts/telemetry_live.csv
+/Ventis*.csv
+
 # Python
 __pycache__/
 *.pyc

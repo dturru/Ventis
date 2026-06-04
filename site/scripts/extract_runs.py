@@ -16,6 +16,11 @@ Writes: ../src/data/runs.json
 import csv, json, os
 from datetime import datetime
 
+try:
+    import sheet_source  # same dir; optional — private live Google Sheets pull
+except ImportError:
+    sheet_source = None
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(HERE, "..", "src", "data", "runs.json"))
 
@@ -135,6 +140,57 @@ def from_fahey():
             out.append({"ts": parse_ts(r["timestamp"]), "co2": co2, "fan": fan,
                         "tempC": _num(r, "temp_c"), "hum": _num(r, "humidity_pct")})
     return bucketize(out)
+
+
+# ── Live Google Sheets source (private; for NEW runs, no CSV export) ──────────
+_TELEMETRY_CACHE = None
+
+
+def _telemetry_rows():
+    """Cached pull of the live `telemetry` tab, or None if not configured."""
+    global _TELEMETRY_CACHE
+    if _TELEMETRY_CACHE is None:
+        if sheet_source and sheet_source.sheet_configured():
+            try:
+                _TELEMETRY_CACHE = sheet_source.fetch_rows()
+                print(f"  [sheet] live: pulled {len(_TELEMETRY_CACHE)} telemetry rows")
+            except Exception as e:  # noqa: BLE001 — any failure → local fallback
+                print(f"  [sheet] live pull failed ({e}); using local CSVs only")
+                _TELEMETRY_CACHE = []
+        else:
+            _TELEMETRY_CACHE = []
+    return _TELEMETRY_CACHE or None
+
+
+def from_sheet(condition):
+    """Build a run's points from the live telemetry tab, filtered by `condition`.
+
+    Use this for NEW runs you log going forward — no CSV download needed. fan_duty
+    is auto-scaled: any value >100 is treated as a 0-255 PWM byte, else as 0-100 %.
+    Returns [] (skips the run) if the live sheet isn't configured."""
+    rows = _telemetry_rows()
+    if not rows:
+        print(f"  [sheet] '{condition}': no live data (sheet not configured) — skipped")
+        return []
+    raw = [r for r in rows if str(r.get("condition", "")).strip() == condition]
+    fans = [f for f in (_num(r, "fan_duty") for r in raw) if f is not None]
+    scale = 255.0 if (fans and max(fans) > 100) else 100.0
+    out = []
+    for r in raw:
+        try:
+            co2 = int(float(r["co2_ppm"]))
+        except (ValueError, KeyError, TypeError):
+            continue
+        fan = _num(r, "fan_duty")
+        out.append({"ts": parse_ts(str(r["timestamp"])), "co2": co2,
+                    "fan": round(fan / scale * 100) if fan is not None else None,
+                    "tempC": _num(r, "temp_c"), "hum": _num(r, "humidity_pct")})
+    return bucketize(out)
+
+
+# To add a NEW run to the site WITHOUT any CSV download: log it with a clean
+# label (e.g. "judge_closed_1ppl"), then add an entry to `runs` below using
+# points=from_sheet("judge_closed_1ppl"), and add its id to the `order` list.
 
 
 def peak(points):

@@ -1,0 +1,5 @@
+# Ventis data-extraction scripts.
+# Core extraction (extract_runs.py) needs only the stdlib.
+# These are for the optional private live Google Sheets pull (sheet_source.py):
+gspread>=6
+google-auth>=2

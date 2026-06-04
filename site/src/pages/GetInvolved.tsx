@@ -18,8 +18,9 @@ export function GetInvolved() {
             <div className="ico"><Icon name="bed" size={26} /></div>
             <h3>Residents</h3>
             <p>
-              Want one in your dorm this fall? Leave your info and you’ll be first in line
-              to try a unit — and to see your own room’s overnight numbers.
+              Want one this fall? Early access is for our <strong>v2 window unit</strong> —
+              the first integrated units, expected Fall 2026. Leave your info to be first in
+              line (and to see your own room’s overnight numbers).
             </p>
             <a className="btn" href={residentsCTA} target="_blank" rel="noreferrer">
               Get early access →

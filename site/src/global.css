@@ -338,6 +338,16 @@ img, svg { display: block; }
 .flow-step p { font-size: 14px; color: var(--muted); }
 .flow-arrow { display: grid; place-items: center; color: var(--green); opacity: 0.45; }
 
+.feels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0 0; }
+.feel {
+  background: var(--tile); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 22px; box-shadow: var(--shadow-sm);
+}
+.feel-ico { margin-bottom: 12px; }
+.feel h4 { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+.feel p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+.feels-note { font-size: 13px; color: var(--faint); font-style: italic; margin: 14px 0 0; max-width: 66ch; }
+
 .dodi-says {
   display: flex; gap: 18px; align-items: flex-start;
   background: var(--green-mist); border: 1px solid var(--line);
@@ -451,7 +461,7 @@ img, svg { display: block; }
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 880px) {
   .panels { grid-template-columns: repeat(2, 1fr); }
-  .points-grid, .flow, .evidence-rows { grid-template-columns: 1fr; }
+  .points-grid, .flow, .evidence-rows, .feels { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); }
   .cta-grid { grid-template-columns: 1fr; }
 }

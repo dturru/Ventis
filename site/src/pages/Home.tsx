@@ -47,7 +47,8 @@ export function Home() {
         </div>
 
         <p className="hero-sub">
-          Automatic, sensing-driven ventilation for <b>dorm rooms that don’t have it.</b>
+          Automatic ventilation for dorms without AC — <b>cool night air in, the CO₂ you
+          can’t feel out,</b> while you sleep.
         </p>
 
         <div className="hero-actions">

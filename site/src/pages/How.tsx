@@ -36,7 +36,7 @@ export function How() {
           <div className="flow-step">
             <div className="big"><Icon name="wind" size={28} /></div>
             <h4>Ventilates</h4>
-            <p>Pulls fresh outdoor air through the window. CO₂ drops; you stay asleep through all of it.</p>
+            <p>Pulls cooler outdoor air through the window. The room cools, the CO₂ drops, and you sleep through all of it.</p>
           </div>
         </div>
 
@@ -45,13 +45,40 @@ export function How() {
           <div className="bubble">
             <div className="who">Dodi · your room’s air, narrated</div>
             <p>
-              “I watch the numbers you can’t feel. When the CO₂ you’re breathing back in
-              starts to climb, I check whether the air outside will actually help — and if
-              it will, I open things up and pull it in. I only run when it’s worth the
-              noise. You just wake up sharp.”
+              “I watch the things you can’t feel. When your room’s warming up and the air
+              outside is cooler, I pull that in for you — and I do the same when the CO₂
+              you’re breathing back in starts to climb. I only run when it’s actually worth
+              it. You just wake up cool and sharp.”
             </p>
           </div>
         </div>
+
+        <div className="eyebrow" style={{ marginTop: 8 }}>What you actually feel</div>
+        <div className="feels">
+          <div className="feel">
+            <div className="feel-ico ico-badge"><Icon name="wind" size={20} /></div>
+            <h4>Cooler nights, automatically</h4>
+            <p>
+              When it’s cooler outside than in your room — most summer nights and early
+              mornings — Ventis pulls that air in for you. It’s the free cooling already
+              outside your window, captured at the right moment instead of depending on you
+              to remember the sash. The moving air reads as a breeze, too.
+            </p>
+          </div>
+          <div className="feel">
+            <div className="feel-ico ico-badge"><Icon name="invisible" size={20} /></div>
+            <h4>Air you can’t feel, handled</h4>
+            <p>
+              It clears the CO₂ that builds while you sleep — no smell, no sensation, but it
+              quietly dulls next-day focus.
+            </p>
+          </div>
+        </div>
+        <p className="feels-note">
+          Because it’s ventilation, not refrigeration, Ventis can’t cool below what’s
+          outside — but it never blows hot afternoon air in, either. It runs only when the
+          air outdoors will actually help.
+        </p>
 
         <div className="prose">
           <h2 className="section-title" style={{ fontSize: 26 }}>The closed loop</h2>

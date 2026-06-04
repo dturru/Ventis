@@ -14,6 +14,9 @@ export interface RunPoint {
   hod: number // continuous hour-of-day (start-day midnight = 0; carries past 24 overnight)
   co2: number
   fan?: number // % duty (Fahey only)
+  tempC?: number // indoor temperature, °C (measured; present where logged)
+  hum?: number // relative humidity, % (measured; present where logged)
+  tempOutC?: number // outdoor temperature, °C (EW run only)
 }
 
 export interface RunPhase {

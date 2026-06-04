@@ -37,31 +37,56 @@ def parse_ts(s):
     raise ValueError(f"bad ts {s!r}")
 
 
+def _mean(xs):
+    return sum(xs) / len(xs) if xs else None
+
+
 def bucketize(samples):
-    """samples: list of (datetime, co2, fan_or_None). Returns list of points."""
-    samples = [s for s in samples if s[1] is not None and s[1] > 0]
+    """samples: list of dicts {ts, co2, fan?, tempC?, hum?, tempOutC?}.
+
+    Returns 5-min-bucketed points. CO2 = mean, fan = max, temp/humidity = mean.
+    temp/humidity/outdoor are only emitted on points where source data exists
+    (never fabricated)."""
+    samples = [s for s in samples if s.get("co2") is not None and s["co2"] > 0]
     if not samples:
         return []
-    samples.sort(key=lambda x: x[0])
-    t0 = samples[0][0]
+    samples.sort(key=lambda x: x["ts"])
+    t0 = samples[0]["ts"]
     midnight = t0.replace(hour=0, minute=0, second=0, microsecond=0)
     buckets = {}
-    for ts, co2, fan in samples:
-        key = int((ts - t0).total_seconds() // (BUCKET_MIN * 60))
-        b = buckets.setdefault(key, {"co2": [], "fan": [], "ts": ts})
-        b["co2"].append(co2)
-        if fan is not None:
-            b["fan"].append(fan)
+    for s in samples:
+        key = int((s["ts"] - t0).total_seconds() // (BUCKET_MIN * 60))
+        b = buckets.setdefault(key, {"co2": [], "fan": [], "tempC": [], "hum": [], "tempOutC": [], "ts": s["ts"]})
+        b["co2"].append(s["co2"])
+        for fld in ("fan", "tempC", "hum", "tempOutC"):
+            if s.get(fld) is not None:
+                b[fld].append(s[fld])
     pts = []
     for key in sorted(buckets):
         b = buckets[key]
-        ts = b["ts"]
-        hod = round((ts - midnight).total_seconds() / 3600.0, 3)
-        p = {"hod": hod, "co2": round(sum(b["co2"]) / len(b["co2"]))}
+        hod = round((b["ts"] - midnight).total_seconds() / 3600.0, 3)
+        p = {"hod": hod, "co2": round(_mean(b["co2"]))}
         if b["fan"]:
             p["fan"] = round(max(b["fan"]))
+        if b["tempC"]:
+            p["tempC"] = round(_mean(b["tempC"]), 1)
+        if b["hum"]:
+            p["hum"] = round(_mean(b["hum"]))
+        if b["tempOutC"]:
+            p["tempOutC"] = round(_mean(b["tempOutC"]), 1)
         pts.append(p)
     return pts
+
+
+def _num(row, *keys):
+    for k in keys:
+        v = row.get(k, "")
+        if v is not None and str(v).strip() != "":
+            try:
+                return float(v)
+            except ValueError:
+                pass
+    return None
 
 
 def from_vault(label):
@@ -74,7 +99,8 @@ def from_vault(label):
                 co2 = int(float(r["co2_ppm"]))
             except (ValueError, KeyError):
                 continue
-            out.append((parse_ts(r["timestamp"]), co2, None))
+            out.append({"ts": parse_ts(r["timestamp"]), "co2": co2,
+                        "tempC": _num(r, "temp_c"), "hum": _num(r, "humidity_pct")})
     return bucketize(out)
 
 
@@ -86,7 +112,9 @@ def from_ew():
                 co2 = int(float(r["co2"]))
             except (ValueError, KeyError):
                 continue
-            out.append((parse_ts(r["timestamp"]), co2, None))
+            out.append({"ts": parse_ts(r["timestamp"]), "co2": co2,
+                        "tempC": _num(r, "temp_in_c"), "hum": _num(r, "humidity_pct"),
+                        "tempOutC": _num(r, "temp_out_c")})
     return bucketize(out)
 
 
@@ -101,12 +129,11 @@ def from_fahey():
             except (ValueError, KeyError):
                 continue
             # fan_duty 0-255 -> percent (128 ~= 50% per field notes)
-            fan = None
-            try:
-                fan = round(float(r["fan_duty"]) / 255.0 * 100)
-            except (ValueError, KeyError):
-                fan = None
-            out.append((parse_ts(r["timestamp"]), co2, fan))
+            fan = _num(r, "fan_duty")
+            if fan is not None:
+                fan = round(fan / 255.0 * 100)
+            out.append({"ts": parse_ts(r["timestamp"]), "co2": co2, "fan": fan,
+                        "tempC": _num(r, "temp_c"), "hum": _num(r, "humidity_pct")})
     return bucketize(out)
 
 

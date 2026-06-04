@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom'
-import { DemoPlayer } from '../components/DemoPlayer'
+import { DeviceDemo } from '../components/DeviceDemo'
 
 export function Demo() {
   return (
     <div className="page">
       <div className="wrap" style={{ maxWidth: 860 }}>
         <div className="eyebrow">Interactive Demo</div>
-        <h1 className="section-title">Watch the room breathe.</h1>
+        <h1 className="section-title">The Ventis dashboard, live.</h1>
         <p className="lede">
-          Press play to replay a real overnight run — the CO₂ climbing, the window phases,
-          and Dodi reacting to what it senses. Scrub anywhere in the night. No hardware needed.
+          This is the actual on-device app. Press play to replay a real overnight run — CO₂,
+          temperature and humidity changing, the fan kicking on, Dodi reacting. Scrub anywhere
+          in the night. No hardware needed.
         </p>
 
-        <DemoPlayer />
+        <DeviceDemo />
 
         <p className="prose" style={{ color: 'var(--muted)', marginTop: 28 }}>
           Want the rest of the nights? The{' '}

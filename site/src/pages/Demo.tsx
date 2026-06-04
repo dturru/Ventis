@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { DemoPlayer } from '../components/DemoPlayer'
 
 export function Demo() {
   return (
@@ -7,30 +8,17 @@ export function Demo() {
         <div className="eyebrow">Interactive Demo</div>
         <h1 className="section-title">Watch the room breathe.</h1>
         <p className="lede">
-          A live, playable version of the Ventis dashboard — CO₂ climbing, the fan kicking
-          on, Dodi reacting in real time — is coming here next.
+          Press play to replay a real overnight run — the CO₂ climbing, the window phases,
+          and Dodi reacting to what it senses. Scrub anywhere in the night. No hardware needed.
         </p>
 
-        <div className="demo-shell">
-          <div>
-            <span className="badge">▶ Interactive demo coming soon</span>
-            <div className="play" aria-hidden>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#1e6e3a">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-            <h3>The dashboard, playable</h3>
-            <p>
-              We’ll drop the real Ventis dashboard here running on a recorded overnight
-              run — no hardware needed. You’ll scrub through a night and see exactly what
-              Dodi sees.
-            </p>
-          </div>
-        </div>
+        <DemoPlayer />
 
-        <p className="prose" style={{ color: 'var(--muted)' }}>
-          In the meantime, the <Link to="/data" style={{ color: 'var(--green)', fontWeight: 600 }}>data page</Link> shows
-          the same overnight runs the demo will replay — measured, not simulated.
+        <p className="prose" style={{ color: 'var(--muted)', marginTop: 28 }}>
+          Want the rest of the nights? The{' '}
+          <Link to="/data" style={{ color: 'var(--green)', fontWeight: 600 }}>data page</Link>{' '}
+          shows every run we’ve measured — Choates, the apartment, East Wheelock — all real,
+          none simulated.
         </p>
       </div>
     </div>

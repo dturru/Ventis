@@ -96,6 +96,40 @@ export function Problem() {
           shoulder-season product; the year-round winter answer is heat-recovery
           ventilation (v3). We don’t pretend otherwise.
         </div>
+
+        <div className="sources">
+          <h3>Sources</h3>
+          <ol>
+            <li>
+              Satish, U. et al. (2012). “Is CO₂ an Indoor Pollutant? Direct Effects of
+              Low-to-Moderate CO₂ Concentrations on Human Decision-Making Performance.”{' '}
+              <em>Environmental Health Perspectives</em> 120(12): 1671–1677.{' '}
+              <a href="https://pubmed.ncbi.nlm.nih.gov/23008272/" target="_blank" rel="noreferrer noopener">pubmed.ncbi.nlm.nih.gov/23008272</a>
+            </li>
+            <li>
+              “Short-term exposure to indoor carbon dioxide and cognitive task performance:
+              a systematic review and meta-analysis.” <em>Building and Environment</em> (2023).{' '}
+              <a href="https://www.sciencedirect.com/science/article/pii/S036013232300358X" target="_blank" rel="noreferrer noopener">sciencedirect.com</a>
+            </li>
+            <li>
+              “Ventilation causing an average CO₂ concentration of 1,000 ppm negatively
+              affects sleep: a field-lab study on healthy young people.”{' '}
+              <em>Building and Environment</em> (2023).{' '}
+              <a href="https://www.sciencedirect.com/science/article/pii/S0360132323011459" target="_blank" rel="noreferrer noopener">sciencedirect.com</a>
+            </li>
+            <li>
+              “Ventilate your bedroom at night. You perform better the next day.” (2023) —
+              overnight bedroom ventilation (CO₂ 2,585 → 660 ppm) and next-day cognitive
+              performance.{' '}
+              <a href="https://www.eurekalert.org/news-releases/988687" target="_blank" rel="noreferrer noopener">eurekalert.org/news-releases/988687</a>
+            </li>
+            <li>
+              ASHRAE. “Position Document on Indoor Carbon Dioxide” (2022) — basis for the
+              ~1,000 ppm indoor-air benchmark used throughout this site.{' '}
+              <a href="https://www.ashrae.org/file%20library/about/position%20documents/pd-on-indoor-carbon-dioxide-english.pdf" target="_blank" rel="noreferrer noopener">ashrae.org</a>
+            </li>
+          </ol>
+        </div>
       </div>
     </div>
   )

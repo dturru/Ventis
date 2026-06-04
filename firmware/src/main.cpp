@@ -11,6 +11,7 @@
 #include <Adafruit_SSD1306.h>
 #include <ESPAsyncWebServer.h>
 #include <Preferences.h>
+#include <LittleFS.h>
 #include "config.h"
 
 #ifndef ANTHROPIC_MODEL
@@ -1446,11 +1447,10 @@ window.addEventListener('load',()=>{
 </body></html>)raw";
 
 void setupServer() {
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *req) {
-        AsyncWebServerResponse *res = req->beginResponse(200, "text/html", INDEX_HTML);
-        res->addHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-        req->send(res);
-    });
+    // Root "/" and static assets are now served from LittleFS (the built React app in
+    // firmware/data/) via serveStatic registered at the end of this function. The legacy
+    // embedded INDEX_HTML page is kept in-source but no longer registered — to fall back
+    // to it, re-add this handler and remove the serveStatic line below (or flash `main`).
 
     server.on("/data", HTTP_GET, [](AsyncWebServerRequest *req) {
         String json = "{";
@@ -1567,6 +1567,10 @@ void setupServer() {
                     + "\",\"source\":\"" + cachedInsightSource + "\"}";
         req->send(200, "application/json", json);
     });
+
+    // Serve the built React app from LittleFS. Registered LAST so all JSON API routes
+    // above take precedence; this catch-all handles "/", /assets/*, and /mock-*.json.
+    server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
     server.begin();
 }
@@ -1705,6 +1709,12 @@ void setup() {
 
     WiFi.softAP(AP_SSID, AP_PASSWORD);
     Serial.printf("AP started: %s\n", WiFi.softAPIP().toString().c_str());
+
+    if (!LittleFS.begin(true)) {
+        Serial.println("LittleFS mount FAILED — React UI will 404 (JSON API still works)");
+    } else {
+        Serial.println("LittleFS mounted — serving React app from /data");
+    }
 
     setupServer();
     if (oledOk) updateOled();

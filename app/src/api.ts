@@ -21,7 +21,11 @@ export async function fetchData(): Promise<SensorData> {
 }
 
 export async function fetchHistory(): Promise<HistoryData> {
-  const r = await withMockFallback('/history', '/mock-history.json')
+  // Technigala demo (2026-06-03): Trends pinned to mock — the device keeps only a
+  // 5-min ring buffer (HISTORY_SIZE 60 × 5s), so live trends look near-empty; the
+  // 965-sample mock-history.json reads far better. Revert to the line below for live:
+  //   const r = await withMockFallback('/history', '/mock-history.json')
+  const r = await mockFetch('/mock-history.json')
   return r.json()
 }
 

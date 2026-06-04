@@ -458,12 +458,48 @@ img, svg { display: block; }
 .footer-links a { color: var(--muted); }
 .footer-links a:hover { color: var(--green); }
 
+/* ── Hardware shot (How page) ──────────────────────────────────────────── */
+.hw-shot { margin: 24px 0 8px; }
+.hw-shot img {
+  width: 100%; height: auto; border-radius: var(--r-lg);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.hw-shot figcaption {
+  font-size: 13.5px; color: var(--muted); line-height: 1.55;
+  margin-top: 14px; max-width: 70ch;
+}
+.hw-shot figcaption strong { color: var(--ink); font-weight: 700; }
+
+/* ── Roadmap (How page) ────────────────────────────────────────────────── */
+.roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0 0; align-items: stretch; }
+.rm {
+  position: relative;
+  background: var(--tile); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 24px 22px; box-shadow: var(--shadow-sm);
+}
+.rm.featured {
+  background: var(--green-mist); border-color: rgba(30, 110, 58, 0.32);
+  box-shadow: var(--shadow); transform: translateY(-4px);
+}
+.rm-badge {
+  position: absolute; top: -11px; left: 22px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #fff; background: var(--green); padding: 4px 10px; border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+}
+.rm-k { font-family: var(--serif); font-size: 30px; color: var(--green); line-height: 1; }
+.rm-when { font-family: var(--mono); font-size: 12px; color: var(--faint); margin: 8px 0 12px; }
+.rm.featured .rm-when { color: var(--green-deep); }
+.rm h4 { font-size: 17px; font-weight: 700; margin-bottom: 7px; letter-spacing: -0.2px; }
+.rm p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 880px) {
   .panels { grid-template-columns: repeat(2, 1fr); }
-  .points-grid, .flow, .evidence-rows, .feels { grid-template-columns: 1fr; }
+  .points-grid, .flow, .evidence-rows, .feels, .roadmap { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); }
   .cta-grid { grid-template-columns: 1fr; }
+  .rm.featured { transform: none; }
 }
 @media (max-width: 640px) {
   .nav-links { display: none; }

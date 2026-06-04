@@ -94,6 +94,67 @@ export function How() {
             data proves it. That’s why Ventis is built around the window, not around a fan.
           </p>
         </div>
+
+        {/* ── The hardware, today ─────────────────────────────────────────── */}
+        <div className="eyebrow" style={{ marginTop: 40 }}>The hardware, today</div>
+        <h2 className="section-title" style={{ fontSize: 26 }}>A working prototype, not a render</h2>
+        <figure className="hw-shot">
+          <img
+            src="/hardware-v1.jpg"
+            alt="The Ventis v1 prototype on a desk by a window: a 3D-printed controller with a live CO₂ display, next to twin 120 mm fans and a small outdoor sensor node."
+            loading="lazy"
+            width={1600}
+            height={1200}
+          />
+          <figcaption>
+            The Ventis <strong>v1 prototype.</strong> It already does the whole job — senses
+            the air, decides, and drives the fan — with hours of real dorm CO₂ data behind it.
+            The controller (left) reads CO₂, temperature and humidity and shows the live number;
+            the small node (right) watches the air outside. The integrated window-duct unit is
+            in development.
+          </figcaption>
+        </figure>
+
+        {/* ── Where Ventis is headed ──────────────────────────────────────── */}
+        <div className="eyebrow" style={{ marginTop: 40 }}>Where Ventis is headed</div>
+        <h2 className="section-title" style={{ fontSize: 26 }}>From prototype to window unit</h2>
+        <div className="roadmap">
+          <div className="rm">
+            <div className="rm-k">v1</div>
+            <div className="rm-when">Today</div>
+            <h4>Working prototype</h4>
+            <p>
+              Controller, sensors and fan running the full sense → decide → ventilate loop,
+              with real overnight dorm CO₂ data behind it.
+            </p>
+          </div>
+          <div className="rm featured">
+            <div className="rm-badge">Next up</div>
+            <div className="rm-k">v2</div>
+            <div className="rm-when">First units expected Fall 2026 · target</div>
+            <h4>The window unit</h4>
+            <p>
+              A windowsill duct piece your sash seals down onto by its own weight, twin
+              intake/exhaust ducts, and all the brains in one quiet indoor box. Hand-removable
+              in seconds and built to keep your window’s emergency egress clear. Double-hung
+              windows first.
+            </p>
+          </div>
+          <div className="rm">
+            <div className="rm-k">v3</div>
+            <div className="rm-when">The vision</div>
+            <h4>Heat recovery</h4>
+            <p>
+              A heat-recovery core so fresh air keeps coming through Hanover winter — without
+              throwing your warmth out the window with it.
+            </p>
+          </div>
+        </div>
+        <p className="feels-note">
+          Dates are targets, not promises — v2 depends on dorm window measurements and housing
+          review. And to be clear about what Ventis is: no heating element, no refrigerant, no
+          compressor. It’s a smart ventilator, not an air conditioner.
+        </p>
       </div>
     </div>
   )

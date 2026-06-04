@@ -53,6 +53,7 @@
 #define SHEETS_URL   "https://script.google.com/macros/s/AKfycbxGhE2Pz5Lp1xlLEwjpfPZI9cyJkNz3nbioRvHkJfGn5dgp94_JDueu67judZPQumFmWQ/exec"
 #define RUN_LABEL    "unlabeled"      // change before each run: e.g. "dorm_window_only"
 #define LOG_INTERVAL 30000            // ms between log writes (30s matches old Pi logger)
+#define CTRL_POLL_INTERVAL 60000      // ms between remote-control polls (Apps Script doGet)
 
 // Ventis AP — private network for outdoor node (AP+STA dual mode)
 #define AP_SSID          "Ventis"

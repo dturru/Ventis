@@ -45,6 +45,31 @@ function doPost(e) {
   }
 }
 
+// Remote logging control. The device polls this (GET) every minute and applies a
+// command only when `seq` changes — so it never fights the on-device web UI.
+// To start/stop a run from ANY device (incl. your phone, off-campus): open the
+// `control` tab, set logging TRUE/FALSE, set the label, and BUMP seq by 1.
+function doGet() {
+  try {
+    const c = getControl_();
+    return json_({ logging: c.logging, label: c.label, seq: c.seq });
+  } catch (err) {
+    return json_({ logging: false, label: '', seq: 0, error: String(err) });
+  }
+}
+
+function getControl_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('control');
+  if (!sh) {
+    sh = ss.insertSheet('control');
+    sh.getRange('A1:C1').setValues([['logging', 'label', 'seq']]);
+    sh.getRange('A2:C2').setValues([[false, '', 0]]);
+  }
+  const v = sh.getRange('A2:C2').getValues()[0];
+  return { logging: truthy_(v[0]), label: blank_(v[1]), seq: Number(v[2]) || 0 };
+}
+
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(CONFIG.sheetName);

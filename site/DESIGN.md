@@ -41,8 +41,11 @@ The site's copy is strong when it's **specific and plain**. It drifts toward an
 - Trust the reader. State the point once, well.
 
 **Avoid (the AI-tells)**
-- **Em-dash overload.** At most one em-dash per paragraph, and not in every
-  paragraph. Prefer a period or comma. (This is the single biggest tell.)
+- **Em-dashes: default to none in body copy.** This is the single biggest tell,
+  and the bar is essentially zero, not "one per paragraph." Use a period, comma,
+  colon, or the middot "·" for label separators (e.g. run names, the tagline). A
+  rare em-dash in a citation is tolerable; if you're reaching for one in prose,
+  restructure the sentence. (Run `grep -rn "—" site/src` before shipping copy.)
 - **The "It's not X, it's Y" / "X vs. Y" antithesis on repeat.** It's punchy
   once per page. Three times is a tic. Vary it.
 - **"honest / honestly" as a verbal crutch.** Demonstrate candor (show the

@@ -52,8 +52,11 @@ export function Home() {
         </p>
 
         <div className="hero-actions">
-          <Link to="/data" className="btn btn-primary">
-            See the data <span className="btn-arrow">→</span>
+          <Link to="/demo" className="btn btn-primary">
+            Try the demo <span className="btn-arrow">→</span>
+          </Link>
+          <Link to="/data" className="btn btn-ghost">
+            See the data
           </Link>
           <a href={residentsCTA} target="_blank" rel="noreferrer" className="btn btn-ghost">
             Get early access

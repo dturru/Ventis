@@ -16,8 +16,8 @@ export function How() {
         <div className="eyebrow">How It Works</div>
         <h1 className="section-title">Senses. Ventilates. Explains.</h1>
         <p className="lede">
-          Ventis runs a simple closed loop, automatically, while you sleep — and tells
-          you what it’s doing in plain English.
+          Ventis runs a simple closed loop while you sleep, and tells you what it’s
+          doing in plain English.
         </p>
 
         <div className="flow">
@@ -75,9 +75,9 @@ export function How() {
           </div>
         </div>
         <p className="feels-note">
-          Because it’s ventilation, not refrigeration, Ventis can’t cool below what’s
-          outside — but it never blows hot afternoon air in, either. It runs only when the
-          air outdoors will actually help.
+          Because it’s ventilation, not refrigeration, Ventis can’t cool below the outside
+          air. But it never blows hot afternoon air in either, and it runs only when the air
+          outdoors will actually help.
         </p>
 
         <div className="prose">
@@ -89,9 +89,9 @@ export function How() {
             into the room.
           </p>
           <p>
-            One honest caveat we never hide: moving air around a closed room (recirculation)
-            does <strong>not</strong> lower CO₂ — only exchange with outdoors does. Our own
-            data proves it. That’s why Ventis is built around the window, not around a fan.
+            One caveat we don’t hide: moving air around a closed room (recirculation) does
+            <strong> not</strong> lower CO₂. Only exchange with the outdoors does, and our own
+            data shows it. That’s why Ventis is built around the window, not the fan.
           </p>
         </div>
 
@@ -107,11 +107,11 @@ export function How() {
             height={1200}
           />
           <figcaption>
-            The Ventis <strong>v1 prototype.</strong> It already does the whole job — senses
-            the air, decides, and drives the fan — with hours of real dorm CO₂ data behind it.
-            The controller (left) reads CO₂, temperature and humidity and shows the live number;
-            the small node (right) watches the air outside. The integrated window-duct unit is
-            in development.
+            The Ventis <strong>v1 prototype.</strong> It already does the whole job: senses
+            the air, decides, and drives the fan, with hours of real dorm CO₂ data behind it.
+            The controller (left) reads CO₂, temperature, and humidity and shows the live
+            number; the small node (right) watches the air outside. The integrated window-duct
+            unit is in development.
           </figcaption>
         </figure>
 
@@ -151,9 +151,9 @@ export function How() {
           </div>
         </div>
         <p className="feels-note">
-          Dates are targets, not promises — v2 depends on dorm window measurements and housing
+          Dates are targets, not promises; v2 depends on dorm window measurements and housing
           review. And to be clear about what Ventis is: no heating element, no refrigerant, no
-          compressor. It’s a smart ventilator, not an air conditioner.
+          compressor. It’s a ventilator, not an air conditioner.
         </p>
       </div>
     </div>

@@ -67,9 +67,8 @@ export function Contact() {
         <div className="eyebrow">Contact</div>
         <h1 className="section-title">Let’s talk about your buildings.</h1>
         <p className="lede">
-          Housing, facilities, or residential operations — if you’re thinking about air
-          quality in your buildings, tell me a bit and I’ll get back to you. Happy to walk
-          through the data.
+          Housing, facilities, or residential operations: if you’re weighing air quality in
+          your buildings, tell me a bit and I’ll get back to you. Happy to walk through the data.
         </p>
 
         <div className="card" style={{ marginTop: 28 }}>

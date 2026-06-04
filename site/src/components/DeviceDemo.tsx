@@ -273,10 +273,10 @@ export function DeviceDemo() {
 
       <p className="dd-caption">
         The actual Ventis dashboard, replaying a <strong>real overnight run</strong> from a Fahey
-        Hall single — every reading measured, not simulated. The occupant kept the window open
-        (CO₂ low), closed it at 2:30 AM for the AC — you can watch the room cool as the CO₂ climbs —
-        then reopened it mid-morning. It’s the clearest proof in our data that <strong>air exchange,
-        not a recirculating fan, controls CO₂</strong>.
+        Hall single. Every reading is measured, not simulated. The occupant kept the window open
+        (CO₂ low), then closed it at 2:30 AM for the AC. Watch the room cool as the CO₂ climbs.
+        They reopened the window mid-morning and it cleared — the clearest proof in our data that{' '}
+        <strong>air exchange, not a recirculating fan, controls CO₂</strong>.
       </p>
     </div>
   )

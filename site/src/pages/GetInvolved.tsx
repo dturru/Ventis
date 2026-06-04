@@ -9,8 +9,7 @@ export function GetInvolved() {
         <div className="eyebrow">Get Involved</div>
         <h1 className="section-title">Better air in your building.</h1>
         <p className="lede">
-          Ventis is early, and we’re building it with the people who’ll use it. Two ways
-          in — pick yours.
+          Ventis is early, and we’re building it with the people who’ll use it. Two ways in.
         </p>
 
         <div className="cta-grid">
@@ -18,9 +17,9 @@ export function GetInvolved() {
             <div className="ico"><Icon name="bed" size={26} /></div>
             <h3>Residents</h3>
             <p>
-              Want one this fall? Early access is for our <strong>v2 window unit</strong> —
-              the first integrated units, expected Fall 2026. Leave your info to be first in
-              line (and to see your own room’s overnight numbers).
+              Want one this fall? Early access is for the <strong>v2 window unit</strong>, the
+              first integrated units, expected Fall 2026. Leave your info to be first in line,
+              and to see your own room’s overnight numbers.
             </p>
             <a className="btn" href={residentsCTA} target="_blank" rel="noreferrer">
               Get early access →
@@ -42,14 +41,14 @@ export function GetInvolved() {
 
         <div className="callout">
           <strong>Where this is headed.</strong> Today Ventis is a per-room device that
-          makes invisible air visible. The bigger picture is a building-level view of air
-          quality — the same honest data, aggregated and anonymized — so the people who run
-          residential buildings can finally see what their students are breathing.
+          makes invisible air visible. The bigger picture is a building-level view: the same
+          measured data, aggregated and anonymized, so the people who run residential
+          buildings can finally see what their students breathe.
         </div>
 
         <p className="data-note">
-          We’re early and we don’t do pricing yet — this is about interest and fit, not a
-          sale. We never share your email.
+          We’re early and don’t have pricing yet; this is about interest and fit, not a sale.
+          We never share your email.
         </p>
       </div>
     </div>

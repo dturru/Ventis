@@ -48,12 +48,12 @@ export function Data() {
         <h1 className="section-title">Real rooms. Real nights. Measured.</h1>
         <p className="lede">
           Every line below is measured CO₂ from a real Dartmouth-area room, logged at
-          30-second resolution. We include the runs that help us — and the ones that don’t.
+          30-second resolution. We include the runs that help our case and the ones that don’t.
         </p>
 
         {hero && (
           <>
-            <div style={{ marginTop: 32 }} className="eyebrow">⚠ What students are actually breathing</div>
+            <div style={{ marginTop: 32 }} className="eyebrow">What students are actually breathing</div>
             <RunCard run={hero} hero />
           </>
         )}
@@ -65,10 +65,10 @@ export function Data() {
 
         <p className="data-note">
           Lines are 5-minute averages of 30-second sensor readings; the peak figure is the
-          absolute single-sample maximum. Outdoor temperature, fan state and window state
+          absolute single-sample maximum. Outdoor temperature, fan state, and window state are
           logged alongside each run. No values are estimated or illustrative. The 1,000 ppm
-          reference line follows widely used indoor-CO₂ guidance — basis and full research
-          citations on the{' '}
+          reference line follows widely used indoor-CO₂ guidance; the basis and full citations
+          are on the{' '}
           <Link to="/problem" style={{ color: 'var(--green)', fontWeight: 600 }}>Problem page</Link>.
         </p>
       </div>

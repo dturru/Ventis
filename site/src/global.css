@@ -523,6 +523,25 @@ img, svg { display: block; }
 
 @keyframes fan-spin { to { transform: rotate(360deg); } }
 
+/* ── Reactive Dodi mascot (demo) ───────────────────────────────────────── */
+.dodi-anim { animation: dodi-breathe 1.7s ease-in-out infinite; will-change: transform; }
+.dodi-anim.distress { animation: dodi-shake 0.11s ease-in-out infinite; }
+@keyframes dodi-breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes dodi-shake { 0%, 100% { transform: translateX(-0.6px); } 50% { transform: translateX(0.6px); } }
+
+.dodi-wing-up { opacity: 0; }
+.dodi-wing-down { opacity: 1; }
+.dodi-anim.flapping .dodi-wing-up { animation: dodi-flap-up 0.16s steps(1, end) infinite; }
+.dodi-anim.flapping .dodi-wing-down { animation: dodi-flap-down 0.16s steps(1, end) infinite; }
+@keyframes dodi-flap-up { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes dodi-flap-down { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dodi-anim, .dodi-anim.distress,
+  .dodi-anim.flapping .dodi-wing-up, .dodi-anim.flapping .dodi-wing-down { animation: none; }
+  .dodi-anim.flapping .dodi-wing-up { opacity: 0; }
+}
+
 /* ── Footer ────────────────────────────────────────────────────────────── */
 .footer { border-top: 1px solid var(--line); background: var(--bone); padding: 44px 0 56px; margin-top: 40px; }
 .footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }

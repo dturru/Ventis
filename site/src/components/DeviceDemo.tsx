@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getRun, type Run, type RunPoint } from '../data/runs'
-import { Dodi } from './Dodi'
+import { DodiMascot } from './DodiMascot'
 
 type Tier = 'green' | 'amber' | 'red'
 
@@ -135,6 +135,7 @@ export function DeviceDemo() {
   const rising = cur.co2 - prev.co2 > 4
   const atEnd = idx >= last
   const tier = tiers[idx]
+  const emotion = tier === 'green' ? 'calm' : tier === 'amber' ? 'alert' : 'distress'
   const callout = SLEEP[tier]
   const tempF = cur.tempC != null ? cur.tempC * 9 / 5 + 32 : null
   const fanPct = cur.fan ?? 0
@@ -173,7 +174,7 @@ export function DeviceDemo() {
           <div className="dd-body">
             {/* Dodi callout */}
             <div className="dd-card dd-dodi" style={{ ...CALLOUT_BG[tier] }}>
-              <Dodi size={48} className="dd-dodi-sprite" />
+              <DodiMascot emotion={emotion} flapping={fanOn} size={48} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="dd-uplabel" style={{ color: TINT[tier] }}>{callout.label}</div>
                 <div className="dd-title">{callout.title}</div>

@@ -271,6 +271,34 @@ img, svg { display: block; }
 .point-h { font-weight: 700; margin: 12px 0 6px; font-size: 16px; }
 .point-p { font-size: 14px; color: var(--muted); line-height: 1.5; }
 
+/* ── Evidence / performance block (Problem page) ───────────────────────── */
+.evidence {
+  background: linear-gradient(165deg, var(--green), var(--green-deep));
+  color: #fff; border-radius: var(--r-lg); box-shadow: var(--shadow);
+  padding: 30px 32px; margin: 34px 0;
+}
+.evidence-title {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(22px, 3vw, 30px); line-height: 1.12; letter-spacing: -0.4px;
+  margin-bottom: 22px;
+}
+.evidence-rows { display: grid; gap: 18px; grid-template-columns: 1fr 1fr; }
+.evidence-row {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-md); padding: 18px 20px;
+}
+.evidence-src {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #9fd9b0; margin-bottom: 9px;
+}
+.evidence-row p { font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.92); }
+.evidence-row strong { color: #fff; font-weight: 700; }
+.evidence-foot {
+  margin-top: 20px; font-size: 16px; font-weight: 600;
+  color: #fff; max-width: 64ch;
+}
+
 /* ── How-it-works flow ─────────────────────────────────────────────────── */
 .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 12px; margin: 36px 0; }
 .flow-step {
@@ -400,7 +428,7 @@ img, svg { display: block; }
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 880px) {
   .panels { grid-template-columns: repeat(2, 1fr); }
-  .points-grid, .flow { grid-template-columns: 1fr; }
+  .points-grid, .flow, .evidence-rows { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); }
   .cta-grid { grid-template-columns: 1fr; }
 }

@@ -41,6 +41,31 @@ export function Problem() {
           </div>
         </div>
 
+        <div className="evidence">
+          <h2 className="evidence-title">It’s not a comfort issue. It’s a performance issue.</h2>
+          <div className="evidence-rows">
+            <div className="evidence-row">
+              <div className="evidence-src">Lawrence Berkeley National Lab · 2012</div>
+              <p>
+                At 1,000 ppm, <strong>6 of 9 decision-making scores dropped measurably</strong>{' '}
+                versus clean air — the exact level we recorded in a Dartmouth dorm, all night.
+              </p>
+            </div>
+            <div className="evidence-row">
+              <div className="evidence-src">Bedroom ventilation field study · 2023</div>
+              <p>
+                Ventilating a bedroom overnight (CO₂ from 2,585 → 660 ppm) produced{' '}
+                <strong>significant next-day cognitive gains</strong> — ventilate at night, and
+                you perform better the next day.
+              </p>
+            </div>
+          </div>
+          <p className="evidence-foot">
+            For a student, that’s focus, studying, and exam performance. For a college, it’s
+            academic performance you can measure — building by building.
+          </p>
+        </div>
+
         <div className="prose">
           <h2 className="section-title" style={{ fontSize: 26, marginTop: 8 }}>
             “Why not just open a window?”

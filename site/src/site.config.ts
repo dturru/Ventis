@@ -17,7 +17,7 @@ export const CONTACT_EMAIL = 'Diego.A.Turrubiartes.28@dartmouth.edu'
 // Dartmouth email → they email you a key → paste it below). Submissions then arrive
 // in your inbox with no mail-client popup. While this is empty, the contact form
 // falls back to composing a pre-filled email in the visitor's mail app.
-export const WEB3FORMS_KEY = ''
+export const WEB3FORMS_KEY = '8d8a4877-e3ad-4cbf-acd7-dd0f59b31cab'
 
 // Resolved residents link: real form if set, else fall back to an email intro.
 export const residentsCTA = BETA_FORM_URL

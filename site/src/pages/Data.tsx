@@ -45,7 +45,7 @@ export function Data() {
     <div className="page">
       <div className="wrap" style={{ maxWidth: 900 }}>
         <div className="eyebrow">The Data</div>
-        <h1 className="section-title">Real rooms. Real nights. Measured.</h1>
+        <h1 className="section-title">Real Dartmouth dorms, measured.</h1>
         <p className="lede">
           Every line below is measured CO₂ from a real Dartmouth-area room, logged at
           30-second resolution. We include the runs that help our case and the ones that don’t.

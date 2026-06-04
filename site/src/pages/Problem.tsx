@@ -107,6 +107,13 @@ export function Problem() {
               <a href="https://pubmed.ncbi.nlm.nih.gov/23008272/" target="_blank" rel="noreferrer noopener">pubmed.ncbi.nlm.nih.gov/23008272</a>
             </li>
             <li>
+              Allen, J.G. et al. (2016). “Associations of Cognitive Function Scores with
+              Carbon Dioxide, Ventilation, and Volatile Organic Compound Exposures in Office
+              Workers” (the Harvard “COGfx” study). <em>Environmental Health Perspectives</em>{' '}
+              124(6): 805–812.{' '}
+              <a href="https://pubmed.ncbi.nlm.nih.gov/26502459/" target="_blank" rel="noreferrer noopener">pubmed.ncbi.nlm.nih.gov/26502459</a>
+            </li>
+            <li>
               “Short-term exposure to indoor carbon dioxide and cognitive task performance:
               a systematic review and meta-analysis.” <em>Building and Environment</em> (2023).{' '}
               <a href="https://www.sciencedirect.com/science/article/pii/S036013232300358X" target="_blank" rel="noreferrer noopener">sciencedirect.com</a>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { getRuns, type Run } from '../data/runs'
 import { RunChart } from '../components/RunChart'
 
@@ -65,7 +66,10 @@ export function Data() {
         <p className="data-note">
           Lines are 5-minute averages of 30-second sensor readings; the peak figure is the
           absolute single-sample maximum. Outdoor temperature, fan state and window state
-          logged alongside each run. No values are estimated or illustrative.
+          logged alongside each run. No values are estimated or illustrative. The 1,000 ppm
+          reference line follows widely used indoor-CO₂ guidance — basis and full research
+          citations on the{' '}
+          <Link to="/problem" style={{ color: 'var(--green)', fontWeight: 600 }}>Problem page</Link>.
         </p>
       </div>
     </div>

@@ -299,7 +299,19 @@ img, svg { display: block; }
   color: #fff; max-width: 64ch;
 }
 
+/* inline citation markers */
+.cite-wrap { line-height: 0; }
+.cite-wrap + .cite-wrap { margin-left: 1px; }
+.cite {
+  font-size: 0.78em; font-weight: 700; color: var(--green); text-decoration: none;
+  padding: 0 1px;
+}
+.cite:hover { text-decoration: underline; }
+.evidence .cite { color: #bfe6cb; }
+
 .sources { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
+.sources li { scroll-margin-top: 84px; transition: background 0.4s ease; border-radius: 6px; }
+.sources li:target { background: var(--green-soft); box-shadow: 0 0 0 6px var(--green-soft); }
 .sources h3 {
   font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
   color: var(--faint); margin-bottom: 16px;

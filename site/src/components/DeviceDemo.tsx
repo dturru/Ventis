@@ -35,7 +35,7 @@ function computeTiers(pts: RunPoint[]): Tier[] {
 }
 
 const SLEEP: Record<Tier, { label: string; title: string; sub: string }> = {
-  green: { label: 'GOOD FOR SLEEP', title: 'Dodi is resting', sub: 'CO₂ is safe — sleep well' },
+  green: { label: 'GOOD FOR SLEEP', title: 'Dodi is resting', sub: 'CO₂ is safe, sleep well' },
   amber: { label: 'SLEEP RISK', title: 'Dodi is restless', sub: 'High CO₂ can disrupt deep sleep' },
   red: { label: 'SLEEP ALERT', title: 'Dodi is struggling', sub: 'Fan running to protect your sleep' },
 }
@@ -68,12 +68,12 @@ function focusColor(pct: number): string {
 // Honest, phase-keyed insight (per canon: closed-room climb = shut window,
 // reopen flush = air-exchange proof; never the recirc fan "fixing" CO₂).
 function insight(hod: number, co2: number, rising: boolean): string {
-  if (hod < 26.5) return `Window's open and the night air is doing the work — ${co2} ppm and steady. Nothing to do yet.`
+  if (hod < 26.5) return `Window's open and the night air is doing the work. ${co2} ppm and steady, nothing to do yet.`
   if (hod < 35.667)
     return rising
-      ? `Window just closed. With no air trading in or out, the CO₂ you re-breathe is climbing — ${co2} ppm and rising.`
+      ? `Window just closed. With no air trading in or out, the CO₂ you re-breathe is climbing: ${co2} ppm and rising.`
       : `${co2} ppm with the window shut. In a sealed room, only swapping the air with outside brings this down.`
-  return `Window's open again — there's the flush. ${co2} ppm and dropping fast. That exchange is the whole point of Ventis.`
+  return `Window's open again, and there's the flush. ${co2} ppm and dropping fast. That exchange is the whole point of Ventis.`
 }
 
 function Sparkline({ pts }: { pts: RunPoint[] }) {
@@ -275,8 +275,8 @@ export function DeviceDemo() {
         The actual Ventis dashboard, replaying a <strong>real overnight run</strong> from a Fahey
         Hall single. Every reading is measured, not simulated. The occupant kept the window open
         (CO₂ low), then closed it at 2:30 AM for the AC. Watch the room cool as the CO₂ climbs.
-        They reopened the window mid-morning and it cleared — the clearest proof in our data that{' '}
-        <strong>air exchange, not a recirculating fan, controls CO₂</strong>.
+        They reopened the window mid-morning and it cleared. It’s the clearest proof in our data
+        that <strong>air exchange, not a recirculating fan, controls CO₂</strong>.
       </p>
     </div>
   )

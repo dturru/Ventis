@@ -144,7 +144,7 @@ def peak(points):
 runs = {
     "choates": {
         "id": "choates",
-        "name": "Choates / Little Hall — 1 person, no AC",
+        "name": "Choates / Little Hall · 1 person, no AC",
         "tag": "The wake-up call",
         "hero": True,
         "framing": "Old, un-renovated stock with no AC and poor ventilation. One person, asleep, pushed the room to 1,111 ppm and held it about four hours above the ASHRAE 1,000 ppm line. No alarm, no smell, no way to know it was happening.",
@@ -155,7 +155,7 @@ runs = {
     },
     "fahey": {
         "id": "fahey",
-        "name": "Fahey Hall — single",
+        "name": "Fahey Hall · single",
         "tag": "Why “just open a window” isn’t the answer",
         "framing": "An open window worked: the air was clean at ~650 ppm. Then the occupant closed it at ~2:30 AM for the AC and fell asleep. Over the next nine hours CO₂ climbed to 979 with the fan running the whole time. It only cleared when they woke and reopened the window at ~11:40 AM.",
         "takeaway": "A window ventilates only while it’s open and you’re awake to keep it that way. The moment comfort wins (heat, cold, or the AC), your air degrades for hours you’ll never feel. That’s the gap Ventis closes.",
@@ -171,7 +171,7 @@ runs = {
     },
     "apt": {
         "id": "apt",
-        "name": "2-person apartment — central AC",
+        "name": "2-person apartment · central AC",
         "tag": "AC ≠ ventilation",
         "framing": "A modern apartment with central AC still hit 1,176 ppm with two people, roughly eight hours above 1,000 ppm overnight.",
         "takeaway": "Air conditioning cools the air; it doesn’t exchange it. CO₂ still builds.",
@@ -181,7 +181,7 @@ runs = {
     },
     "eastwheelock": {
         "id": "eastwheelock",
-        "name": "East Wheelock — renovated HVAC, 2 people",
+        "name": "East Wheelock · renovated HVAC, 2 people",
         "tag": "Honest negative control",
         "framing": "Premium, renovated stock with real mechanical ventilation. Two occupants, yet CO₂ peaked at 846 ppm and declined overnight, never crossing 1,000.",
         "takeaway": "We don’t overclaim. Buildings that already exchange air don’t need us; the old stock does.",

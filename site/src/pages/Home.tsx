@@ -23,7 +23,7 @@ const PANELS = [
     num: '03',
     ico: 'chart',
     title: 'The Data',
-    desc: 'Real overnight CO₂ from Dartmouth dorms — including the runs that prove it.',
+    desc: 'Real overnight CO₂ from Dartmouth dorms, including the runs that prove it.',
   },
   {
     to: '/get-involved',

@@ -77,10 +77,10 @@ export function Contact() {
               <div className="check">
                 <Icon name="loop" size={26} />
               </div>
-              <h3>Thanks — that’s on its way.</h3>
+              <h3>Thanks, that’s on its way.</h3>
               <p>
                 {usedMailto
-                  ? 'Your email app should have opened with your message ready to send — just hit send and it’ll reach me directly.'
+                  ? 'Your email app should have opened with your message ready to send. Just hit send and it’ll reach me directly.'
                   : 'Got it. I’ll be in touch at the email you gave shortly.'}
               </p>
             </div>

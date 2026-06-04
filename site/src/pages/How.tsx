@@ -24,13 +24,13 @@ export function How() {
           <div className="flow-step">
             <div className="big"><Icon name="sense" size={28} /></div>
             <h4>Senses</h4>
-            <p>Reads CO₂, temperature and humidity in your room — and the air outside — every few seconds.</p>
+            <p>Reads CO₂, temperature, and humidity in your room, and the air outside, every few seconds.</p>
           </div>
           <div className="flow-arrow"><Chevron /></div>
           <div className="flow-step">
             <div className="big"><Icon name="decide" size={28} /></div>
             <h4>Decides</h4>
-            <p>Ventilates only when it’s worth it — when outdoor air will actually cool the room or clear the CO₂.</p>
+            <p>Ventilates only when it’s worth it: when outdoor air will actually cool the room or clear the CO₂.</p>
           </div>
           <div className="flow-arrow"><Chevron /></div>
           <div className="flow-step">
@@ -46,9 +46,9 @@ export function How() {
             <div className="who">Dodi · your room’s air, narrated</div>
             <p>
               “I watch the things you can’t feel. When your room’s warming up and the air
-              outside is cooler, I pull that in for you — and I do the same when the CO₂
-              you’re breathing back in starts to climb. I only run when it’s actually worth
-              it. You just wake up cool and sharp.”
+              outside is cooler, I pull that in for you. I do the same when the CO₂ you’re
+              breathing back in starts to climb. I only run when it’s actually worth it, so
+              you just wake up cool and sharp.”
             </p>
           </div>
         </div>
@@ -59,8 +59,8 @@ export function How() {
             <div className="feel-ico ico-badge"><Icon name="wind" size={20} /></div>
             <h4>Cooler nights, automatically</h4>
             <p>
-              When it’s cooler outside than in your room — most summer nights and early
-              mornings — Ventis pulls that air in for you. It’s the free cooling already
+              When it’s cooler outside than in your room, which is most summer nights and
+              early mornings, Ventis pulls that air in for you. It’s the free cooling already
               outside your window, captured at the right moment instead of depending on you
               to remember the sash. The moving air reads as a breeze, too.
             </p>
@@ -69,8 +69,8 @@ export function How() {
             <div className="feel-ico ico-badge"><Icon name="invisible" size={20} /></div>
             <h4>Air you can’t feel, handled</h4>
             <p>
-              It clears the CO₂ that builds while you sleep — no smell, no sensation, but it
-              quietly dulls next-day focus.
+              It clears the CO₂ that builds while you sleep. No smell, no sensation, but it
+              quietly dulls your next-day focus.
             </p>
           </div>
         </div>
@@ -145,7 +145,7 @@ export function How() {
             <div className="rm-when">The vision</div>
             <h4>Heat recovery</h4>
             <p>
-              A heat-recovery core so fresh air keeps coming through Hanover winter — without
+              A heat-recovery core so fresh air keeps coming through Hanover winter, without
               throwing your warmth out the window with it.
             </p>
           </div>

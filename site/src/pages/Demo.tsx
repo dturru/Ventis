@@ -16,10 +16,10 @@ export function Demo() {
         <DeviceDemo />
 
         <p className="prose" style={{ color: 'var(--muted)', marginTop: 28 }}>
-          Want the rest of the nights? The{' '}
+          Want the other nights? The{' '}
           <Link to="/data" style={{ color: 'var(--green)', fontWeight: 600 }}>data page</Link>{' '}
-          shows every run we’ve measured — Choates, the apartment, East Wheelock — all real,
-          none simulated.
+          has every run we’ve measured: Choates, the apartment, East Wheelock. All real, none
+          simulated.
         </p>
       </div>
     </div>

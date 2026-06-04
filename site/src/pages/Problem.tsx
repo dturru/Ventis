@@ -138,13 +138,13 @@ export function Problem() {
               <a href="https://www.sciencedirect.com/science/article/pii/S0360132323011459" target="_blank" rel="noreferrer noopener">sciencedirect.com</a>
             </li>
             <li id="ref-5">
-              “Ventilate your bedroom at night. You perform better the next day.” (2023) —
-              overnight bedroom ventilation (CO₂ 2,585 → 660 ppm) and next-day cognitive
+              “Ventilate your bedroom at night. You perform better the next day.” (2023).
+              Overnight bedroom ventilation (CO₂ 2,585 → 660 ppm) and next-day cognitive
               performance.{' '}
               <a href="https://www.eurekalert.org/news-releases/988687" target="_blank" rel="noreferrer noopener">eurekalert.org/news-releases/988687</a>
             </li>
             <li id="ref-6">
-              ASHRAE. “Position Document on Indoor Carbon Dioxide” (2022) — basis for the
+              ASHRAE. “Position Document on Indoor Carbon Dioxide” (2022). Basis for the
               ~1,000 ppm indoor-air benchmark used throughout this site.{' '}
               <a href="https://www.ashrae.org/file%20library/about/position%20documents/pd-on-indoor-carbon-dioxide-english.pdf" target="_blank" rel="noreferrer noopener">ashrae.org</a>
             </li>

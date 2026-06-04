@@ -23,8 +23,8 @@ function Footer() {
           <div className="footer-brand">Ventis</div>
           <p className="footer-note">
             Automatic, sensing-driven ventilation for dorm rooms that don't have it.
-            v1 and v2 are honestly a shoulder-season product — year-round CO₂ needs
-            metered air exchange (v2) and heat recovery (v3). Built at Dartmouth.
+            v1 and v2 are a shoulder-season product; year-round CO₂ needs metered air
+            exchange (v2) and heat recovery (v3). Built at Dartmouth.
           </p>
         </div>
         <div className="footer-links">

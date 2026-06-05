@@ -192,11 +192,11 @@ void logToSheets() {
     char ts[25] = "unknown";
     struct tm t;
     if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
-    char body[320];
+    char body[384];
     snprintf(body, sizeof(body),
-        "{\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
+        "{\"token\":\"%s\",\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
         "\"humidity_pct\":%.2f,\"temp_out_c\":%.2f,\"fan_on\":%s,\"fan_duty\":%u,\"reason\":\"%s\"}",
-        ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
+        SHEETS_TOKEN, ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
         fan.on ? "true" : "false", computeDuty(fan, readings), reasonStr(fan.reason));
     WiFiClientSecure client;
     client.setInsecure();

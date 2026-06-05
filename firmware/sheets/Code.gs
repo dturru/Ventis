@@ -37,6 +37,16 @@ const SCHEMA = [
 function doPost(e) {
   try {
     const p = JSON.parse(e.postData.contents);
+    // Write auth: the /exec URL is public (committed in firmware config.h), so without
+    // this check anyone could POST and poison the dataset. The firmware sends `token`
+    // (from gitignored secrets.h); the expected value lives in a Script Property so it's
+    // never in the repo. Rollout is order-independent and lossless: while the property is
+    // UNSET the endpoint behaves as before (accepts all), and the instant you set it,
+    // only the matching token is accepted. Set it AFTER reflashing devices with the token.
+    const expected = PropertiesService.getScriptProperties().getProperty('SHEETS_TOKEN');
+    if (expected && p.token !== expected) {
+      return json_({ ok: false, error: 'unauthorized' });
+    }
     const sheet = getSheet_();
     sheet.appendRow(buildRow_(p));
     return json_({ ok: true, rows: sheet.getLastRow() - 1 });

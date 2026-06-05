@@ -92,8 +92,8 @@ function getSheet_() {
 function buildRow_(p) {
   return [
     p.timestamp || new Date().toISOString(),
-    blank_(p.device_id != null ? p.device_id : CONFIG.deviceId),
-    blank_(p.condition != null ? p.condition : p.run),   // run -> condition
+    deviceId_(p.device_id != null ? p.device_id : CONFIG.deviceId),
+    label_(p.condition != null ? p.condition : p.run),   // run -> condition (sanitized)
     num_(p.co2_ppm,  p.co2),                              // co2 -> co2_ppm
     num_(p.temp_c,   p.temp_in_c),                        // temp_in_c -> temp_c
     num_(p.humidity_pct),
@@ -125,6 +125,32 @@ function fanDuty_(p) {
   }
   if (p.fan_on != null) return truthy_(p.fan_on) ? 100 : 0;
   return '';
+}
+
+// ---- privacy guards (anonymization enforced at ingest) ----
+// The dataset promises "no names, no room identifiers." We can't reliably detect an
+// arbitrary person's name in code, but we CAN enforce the safe SHAPE of the two free-text
+// fields so identifying info never reaches the sheet, even on operator error. Sanitizing
+// happens here in buildRow_ — BEFORE appendRow — so the raw string is never persisted.
+
+// Condition labels follow `building_condition_occupancy` (e.g. "choates_windowclosed_1person").
+// Force lowercase + [a-z0-9_] only, and strip 3+ digit runs (room numbers like 302, years
+// like 2026). Occupancy counts (1-2 digits, e.g. "2person") are preserved.
+function label_(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).toLowerCase()
+    .replace(/\d{3,}/g, '')             // drop room numbers / years
+    .replace(/[^a-z0-9_]+/g, '_')       // safe charset only (kills free-text, spaces, punctuation)
+    .replace(/_+/g, '_')                // collapse repeats
+    .replace(/^_+|_+$/g, '')            // trim
+    .slice(0, 64);                      // length cap
+}
+
+// device_id must be a pseudonym (e.g. "ventis-01"), never a person's name. Anything that
+// doesn't fit the pseudonym shape falls back to the configured pseudonym.
+function deviceId_(v) {
+  var s = (v === null || v === undefined) ? '' : String(v).toLowerCase().trim();
+  return /^ventis[-_][a-z0-9]+$/.test(s) ? s : CONFIG.deviceId;
 }
 
 function truthy_(v) { return v === true || v === 'true' || v === 1 || v === '1'; }

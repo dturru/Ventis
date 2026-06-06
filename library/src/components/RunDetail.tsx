@@ -53,7 +53,23 @@ export default function RunDetail() {
       <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
         {run.building || run.condition || "Run"}
       </h1>
-      <p style={{ color: "var(--muted)", marginBottom: 20 }}>{run.date}</p>
+      <p style={{ color: "var(--muted)", marginBottom: 12 }}>{run.date}</p>
+
+      <a
+        href={`/data/csv/${run.csv}`}
+        download={run.csv}
+        style={{
+          display: "inline-block",
+          marginBottom: 20,
+          padding: "6px 14px",
+          borderRadius: 6,
+          border: "1px solid var(--green)",
+          color: "var(--green)",
+          fontSize: 14,
+        }}
+      >
+        ⬇ Download raw CSV
+      </a>
 
       <img
         src={`/data/charts/${run.chart}`}

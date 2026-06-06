@@ -51,6 +51,7 @@
 // 2026-06-01: repointed to the v3 schema deployment (writes the locked `telemetry` tab).
 // Old per-run-tab deployment was: AKfycbwBiCM6SlmVnw8-vi2htEFvyK16HTt9hWD-U46EZVeYU6-Zm8fLjJlekcMcTeHTh_II
 #define SHEETS_URL   "https://script.google.com/macros/s/AKfycbxGhE2Pz5Lp1xlLEwjpfPZI9cyJkNz3nbioRvHkJfGn5dgp94_JDueu67judZPQumFmWQ/exec"
+#define DEVICE_ID    "ventis-01"        // pseudonym; namespaces run_id + the row's device_id. NO real names.
 #define RUN_LABEL    "unlabeled"      // change before each run: e.g. "dorm_window_only"
 #define LOG_INTERVAL 30000            // ms between log writes (30s matches old Pi logger)
 #define CTRL_POLL_INTERVAL 60000      // ms between remote-control polls (Apps Script doGet)

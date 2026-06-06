@@ -111,6 +111,7 @@ bool          autoInsightBootDone  = false;
 const unsigned long AUTO_INSIGHT_INTERVAL_MS   = 60000;  // 60s between periodic auto-regens
 const unsigned long AUTO_INSIGHT_BOOT_DELAY_MS = 8000;   // wait 8s after first reading before first auto
 char          runLabel[64]     = "unlabeled";
+char          runId[40]        = "";        // <DEVICE_ID>_<start_epoch>, set on run start, persisted in NVS
 uint32_t      logRowCount      = 0;
 
 // Logging persistence (NVS) + remote control. logEnabled/runLabel survive a
@@ -192,11 +193,11 @@ void logToSheets() {
     char ts[25] = "unknown";
     struct tm t;
     if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
-    char body[384];
+    char body[448];
     snprintf(body, sizeof(body),
-        "{\"token\":\"%s\",\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
+        "{\"token\":\"%s\",\"device_id\":\"%s\",\"run_id\":\"%s\",\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
         "\"humidity_pct\":%.2f,\"temp_out_c\":%.2f,\"fan_on\":%s,\"fan_duty\":%u,\"reason\":\"%s\"}",
-        SHEETS_TOKEN, ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
+        SHEETS_TOKEN, DEVICE_ID, runId, ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
         fan.on ? "true" : "false", computeDuty(fan, readings), reasonStr(fan.reason));
     WiFiClientSecure client;
     client.setInsecure();
@@ -214,6 +215,7 @@ void logToSheets() {
 void persistLogState() {
     prefs.putBool("logOn", logEnabled);
     prefs.putString("label", runLabel);
+    prefs.putString("runId", runId);
 }
 
 // Single path for applying a logging command, whether it came from the on-device
@@ -226,6 +228,12 @@ void applyLogCommand(bool enable, const char *label, bool resetCounters) {
     if (enable && (!logEnabled || resetCounters)) {
         logRowCount = 0;
         lastLogMs   = 0;   // log immediately on (re)start
+        // New run → mint a run_id (<device>_<start epoch>). Persisted below, so a reboot
+        // mid-run RESUMES the same run_id rather than splitting the run. Falls back to
+        // uptime millis if NTP hasn't synced yet (run_id stays unique, just not wall-clock).
+        time_t now = time(nullptr);
+        long stamp = (now > 1700000000) ? (long)now : (long)millis();
+        snprintf(runId, sizeof(runId), "%s_%ld", DEVICE_ID, stamp);
     }
     logEnabled = enable;
     persistLogState();
@@ -1701,6 +1709,11 @@ void setup() {
     if (savedLabel.length()) {
         strncpy(runLabel, savedLabel.c_str(), sizeof(runLabel) - 1);
         runLabel[sizeof(runLabel) - 1] = '\0';
+    }
+    String savedRunId = prefs.getString("runId", "");
+    if (savedRunId.length()) {
+        strncpy(runId, savedRunId.c_str(), sizeof(runId) - 1);
+        runId[sizeof(runId) - 1] = '\0';
     }
     if (logEnabled) {
         lastLogMs = 0;   // resume logging immediately

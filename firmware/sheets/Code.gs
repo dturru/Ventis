@@ -31,7 +31,7 @@ const CONFIG = {
 // Canonical column order = the data contract. Do not reorder casually.
 const SCHEMA = [
   'timestamp', 'device_id', 'condition', 'co2_ppm', 'temp_c',
-  'humidity_pct', 'fan_duty', 'window_state', 'consent'
+  'humidity_pct', 'fan_duty', 'window_state', 'consent', 'run_id'
 ];
 
 function doPost(e) {
@@ -99,7 +99,8 @@ function buildRow_(p) {
     num_(p.humidity_pct),
     fanDuty_(p),                                          // real duty if sent, else 0/100 from fan_on
     blank_(p.window_state),                               // not measured by v1 yet -> blank
-    (p.consent != null ? truthy_(p.consent) : CONFIG.consent)
+    (p.consent != null ? truthy_(p.consent) : CONFIG.consent),
+    runId_(p.run_id)                                      // <device>_<start epoch>; blank for legacy rows
   ];
 }
 
@@ -151,6 +152,13 @@ function label_(v) {
 function deviceId_(v) {
   var s = (v === null || v === undefined) ? '' : String(v).toLowerCase().trim();
   return /^ventis[-_][a-z0-9]+$/.test(s) ? s : CONFIG.deviceId;
+}
+
+// run_id is device-generated (<device_id>_<start_epoch>) — no PII, but sanitize defensively
+// to a safe key charset. Blank for legacy rows that predate the run_id firmware.
+function runId_(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).toLowerCase().replace(/[^a-z0-9_\-]+/g, '').slice(0, 48);
 }
 
 function truthy_(v) { return v === true || v === 'true' || v === 1 || v === '1'; }

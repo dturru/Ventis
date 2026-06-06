@@ -35,3 +35,6 @@ Thumbs.db
 # Logs / scratch
 *.log
 excalidraw.log
+
+# Archived per-run dataset (the moat) + manifest — never commit.
+site/scripts/archive/

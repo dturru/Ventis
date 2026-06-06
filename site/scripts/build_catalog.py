@@ -1,5 +1,5 @@
-"""Build the Data Library catalog from ventis.db: catalog.json + per-run series."""
-import json, os, re, shutil, sqlite3, sys
+"""Build the Data Library catalog from ventis.db: catalog.json + per-run series + CSV."""
+import csv, json, os, re, shutil, sqlite3, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ARCHIVE_DIR = os.path.join(HERE, "archive")
@@ -84,7 +84,7 @@ def run_record(run: dict) -> dict:
         "ashrae_exceed": bool(peak is not None and peak > ASHRAE),
         "consent": run.get("consent", ""),
         "chart": f"{_slug(run.get('condition',''))}.png",
-        "csv": f"{run.get('run_key')}.csv",
+        "csv": f"{rid}.csv",
         "series": f"{rid}.json",
         "notes": "",
     }
@@ -106,13 +106,24 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
     records = [run_record(r) for r in runs]
     json.dump({"generated": _now(), "runs": records},
               open(os.path.join(out_dir, "catalog.json"), "w"), indent=2, default=str)
+    csv_dir = os.path.join(out_dir, "csv")
+    os.makedirs(csv_dir, exist_ok=True)
+    CSV_COLS = ["timestamp", "co2_ppm", "temp_c", "humidity_pct",
+                "fan_duty", "window_state", "condition"]
     for r in runs:
         rid = (r.get("run_id") or "").strip() or r["run_key"]
-        rows = con.execute(
-            "SELECT timestamp,co2_ppm,temp_c,humidity_pct FROM readings "
-            "WHERE run_key=? ORDER BY timestamp", (r["run_key"],)).fetchall()
-        step = max(1, len(rows) // SERIES_MAX)
-        rows = rows[::step]
+        full = con.execute(
+            "SELECT timestamp,co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition "
+            "FROM readings WHERE run_key=? ORDER BY timestamp", (r["run_key"],)).fetchall()
+        # full raw CSV (downloadable from the run detail page)
+        with open(os.path.join(csv_dir, f"{rid}.csv"), "w", newline="", encoding="utf-8") as cf:
+            w = csv.writer(cf)
+            w.writerow(CSV_COLS)
+            for x in full:
+                w.writerow([x[c] for c in CSV_COLS])
+        # downsampled series JSON (for charts / compare view)
+        step = max(1, len(full) // SERIES_MAX)
+        rows = full[::step]
         json.dump({
             "ts":   [x["timestamp"] for x in rows],
             "co2_ppm":      [x["co2_ppm"] for x in rows],

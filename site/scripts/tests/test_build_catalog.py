@@ -43,11 +43,12 @@ def _fixture_db(path):
       CREATE TABLE runs (run_key TEXT, run_id TEXT, device_id TEXT, condition TEXT,
         start TEXT, end TEXT, n_rows INT, co2_mean REAL, co2_peak REAL);
       CREATE TABLE readings (run_key TEXT, run_id TEXT, timestamp TEXT,
-        co2_ppm REAL, temp_c REAL, humidity_pct REAL);
+        co2_ppm REAL, temp_c REAL, humidity_pct REAL,
+        fan_duty REAL, window_state TEXT, condition TEXT);
       INSERT INTO runs VALUES ('k1','r1','ventis-01','choates_x_1person',
         '2026-06-01 21:00:00','2026-06-01 22:00:00',2,800,1100);
-      INSERT INTO readings VALUES ('k1','r1','2026-06-01 21:00:00',800,22,40),
-                                  ('k1','r1','2026-06-01 21:30:00',1100,22,41);
+      INSERT INTO readings VALUES ('k1','r1','2026-06-01 21:00:00',800,22,40,0,'closed','choates_x_1person'),
+                                  ('k1','r1','2026-06-01 21:30:00',1100,22,41,100,'closed','choates_x_1person');
     """)
     con.commit(); con.close()
 
@@ -76,3 +77,8 @@ def test_build_emits_catalog_and_series(tmp_path):
     assert cat["runs"][0]["building"] == "choates"
     series = json.load(open(out / "series" / "r1.json"))
     assert len(series["co2_ppm"]) == 2
+    # full raw CSV is emitted + downloadable
+    csv_text = open(out / "csv" / "r1.csv").read().strip().splitlines()
+    assert csv_text[0] == "timestamp,co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition"
+    assert len(csv_text) == 3  # header + 2 rows
+    assert cat["runs"][0]["csv"] == "r1.csv"

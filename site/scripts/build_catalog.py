@@ -104,7 +104,10 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
     if os.path.isdir(graphs_dir):
         for f in os.listdir(graphs_dir):
             if f.endswith(".png"):
-                shutil.copy2(os.path.join(graphs_dir, f), cdst)
+                # lowercase dest so the catalog's _slug(condition) reference
+                # resolves on case-sensitive hosts (Linux CI / Cloudflare)
+                shutil.copy2(os.path.join(graphs_dir, f),
+                             os.path.join(cdst, f.lower()))
     return len(records)
 
 

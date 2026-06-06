@@ -1,0 +1,35 @@
+/* Ventis design tokens — kept in sync with app/src/global.css */
+:root {
+  --bg: #edf2ed;
+  --tile: #ffffff;
+  --tile-alt: #f7faf6;
+  --fg: #1f2a1f;
+  --muted: #5e6b5e;
+  --green: #1e6e3a;
+  --green-hover: #155026;
+  --green-light: #e8f5e9;
+  --amber: #b87900;
+  --amber-light: #fff7e0;
+  --red: #c62828;
+  --red-light: #ffebee;
+  --border: #d0dbd0;
+  --shadow: 0 2px 8px rgba(30, 110, 58, 0.10), 0 1px 2px rgba(30, 110, 58, 0.06);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--green); text-decoration: none; }
+a:hover { color: var(--green-hover); }
+button { font-family: inherit; cursor: pointer; }
+input, select { font-family: inherit; }

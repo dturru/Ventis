@@ -10,6 +10,8 @@
 #include <SensirionI2CScd4x.h>
 #include <Adafruit_SSD1306.h>
 #include <ESPAsyncWebServer.h>
+#include <Preferences.h>
+#include <LittleFS.h>
 #include "config.h"
 
 #ifndef ANTHROPIC_MODEL
@@ -109,7 +111,16 @@ bool          autoInsightBootDone  = false;
 const unsigned long AUTO_INSIGHT_INTERVAL_MS   = 60000;  // 60s between periodic auto-regens
 const unsigned long AUTO_INSIGHT_BOOT_DELAY_MS = 8000;   // wait 8s after first reading before first auto
 char          runLabel[64]     = "unlabeled";
+char          runId[40]        = "";        // <DEVICE_ID>_<start_epoch>, set on run start, persisted in NVS
 uint32_t      logRowCount      = 0;
+
+// Logging persistence (NVS) + remote control. logEnabled/runLabel survive a
+// reboot so a crash or power-blip RESUMES the run instead of going silent; the
+// device also polls the Apps Script doGet for start/stop commands so a run can be
+// controlled from anywhere (outbound HTTPS — no LAN/inbound access needed).
+Preferences   prefs;
+uint32_t      lastCtrlSeq      = 0;       // last applied remote command id
+unsigned long lastCtrlPollMs   = 0;
 
 // /insight is handled synchronously in the AsyncWebServer handler — see setupServer().
 // Previous async/loop-dispatch architecture had a dangling-pointer + TCP-tear-down
@@ -182,11 +193,11 @@ void logToSheets() {
     char ts[25] = "unknown";
     struct tm t;
     if (getLocalTime(&t)) strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%S", &t);
-    char body[320];
+    char body[448];
     snprintf(body, sizeof(body),
-        "{\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
+        "{\"token\":\"%s\",\"device_id\":\"%s\",\"run_id\":\"%s\",\"timestamp\":\"%s\",\"run\":\"%s\",\"co2\":%u,\"temp_in_c\":%.2f,"
         "\"humidity_pct\":%.2f,\"temp_out_c\":%.2f,\"fan_on\":%s,\"fan_duty\":%u,\"reason\":\"%s\"}",
-        ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
+        SHEETS_TOKEN, DEVICE_ID, runId, ts, runLabel, readings.co2, readings.tempIn, readings.humidity, readings.tempOut,
         fan.on ? "true" : "false", computeDuty(fan, readings), reasonStr(fan.reason));
     WiFiClientSecure client;
     client.setInsecure();
@@ -197,6 +208,65 @@ void logToSheets() {
     http.POST(body);
     http.end();
     Serial.printf("[LOG] %s co2=%u\n", ts, readings.co2);
+}
+
+// ── Logging state persistence + remote control ───────────────────────────────
+
+void persistLogState() {
+    prefs.putBool("logOn", logEnabled);
+    prefs.putString("label", runLabel);
+    prefs.putString("runId", runId);
+}
+
+// Single path for applying a logging command, whether it came from the on-device
+// web UI or the remote control tab. Persists to NVS so it survives a reboot.
+void applyLogCommand(bool enable, const char *label, bool resetCounters) {
+    if (label && label[0]) {
+        strncpy(runLabel, label, sizeof(runLabel) - 1);
+        runLabel[sizeof(runLabel) - 1] = '\0';
+    }
+    if (enable && (!logEnabled || resetCounters)) {
+        logRowCount = 0;
+        lastLogMs   = 0;   // log immediately on (re)start
+        // New run → mint a run_id (<device>_<start epoch>). Persisted below, so a reboot
+        // mid-run RESUMES the same run_id rather than splitting the run. Falls back to
+        // uptime millis if NTP hasn't synced yet (run_id stays unique, just not wall-clock).
+        time_t now = time(nullptr);
+        long stamp = (now > 1700000000) ? (long)now : (long)millis();
+        snprintf(runId, sizeof(runId), "%s_%ld", DEVICE_ID, stamp);
+    }
+    logEnabled = enable;
+    persistLogState();
+}
+
+// Poll the Apps Script doGet for a remote logging command. Outbound HTTPS, so it
+// works from anywhere the device has internet — no inbound/LAN access needed. A
+// command applies only when its `seq` increments, so it never fights the on-device
+// web UI: you trigger it by editing the control tab and bumping seq.
+void pollControl() {
+    if (strlen(SHEETS_URL) == 0 || WiFi.status() != WL_CONNECTED) return;
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    if (!http.begin(client, SHEETS_URL)) return;
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    int code = http.GET();
+    if (code == 200) {
+        JsonDocument doc;
+        if (deserializeJson(doc, http.getString()) == DeserializationError::Ok) {
+            uint32_t seq = doc["seq"] | 0;
+            if (seq != lastCtrlSeq) {
+                bool        enable = doc["logging"] | false;
+                const char *label  = doc["label"]  | "";
+                applyLogCommand(enable, label, true);
+                lastCtrlSeq = seq;
+                prefs.putUInt("ctrlSeq", lastCtrlSeq);
+                Serial.printf("[CTRL] seq %u: logging=%s label=%s\n",
+                              seq, enable ? "ON" : "OFF", runLabel);
+            }
+        }
+    }
+    http.end();
 }
 
 // ── RGB LED ──────────────────────────────────────────────────────────────────
@@ -1385,11 +1455,10 @@ window.addEventListener('load',()=>{
 </body></html>)raw";
 
 void setupServer() {
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *req) {
-        AsyncWebServerResponse *res = req->beginResponse(200, "text/html", INDEX_HTML);
-        res->addHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-        req->send(res);
-    });
+    // Root "/" and static assets are now served from LittleFS (the built React app in
+    // firmware/data/) via serveStatic registered at the end of this function. The legacy
+    // embedded INDEX_HTML page is kept in-source but no longer registered — to fall back
+    // to it, re-add this handler and remove the serveStatic line below (or flash `main`).
 
     server.on("/data", HTTP_GET, [](AsyncWebServerRequest *req) {
         String json = "{";
@@ -1414,17 +1483,14 @@ void setupServer() {
     });
 
     server.on("/log/start", HTTP_GET, [](AsyncWebServerRequest *req) {
-        if (req->hasParam("label")) {
-            strncpy(runLabel, req->getParam("label")->value().c_str(), sizeof(runLabel) - 1);
-        }
-        logEnabled  = true;
-        logRowCount = 0;
-        lastLogMs   = 0;
+        const char *label = req->hasParam("label")
+            ? req->getParam("label")->value().c_str() : nullptr;
+        applyLogCommand(true, label, true);   // persists to NVS (reboot-resume)
         req->send(200, "application/json", "{\"ok\":true,\"enabled\":true}");
     });
 
     server.on("/log/stop", HTTP_GET, [](AsyncWebServerRequest *req) {
-        logEnabled = false;
+        applyLogCommand(false, nullptr, false);
         req->send(200, "application/json", "{\"ok\":true,\"enabled\":false}");
     });
 
@@ -1509,6 +1575,10 @@ void setupServer() {
                     + "\",\"source\":\"" + cachedInsightSource + "\"}";
         req->send(200, "application/json", json);
     });
+
+    // Serve the built React app from LittleFS. Registered LAST so all JSON API routes
+    // above take precedence; this catch-all handles "/", /assets/*, and /mock-*.json.
+    server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
     server.begin();
 }
@@ -1630,8 +1700,34 @@ void setup() {
     while (!getLocalTime(&t) && ntpTries++ < 20) delay(500);
     Serial.printf("NTP: %s\n", ntpTries < 20 ? "synced" : "failed");
 
+    // Restore logging state across reboots — a crash/power-blip resumes the run
+    // instead of going silent. Also restore the last applied remote command id.
+    prefs.begin("ventis", false);
+    logEnabled  = prefs.getBool("logOn", false);
+    lastCtrlSeq = prefs.getUInt("ctrlSeq", 0);
+    String savedLabel = prefs.getString("label", "");
+    if (savedLabel.length()) {
+        strncpy(runLabel, savedLabel.c_str(), sizeof(runLabel) - 1);
+        runLabel[sizeof(runLabel) - 1] = '\0';
+    }
+    String savedRunId = prefs.getString("runId", "");
+    if (savedRunId.length()) {
+        strncpy(runId, savedRunId.c_str(), sizeof(runId) - 1);
+        runId[sizeof(runId) - 1] = '\0';
+    }
+    if (logEnabled) {
+        lastLogMs = 0;   // resume logging immediately
+        Serial.printf("[RESUME] logging '%s' after reboot\n", runLabel);
+    }
+
     WiFi.softAP(AP_SSID, AP_PASSWORD);
     Serial.printf("AP started: %s\n", WiFi.softAPIP().toString().c_str());
+
+    if (!LittleFS.begin(true)) {
+        Serial.println("LittleFS mount FAILED — React UI will 404 (JSON API still works)");
+    } else {
+        Serial.println("LittleFS mounted — serving React app from /data");
+    }
 
     setupServer();
     if (oledOk) updateOled();
@@ -1706,6 +1802,13 @@ void loop() {
         lastLogMs = now;
         logToSheets();
         logRowCount++;
+    }
+
+    // Remote control poll — outbound HTTPS, so a run can be started/stopped from
+    // anywhere (edit the control tab + bump seq). Blocks ~1-2s like logToSheets.
+    if (now - lastCtrlPollMs >= CTRL_POLL_INTERVAL) {
+        lastCtrlPollMs = now;
+        pollControl();
     }
 
     // RGB LED

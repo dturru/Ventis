@@ -31,18 +31,53 @@ const CONFIG = {
 // Canonical column order = the data contract. Do not reorder casually.
 const SCHEMA = [
   'timestamp', 'device_id', 'condition', 'co2_ppm', 'temp_c',
-  'humidity_pct', 'fan_duty', 'window_state', 'consent'
+  'humidity_pct', 'fan_duty', 'window_state', 'consent', 'run_id'
 ];
 
 function doPost(e) {
   try {
     const p = JSON.parse(e.postData.contents);
+    // Write auth: the /exec URL is public (committed in firmware config.h), so without
+    // this check anyone could POST and poison the dataset. The firmware sends `token`
+    // (from gitignored secrets.h); the expected value lives in a Script Property so it's
+    // never in the repo. Rollout is order-independent and lossless: while the property is
+    // UNSET the endpoint behaves as before (accepts all), and the instant you set it,
+    // only the matching token is accepted. Set it AFTER reflashing devices with the token.
+    const expected = PropertiesService.getScriptProperties().getProperty('SHEETS_TOKEN');
+    if (expected && p.token !== expected) {
+      return json_({ ok: false, error: 'unauthorized' });
+    }
     const sheet = getSheet_();
     sheet.appendRow(buildRow_(p));
     return json_({ ok: true, rows: sheet.getLastRow() - 1 });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
+}
+
+// Remote logging control. The device polls this (GET) every minute and applies a
+// command only when `seq` changes — so it never fights the on-device web UI.
+// To start/stop a run from ANY device (incl. your phone, off-campus): open the
+// `control` tab, set logging TRUE/FALSE, set the label, and BUMP seq by 1.
+function doGet() {
+  try {
+    const c = getControl_();
+    return json_({ logging: c.logging, label: c.label, seq: c.seq });
+  } catch (err) {
+    return json_({ logging: false, label: '', seq: 0, error: String(err) });
+  }
+}
+
+function getControl_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('control');
+  if (!sh) {
+    sh = ss.insertSheet('control');
+    sh.getRange('A1:C1').setValues([['logging', 'label', 'seq']]);
+    sh.getRange('A2:C2').setValues([[false, '', 0]]);
+  }
+  const v = sh.getRange('A2:C2').getValues()[0];
+  return { logging: truthy_(v[0]), label: blank_(v[1]), seq: Number(v[2]) || 0 };
 }
 
 function getSheet_() {
@@ -57,14 +92,15 @@ function getSheet_() {
 function buildRow_(p) {
   return [
     p.timestamp || new Date().toISOString(),
-    blank_(p.device_id != null ? p.device_id : CONFIG.deviceId),
-    blank_(p.condition != null ? p.condition : p.run),   // run -> condition
+    deviceId_(p.device_id != null ? p.device_id : CONFIG.deviceId),
+    label_(p.condition != null ? p.condition : p.run),   // run -> condition (sanitized)
     num_(p.co2_ppm,  p.co2),                              // co2 -> co2_ppm
     num_(p.temp_c,   p.temp_in_c),                        // temp_in_c -> temp_c
     num_(p.humidity_pct),
     fanDuty_(p),                                          // real duty if sent, else 0/100 from fan_on
     blank_(p.window_state),                               // not measured by v1 yet -> blank
-    (p.consent != null ? truthy_(p.consent) : CONFIG.consent)
+    (p.consent != null ? truthy_(p.consent) : CONFIG.consent),
+    runId_(p.run_id)                                      // <device>_<start epoch>; blank for legacy rows
   ];
 }
 
@@ -90,6 +126,39 @@ function fanDuty_(p) {
   }
   if (p.fan_on != null) return truthy_(p.fan_on) ? 100 : 0;
   return '';
+}
+
+// ---- privacy guards (anonymization enforced at ingest) ----
+// The dataset promises "no names, no room identifiers." We can't reliably detect an
+// arbitrary person's name in code, but we CAN enforce the safe SHAPE of the two free-text
+// fields so identifying info never reaches the sheet, even on operator error. Sanitizing
+// happens here in buildRow_ — BEFORE appendRow — so the raw string is never persisted.
+
+// Condition labels follow `building_condition_occupancy` (e.g. "choates_windowclosed_1person").
+// Force lowercase + [a-z0-9_] only, and strip 3+ digit runs (room numbers like 302, years
+// like 2026). Occupancy counts (1-2 digits, e.g. "2person") are preserved.
+function label_(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).toLowerCase()
+    .replace(/\d{3,}/g, '')             // drop room numbers / years
+    .replace(/[^a-z0-9_]+/g, '_')       // safe charset only (kills free-text, spaces, punctuation)
+    .replace(/_+/g, '_')                // collapse repeats
+    .replace(/^_+|_+$/g, '')            // trim
+    .slice(0, 64);                      // length cap
+}
+
+// device_id must be a pseudonym (e.g. "ventis-01"), never a person's name. Anything that
+// doesn't fit the pseudonym shape falls back to the configured pseudonym.
+function deviceId_(v) {
+  var s = (v === null || v === undefined) ? '' : String(v).toLowerCase().trim();
+  return /^ventis[-_][a-z0-9]+$/.test(s) ? s : CONFIG.deviceId;
+}
+
+// run_id is device-generated (<device_id>_<start_epoch>) — no PII, but sanitize defensively
+// to a safe key charset. Blank for legacy rows that predate the run_id firmware.
+function runId_(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).toLowerCase().replace(/[^a-z0-9_\-]+/g, '').slice(0, 48);
 }
 
 function truthy_(v) { return v === true || v === 'true' || v === 1 || v === '1'; }

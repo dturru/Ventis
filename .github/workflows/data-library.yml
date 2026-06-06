@@ -1,0 +1,64 @@
+name: data-library
+
+# Scheduled refresh + deploy of the private Ventis Data Library.
+# Pulls the live Sheet (read-only key) -> existing pipeline -> build_catalog.py
+# -> static React app -> Cloudflare Pages (gated by Cloudflare Access).
+#
+# Moat: the service-account key + private data exist ONLY inside this ephemeral
+# runner and on the gated Cloudflare edge. Nothing private is committed.
+# 🔴 Do NOT enable the schedule until Cloudflare Access is proven to block anon
+#    (see docs/plans Task 10). Until then, run only via manual workflow_dispatch.
+
+on:
+  # schedule: [{ cron: "17 * * * *" }]   # hourly — ENABLE ONLY AFTER the Access gate is verified
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: pip install -r site/scripts/requirements.txt
+
+      - name: Write service-account key (read-only Sheets)
+        env:
+          VENTIS_SA_JSON: ${{ secrets.VENTIS_SA_JSON }}
+        run: printf '%s' "$VENTIS_SA_JSON" > site/scripts/service_account.json
+
+      - name: Refresh dataset + charts (pull -> sqlite -> archive -> plot)
+        env:
+          VENTIS_SHEET_ID: ${{ secrets.VENTIS_SHEET_ID }}
+        run: python site/scripts/refresh_backup.py --no-backup
+
+      - name: Build catalog (catalog.json + series + charts)
+        run: python site/scripts/build_catalog.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build the catalog app
+        run: |
+          cd library
+          npm ci
+          npm run build
+
+      - name: Deploy to Cloudflare Pages (production only)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          # --branch=main forces a PRODUCTION deploy. Preview deploys get unique
+          # *.pages.dev subdomains that a single-hostname Access policy may NOT
+          # cover -> moat leak. Keep deploys production-only.
+          command: pages deploy library/dist --project-name=ventis-data-library --branch=main
+
+      - name: Clean up key
+        if: always()
+        run: rm -f site/scripts/service_account.json

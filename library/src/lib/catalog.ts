@@ -1,0 +1,45 @@
+export interface Run {
+  run_id: string;
+  run_key: string;
+  device_id: string;
+  building: string;
+  condition: string;
+  occupancy: number | null;
+  window_state: string;
+  date: string;
+  start: string;
+  end: string;
+  duration_h: number | null;
+  n_rows: number;
+  co2_mean: number | null;
+  co2_peak: number | null;
+  ashrae_exceed: boolean;
+  consent: string;
+  chart: string;
+  csv: string;
+  series: string;
+  notes: string;
+}
+
+export async function loadCatalog(): Promise<Run[]> {
+  const r = await fetch("/data/catalog.json");
+  return (await r.json()).runs;
+}
+
+export function filterRuns(runs: Run[], f: Partial<Record<keyof Run, unknown>>): Run[] {
+  return runs.filter((r) =>
+    Object.entries(f).every(
+      ([k, v]) =>
+        v == null ||
+        v === "" ||
+        String((r as unknown as Record<string, unknown>)[k]).toLowerCase().includes(String(v).toLowerCase())
+    )
+  );
+}
+
+export function sortRuns(runs: Run[], key: keyof Run, dir: "asc" | "desc"): Run[] {
+  const s = [...runs].sort((a, b) =>
+    (a[key] as never) > (b[key] as never) ? 1 : -1
+  );
+  return dir === "desc" ? s.reverse() : s;
+}

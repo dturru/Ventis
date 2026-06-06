@@ -17,7 +17,7 @@ export function InsightCard({ text, source, latencyMs, isController, onTap }: Pr
   return (
     <div
       data-tour="insight"
-      onClick={isController ? onTap : undefined}
+      onClick={onTap}
       style={{
         background: 'var(--green-light)',
         border: '1px solid #bedfc4',
@@ -25,7 +25,7 @@ export function InsightCard({ text, source, latencyMs, isController, onTap }: Pr
         padding: 16,
         marginBottom: 12,
         boxShadow: 'var(--shadow)',
-        cursor: isController ? 'pointer' : 'default',
+        cursor: 'pointer',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>

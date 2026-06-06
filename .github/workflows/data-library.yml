@@ -39,6 +39,13 @@ jobs:
       - name: Build catalog (catalog.json + series + charts)
         run: python site/scripts/build_catalog.py
 
+      - name: Sync system-of-record to Supabase (durable, off-laptop)
+        # No-op (dry run, exit 0) until the SUPABASE_DB_URL secret is set — keeps CI green.
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          VENTIS_SHEET_ID: ${{ secrets.VENTIS_SHEET_ID }}
+        run: python site/scripts/supabase_sync.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

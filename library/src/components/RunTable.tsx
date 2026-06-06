@@ -21,6 +21,15 @@ export default function RunTable() {
   const [filters, setFilters] = useState<Partial<Record<keyof Run, string>>>({});
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     loadCatalog()
@@ -62,7 +71,7 @@ export default function RunTable() {
         flagged (ASHRAE)
       </p>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
         {(["building", "condition", "occupancy", "date"] as (keyof Run)[]).map((k) => (
           <input
             key={k}
@@ -77,12 +86,32 @@ export default function RunTable() {
             }}
           />
         ))}
+        <Link
+          to={`/compare?ids=${encodeURIComponent(Array.from(selected).join(","))}`}
+          onClick={(e) => {
+            if (selected.size < 2) {
+              e.preventDefault();
+            }
+          }}
+          style={{
+            marginLeft: "auto",
+            padding: "6px 14px",
+            borderRadius: 6,
+            background: selected.size >= 2 ? "var(--green)" : "var(--border)",
+            color: selected.size >= 2 ? "#fff" : "var(--muted)",
+            pointerEvents: selected.size >= 2 ? "auto" : "none",
+          }}
+          title={selected.size < 2 ? "Select 2+ runs to compare" : "Compare selected runs"}
+        >
+          Compare ({selected.size})
+        </Link>
       </div>
 
       <div style={{ overflowX: "auto", boxShadow: "var(--shadow)", borderRadius: 8 }}>
         <table style={{ borderCollapse: "collapse", width: "100%", background: "var(--tile)" }}>
           <thead>
             <tr>
+              <th style={{ borderBottom: "2px solid var(--border)", padding: "10px 12px" }} />
               {COLUMNS.map((c) => (
                 <th
                   key={c.key}
@@ -110,6 +139,14 @@ export default function RunTable() {
                 key={r.run_id || r.run_key}
                 style={{ background: i % 2 ? "var(--tile-alt)" : "var(--tile)" }}
               >
+                <td style={cell}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(r.run_id || r.run_key)}
+                    onChange={() => toggleSelect(r.run_id || r.run_key)}
+                    aria-label={`select ${r.condition}`}
+                  />
+                </td>
                 <td style={cell}>{r.date}</td>
                 <td style={cell}>{r.building}</td>
                 <td style={cell}>{r.occupancy ?? "—"}</td>

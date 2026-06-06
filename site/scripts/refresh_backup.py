@@ -15,6 +15,7 @@ pandas aren't installed) so a missing plot dep never blocks the backup.
 Usage:
   python refresh_backup.py            # full refresh + backup
   python refresh_backup.py --no-graphs
+  python refresh_backup.py --no-backup   # steps 1-4 only (CI: refresh + chart, no OneDrive zip)
 """
 import csv as _csv
 import os
@@ -41,6 +42,7 @@ def _step(n, msg):
 
 def main(argv):
     do_graphs = "--no-graphs" not in argv
+    do_backup = "--no-backup" not in argv
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
     _step(1, "pull telemetry")
@@ -71,6 +73,10 @@ def main(argv):
             print(f"  (charts skipped: {e})")
     else:
         print("  (charts skipped)")
+
+    if not do_backup:
+        print("\nDONE — dataset refreshed + charted (backup skipped, --no-backup).")
+        return 0
 
     _step(5, "backup to OneDrive")
     onedrive = os.environ.get("OneDrive") or os.path.expanduser(r"~\OneDrive")

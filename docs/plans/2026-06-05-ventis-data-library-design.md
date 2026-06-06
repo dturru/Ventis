@@ -79,7 +79,9 @@ This maps **1:1 to the future Postgres `runs` table**. `building` / `occupancy` 
 ## Graduation path to B (Supabase)
 Trigger: College wants a pilot / per-user logins / multi-building. Steps: stand up Supabase; load `ventis.db` → Postgres `runs` table (= `catalog.json` schema); point the same frontend at Supabase with auth + row-level security; issue read-only College accounts; add annotations + upload + optional UI query. Frontend + schema already match → low-friction.
 
-## Open questions (resolve at planning)
-- Host: Cloudflare Pages+Access vs Vercel Authentication (both free; pick on auth UX).
-- Cron cadence (hourly vs a few times/day) — runs aren't real-time.
-- Reuse existing `app/`/`site/` design tokens vs a fresh minimal theme.
+## Open questions — RESOLVED (built + live 2026-06-05)
+- ~~Host~~ → **Cloudflare Pages + Cloudflare Access** (gate over apex + `*.pages.dev` wildcard via Pages preview-protection; anon → 302 login, verified). Deploy via `wrangler-action`, production-only (`--branch=main`).
+- ~~Cron cadence~~ → **hourly** (`17 * * * *`).
+- ~~Design tokens~~ → **reused** the `app/` Ventis tokens (`library/src/theme.css`).
+
+**Status: LIVE** at https://ventis-data-library.pages.dev (PR #2 merged to `main`; all 12 plan tasks done). Future: v1.1 compare view (series JSON already emitted), graduate to Supabase/Postgres (Approach B) when per-user logins / pilot justify it.

@@ -1,6 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from build_catalog import parse_label, run_record
+import json, sqlite3
+from build_catalog import parse_label, run_record, build
 
 
 def test_parse_label_standard():
@@ -34,3 +35,29 @@ def test_run_record_shape():
     assert r["ashrae_exceed"] is True          # peak 1100 > 1000
     assert r["date"] == "2026-06-01"
     assert abs(r["duration_h"] - 2.0) < 0.01
+
+
+def _fixture_db(path):
+    con = sqlite3.connect(path)
+    con.executescript("""
+      CREATE TABLE runs (run_key TEXT, run_id TEXT, device_id TEXT, condition TEXT,
+        start TEXT, end TEXT, n_rows INT, co2_mean REAL, co2_peak REAL);
+      CREATE TABLE readings (run_key TEXT, run_id TEXT, timestamp TEXT,
+        co2_ppm REAL, temp_c REAL, humidity_pct REAL);
+      INSERT INTO runs VALUES ('k1','r1','ventis-01','choates_x_1person',
+        '2026-06-01 21:00:00','2026-06-01 22:00:00',2,800,1100);
+      INSERT INTO readings VALUES ('k1','r1','2026-06-01 21:00:00',800,22,40),
+                                  ('k1','r1','2026-06-01 21:30:00',1100,22,41);
+    """)
+    con.commit(); con.close()
+
+
+def test_build_emits_catalog_and_series(tmp_path):
+    db = tmp_path / "ventis.db"; _fixture_db(str(db))
+    out = tmp_path / "out"
+    build(db_path=str(db), out_dir=str(out), graphs_dir=str(tmp_path))
+    cat = json.load(open(out / "catalog.json"))
+    assert len(cat["runs"]) == 1
+    assert cat["runs"][0]["building"] == "choates"
+    series = json.load(open(out / "series" / "r1.json"))
+    assert len(series["co2_ppm"]) == 2

@@ -3,3 +3,7 @@
 # These are for the optional private live Google Sheets pull (sheet_source.py):
 gspread>=6
 google-auth>=2
+
+# Charting (plot_ventis_run.py) + the data library build (build_catalog.py / CI):
+pandas>=2
+matplotlib>=3.7

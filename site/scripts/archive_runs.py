@@ -54,12 +54,20 @@ def _safe(name):
 
 
 def _parse(ts):
+    # Google Sheets reformats the ISO timestamp (space separator, UNPADDED hour,
+    # e.g. "2026-06-02 0:59:32"). strptime is lenient about padding, so this parses
+    # both that and the firmware's "YYYY-MM-DDTHH:MM:SS".
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
         try:
             return datetime.strptime(ts, fmt)
         except (ValueError, TypeError):
             pass
     return None
+
+
+def _dt(r):
+    # Sort key by ACTUAL time — never lexical, since Sheets' unpadded hours break it.
+    return _parse(_ts(r)) or datetime.min
 
 
 def group_runs(rows):
@@ -76,7 +84,7 @@ def group_runs(rows):
         else:
             legacy.append(r)
 
-    legacy.sort(key=_ts)
+    legacy.sort(key=_dt)
     cur_key, last_dt, last_cond = None, None, None
     for r in legacy:
         cond = str(r.get("condition", "")).strip() or "unlabeled"
@@ -89,7 +97,7 @@ def group_runs(rows):
         last_dt, last_cond = (dt or last_dt), cond
 
     for k in runs:
-        runs[k].sort(key=_ts)
+        runs[k].sort(key=_dt)
     return runs
 
 
@@ -122,7 +130,7 @@ def main(argv):
         return 0
 
     # the run owning the globally newest row is possibly still logging
-    newest_key = max(runs, key=lambda k: _ts(runs[k][-1]))
+    newest_key = max(runs, key=lambda k: _dt(runs[k][-1]))
 
     manifest = {}
     if os.path.exists(MANIFEST):

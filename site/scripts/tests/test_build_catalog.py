@@ -52,6 +52,21 @@ def _fixture_db(path):
     con.commit(); con.close()
 
 
+def test_parse_label_known_building_anywhere():
+    assert parse_label("1RSingle - Fahey")["building"] == "fahey"
+    assert parse_label("judge_baseline_2person")["building"] == "judge"
+    assert parse_label("eastwheelock_fanclosed_2person")["building"] == "eastwheelock"
+    assert parse_label("mystery_x_1person")["building"] == "mystery"
+
+
+def test_parse_label_occupancy_variants():
+    assert parse_label("eastwheelock_fanclosed_2person")["occupancy"] == 2
+    assert parse_label("eastwheelock_fan_closed_2ppl")["occupancy"] == 2
+    assert parse_label("summit_bedroom_two_ppl")["occupancy"] == 2
+    assert parse_label("midmass_windowfan_3person")["occupancy"] == 3
+    assert parse_label("little_baseline_occupied")["occupancy"] is None
+
+
 def test_build_emits_catalog_and_series(tmp_path):
     db = tmp_path / "ventis.db"; _fixture_db(str(db))
     out = tmp_path / "out"

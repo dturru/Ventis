@@ -10,7 +10,7 @@ name: data-library
 #    (see docs/plans Task 10). Until then, run only via manual workflow_dispatch.
 
 on:
-  # schedule: [{ cron: "17 * * * *" }]   # hourly — ENABLE ONLY AFTER the Access gate is verified
+  schedule: [{ cron: "17 * * * *" }]   # hourly — Access gate verified 2026-06-05 (anon 302 on apex + hash aliases)
   workflow_dispatch:
 
 jobs:

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { loadCatalog, filterRuns, sortRuns, type Run } from "../lib/catalog";
+import { loadCatalog, filterRuns, sortRuns, searchRuns, type Run } from "../lib/catalog";
+import StatsBar from "./StatsBar";
 
 type SortKey = keyof Run;
 
@@ -22,6 +23,7 @@ export default function RunTable() {
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState("");
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -41,8 +43,8 @@ export default function RunTable() {
     const active = Object.fromEntries(
       Object.entries(filters).filter(([, v]) => v !== "" && v != null)
     );
-    return sortRuns(filterRuns(runs, active), sortBy, dir);
-  }, [runs, filters, sortBy, dir]);
+    return sortRuns(filterRuns(searchRuns(runs, query), active), sortBy, dir);
+  }, [runs, query, filters, sortBy, dir]);
 
   function toggleSort(key: SortKey) {
     if (key === sortBy) setDir(dir === "asc" ? "desc" : "asc");
@@ -65,11 +67,30 @@ export default function RunTable() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Ventis Data Library</h1>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <h1 style={{ fontSize: 22, marginBottom: 4 }}>Ventis Data Library</h1>
+        <Link to="/about" style={{ fontSize: 14 }}>About / export →</Link>
+      </div>
       <p style={{ color: "var(--muted)", marginBottom: 20 }}>
         {runs.length} run{runs.length === 1 ? "" : "s"} · CO₂ peaks above 1000 ppm
         flagged (ASHRAE)
       </p>
+
+      <StatsBar runs={runs} />
+
+      <input
+        placeholder="🔍 search runs (building, condition, date…)"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "8px 12px",
+          marginBottom: 12,
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+          background: "var(--tile)",
+        }}
+      />
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
         {(["building", "condition", "occupancy", "date"] as (keyof Run)[]).map((k) => (

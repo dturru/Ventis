@@ -37,6 +37,16 @@ export function filterRuns(runs: Run[], f: Partial<Record<keyof Run, unknown>>):
   );
 }
 
+/** Free-text search across the human-readable fields of each run. */
+export function searchRuns(runs: Run[], query: string): Run[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return runs;
+  const fields: (keyof Run)[] = ["building", "condition", "date", "device_id", "window_state"];
+  return runs.filter((r) =>
+    fields.some((f) => String((r as unknown as Record<string, unknown>)[f] ?? "").toLowerCase().includes(q))
+  );
+}
+
 export function sortRuns(runs: Run[], key: keyof Run, dir: "asc" | "desc"): Run[] {
   const s = [...runs].sort((a, b) =>
     (a[key] as never) > (b[key] as never) ? 1 : -1

@@ -7,18 +7,39 @@ DB = os.path.join(ARCHIVE_DIR, "ventis.db")
 GRAPHS_DIR = os.path.join(ARCHIVE_DIR, "graphs")
 
 
-def parse_label(condition: str):
-    """building_condition_occupancy -> {building, occupancy}. Tolerant of legacy."""
-    s = str(condition or "").strip().lower()
-    toks = re.split(r"[^a-z0-9]+", s)
-    toks = [t for t in toks if t]
-    building = toks[0] if toks else ""
-    occ = None
+KNOWN_BUILDINGS = {
+    # Ventis dataset buildings
+    "fahey", "judge", "eastwheelock", "summit", "little", "midmass",
+    # Dartmouth halls (seed; extend as runs are deployed)
+    "cohen", "bissell", "brown", "french", "mclane", "hitchcock", "zimmerman",
+    "wheeler", "richardson", "morton", "mcculloch", "russellsage", "butterfield",
+    "streeter", "lord", "topliff", "ripley", "smith", "woodward", "gile",
+    "northmass", "southfay", "midfay", "northfay", "hinman", "andres", "maxwell",
+}
+
+WORD_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+
+
+def _occupancy(toks):
+    # digit forms: "2person", "2ppl"
     for t in toks:
-        m = re.match(r"(\d+)person", t)
+        m = re.match(r"(\d+)(person|ppl)$", t)
         if m:
-            occ = int(m.group(1)); break
-    return {"building": building, "occupancy": occ}
+            return int(m.group(1))
+    # word forms: "two" immediately before "ppl"/"person"
+    for i, t in enumerate(toks):
+        if t in ("ppl", "person") and i > 0 and toks[i - 1] in WORD_NUM:
+            return WORD_NUM[toks[i - 1]]
+    return None
+
+
+def parse_label(condition: str):
+    """building_condition_occupancy -> {building, occupancy}. Tolerant of legacy.
+    Building = first KNOWN_BUILDINGS token found anywhere, else first token."""
+    s = str(condition or "").strip().lower()
+    toks = [t for t in re.split(r"[^a-z0-9]+", s) if t]
+    building = next((t for t in toks if t in KNOWN_BUILDINGS), toks[0] if toks else "")
+    return {"building": building, "occupancy": _occupancy(toks)}
 
 
 from datetime import datetime

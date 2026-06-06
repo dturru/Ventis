@@ -104,6 +104,12 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
     con = sqlite3.connect(db_path); con.row_factory = sqlite3.Row
     runs = [dict(r) for r in con.execute("SELECT * FROM runs ORDER BY start")]
     records = [run_record(r) for r in runs]
+    # annotate with verifiable consent status from the ledger (falls back to unverified)
+    try:
+        from consent_ledger import load_ledger, merge_consent
+        merge_consent(records, load_ledger())
+    except Exception as e:
+        print(f"(consent ledger skipped: {e})")
     json.dump({"generated": _now(), "runs": records},
               open(os.path.join(out_dir, "catalog.json"), "w"), indent=2, default=str)
     csv_dir = os.path.join(out_dir, "csv")

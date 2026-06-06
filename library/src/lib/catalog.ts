@@ -15,6 +15,9 @@ export interface Run {
   co2_peak: number | null;
   ashrae_exceed: boolean;
   consent: string;
+  consent_status?: string;
+  consent_method?: string;
+  consent_date?: string;
   chart: string;
   csv: string;
   series: string;

@@ -3,6 +3,7 @@ import RunTable from "./components/RunTable";
 import RunDetail from "./components/RunDetail";
 import ComparePage from "./components/ComparePage";
 import AboutPage from "./components/AboutPage";
+import OperationsPage from "./components/OperationsPage";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/run/:run_id" element={<RunDetail />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/operations" element={<OperationsPage />} />
       </Routes>
     </BrowserRouter>
   );

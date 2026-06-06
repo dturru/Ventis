@@ -69,7 +69,11 @@ export default function RunTable() {
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <h1 style={{ fontSize: 22, marginBottom: 4 }}>Ventis Data Library</h1>
-        <Link to="/about" style={{ fontSize: 14 }}>About / export →</Link>
+        <span style={{ fontSize: 14 }}>
+          <Link to="/operations">Operations</Link>
+          {" · "}
+          <Link to="/about">About / export →</Link>
+        </span>
       </div>
       <p style={{ color: "var(--muted)", marginBottom: 20 }}>
         {runs.length} run{runs.length === 1 ? "" : "s"} · CO₂ peaks above 1000 ppm

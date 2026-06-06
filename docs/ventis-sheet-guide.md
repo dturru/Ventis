@@ -17,6 +17,11 @@ Examples: `little_baseline_1person` · `eastwheelock_fanclosed_2person` · `midm
 
 > If your building isn't listed, add it as one lowercase word (no spaces). Keep it consistent across runs.
 
+## Consent (BEFORE you start a run)
+Get the occupant's opt-in first, and tell them it's anonymized + opt-out-able. Then record it:
+`python site/scripts/consent_ledger.py --set <run_key> --method opt_in_verbal --date <YYYY-MM-DD> --terms v1-2026-06 --by <you>`
+Methods: `occupant_self` (your room) · `opt_in_verbal` · `opt_in_written` · `building_program` (ResLife-approved). No run counts until consent is recorded. Full SOP = the catalog **Operations** page.
+
 ## Start / stop a run (the `control` tab)
 The `control` tab is a **single-row register — only ROW 2 matters.** Editing any other row does nothing.
 

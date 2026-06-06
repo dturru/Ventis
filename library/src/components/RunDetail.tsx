@@ -43,7 +43,17 @@ export default function RunDetail() {
         {run.ashrae_exceed && <span style={badge}>ASHRAE &gt; 1000</span>}
       </>,
     ],
-    ["Consent", run.consent || "—"],
+    [
+      "Consent",
+      run.consent_status === "verified" ? (
+        <span style={{ color: "var(--green)" }}>
+          ✓ verified{run.consent_method ? ` — ${run.consent_method}` : ""}
+          {run.consent_date ? ` (${run.consent_date})` : ""}
+        </span>
+      ) : (
+        <span style={{ color: "var(--amber)" }}>unverified — record in the consent ledger</span>
+      ),
+    ],
     ["Run ID", run.run_id || run.run_key],
   ];
 

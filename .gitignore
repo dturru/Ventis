@@ -38,3 +38,6 @@ excalidraw.log
 
 # Archived per-run dataset (the moat) + manifest — never commit.
 site/scripts/archive/
+
+# Data Library build artifacts (moat — never commit)
+library/public/data/

@@ -53,6 +53,17 @@ def test_plan_reconcile_builds_upserts_and_marks():
     assert marks == [(1, "k_fahey")]   # only the matched submission is marked
 
 
+def test_reconcile_is_nonfatal_on_db_error(monkeypatch):
+    # Must NOT break the hourly pipeline if the table is missing / DB hiccups.
+    import reconcile_consent as rc
+
+    def boom(url):
+        raise RuntimeError('relation "consent_submissions" does not exist')
+
+    monkeypatch.setattr(rc, "_fetch", boom)
+    assert rc.reconcile(db_url="postgresql://fake") == 0   # returns 0, no exception
+
+
 def test_plan_reconcile_skips_already_reconciled():
     subs = [{"id": 9, "condition": "fahey_window_1person",
              "consent_method": "opt_in_form", "agreed_at": "2026-06-01 20:30:00",

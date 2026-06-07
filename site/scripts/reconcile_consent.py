@@ -99,12 +99,17 @@ def reconcile(db_url=None):
     if not src:
         print("(reconcile_consent: SUPABASE_DB_URL unset — skipped)")
         return 0
-    subs, runs = _fetch(src)
-    upserts, marks = plan_reconcile(subs, runs)
-    if upserts:
-        _apply(upserts, marks, src)
-    print(f"reconcile_consent: {len(upserts)} submission(s) reconciled to runs "
-          f"({len(subs)} total submissions, {len(runs)} runs)")
+    # Non-fatal by design: this is a supplementary enrichment step. A missing table
+    # (DDL not run yet) or a transient DB error must never break the hourly pipeline.
+    try:
+        subs, runs = _fetch(src)
+        upserts, marks = plan_reconcile(subs, runs)
+        if upserts:
+            _apply(upserts, marks, src)
+        print(f"reconcile_consent: {len(upserts)} submission(s) reconciled to runs "
+              f"({len(subs)} total submissions, {len(runs)} runs)")
+    except Exception as e:
+        print(f"(reconcile_consent: skipped, {e})")
     return 0
 
 

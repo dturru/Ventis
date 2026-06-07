@@ -19,10 +19,35 @@ Used two ways:
 import csv
 import os
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SA = os.path.join(HERE, "service_account.json")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+
+# Transient HTTP statuses worth a retry on a Sheets blip. A bare 503
+# ("service is currently unavailable") failed the hourly cron once
+# (CI run 27085208176) and cleared on its own the next hour — the retry
+# turns that red X into a transparent recovery. 4xx (404/403) stay fast-fail:
+# those are config bugs, not blips.
+_RETRY_STATUS = {429, 500, 502, 503, 504}
+
+
+def _with_retry(fn, *, tries=4, base_delay=2.0):
+    """Call fn(), retrying only transient Sheets API errors with exponential backoff."""
+    import gspread
+
+    for attempt in range(1, tries + 1):
+        try:
+            return fn()
+        except gspread.exceptions.APIError as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status not in _RETRY_STATUS or attempt == tries:
+                raise
+            delay = base_delay * (2 ** (attempt - 1))
+            print(f"Sheets API {status} (attempt {attempt}/{tries}) — retrying in {delay:.0f}s",
+                  file=sys.stderr)
+            time.sleep(delay)
 
 # telemetry schema column order (see vault: Data/Telemetry Schema.md)
 COLUMNS = [
@@ -61,8 +86,8 @@ def fetch_rows():
     creds = Credentials.from_service_account_file(sa, scopes=SCOPES)
     gc = gspread.authorize(creds)
     tab = os.environ.get("VENTIS_TAB", "telemetry")
-    ws = gc.open_by_key(sheet_id).worksheet(tab)
-    return ws.get_all_records()  # list[dict] keyed by the header row
+    ws = _with_retry(lambda: gc.open_by_key(sheet_id).worksheet(tab))
+    return _with_retry(ws.get_all_records)  # list[dict] keyed by the header row
 
 
 def _summary(rows):

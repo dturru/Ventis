@@ -7,3 +7,6 @@ google-auth>=2
 # Charting (plot_ventis_run.py) + the data library build (build_catalog.py / CI):
 pandas>=2
 matplotlib>=3.7
+
+# Supabase system-of-record sync (supabase_sync.py / CI):
+psycopg[binary]>=3

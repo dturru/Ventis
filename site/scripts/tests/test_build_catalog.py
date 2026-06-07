@@ -71,7 +71,7 @@ def test_parse_label_occupancy_variants():
 def test_build_emits_catalog_and_series(tmp_path):
     db = tmp_path / "ventis.db"; _fixture_db(str(db))
     out = tmp_path / "out"
-    build(db_path=str(db), out_dir=str(out), graphs_dir=str(tmp_path))
+    build(db_path=str(db), out_dir=str(out), graphs_dir=str(tmp_path), db_url="")  # force SQLite
     cat = json.load(open(out / "catalog.json"))
     assert len(cat["runs"]) == 1
     assert cat["runs"][0]["building"] == "choates"
@@ -82,3 +82,28 @@ def test_build_emits_catalog_and_series(tmp_path):
     assert csv_text[0] == "timestamp,co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition"
     assert len(csv_text) == 3  # header + 2 rows
     assert cat["runs"][0]["csv"] == "r1.csv"
+
+
+def test_build_reads_from_supabase_when_db_url_set(tmp_path, monkeypatch):
+    # When SUPABASE_DB_URL is set, build() reads runs/readings from Postgres
+    # (the SoR) via _fetch_postgres, NOT SQLite. The fetcher normalizes Postgres
+    # rows to the same dict shape (start/end keys, string timestamps), so all the
+    # downstream record/series/CSV logic is unchanged.
+    import build_catalog as bc
+    runs = [{"run_key": "k1", "run_id": "r1", "device_id": "ventis-01",
+             "condition": "choates_x_1person", "start": "2026-06-01 21:00:00",
+             "end": "2026-06-01 22:00:00", "n_rows": 2, "co2_mean": 800.0, "co2_peak": 1100.0}]
+    readings = {"k1": [
+        {"timestamp": "2026-06-01 21:00:00", "co2_ppm": 800.0, "temp_c": 22.0,
+         "humidity_pct": 40.0, "fan_duty": 0.0, "window_state": "closed", "condition": "choates_x_1person"},
+        {"timestamp": "2026-06-01 21:30:00", "co2_ppm": 1100.0, "temp_c": 22.0,
+         "humidity_pct": 41.0, "fan_duty": 100.0, "window_state": "closed", "condition": "choates_x_1person"}]}
+    seen = {}
+    monkeypatch.setattr(bc, "_fetch_postgres", lambda url: (seen.setdefault("url", url), (runs, readings))[1])
+    out = tmp_path / "out"
+    bc.build(out_dir=str(out), graphs_dir=str(tmp_path), db_url="postgresql://fake")
+    assert seen["url"] == "postgresql://fake"            # routed to Postgres
+    cat = json.load(open(out / "catalog.json"))
+    assert len(cat["runs"]) == 1 and cat["runs"][0]["building"] == "choates"
+    assert json.load(open(out / "series" / "r1.json"))["co2_ppm"] == [800.0, 1100.0]
+    assert open(out / "csv" / "r1.csv").read().strip().count("\n") == 2  # header + 2 rows

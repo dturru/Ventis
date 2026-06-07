@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { Client } from "pg";
+import pg from "pg";   // pg is CommonJS; default-import + destructure works under ESM ("type":"module")
 import { validateConsentPayload } from "./_validate";
+
+const { Client } = pg;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });

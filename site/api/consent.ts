@@ -11,7 +11,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = process.env.SUPABASE_DB_URL;
   if (!url) return res.status(500).json({ error: "not configured" });
 
-  const client = new Client({ connectionString: url });
+  // Supabase requires SSL; from a serverless function without it the connect hangs
+  // into a platform timeout (FUNCTION_INVOCATION_FAILED). rejectUnauthorized:false
+  // matches the standard pg + Supabase pooler setup. Fail fast so errors are catchable.
+  const client = new Client({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 8000,
+  });
   try {
     await client.connect();
     await client.query(
@@ -22,7 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        v.value.attested_by, v.value.terms_version, v.value.notes],
     );
     return res.status(200).json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error("consent insert failed:", e);   // surfaces in Vercel function logs
     return res.status(500).json({ error: "could not record consent" });
   } finally {
     await client.end().catch(() => {});

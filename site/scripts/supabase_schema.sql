@@ -29,3 +29,17 @@ create table if not exists runs (
   co2_mean   double precision,
   co2_peak   double precision
 );
+
+-- Consent ledger: verifiable, de-identified provenance per run (graduated from
+-- the gitignored archive/consent_ledger.csv). Keyed by run, NEVER by occupant.
+-- Written by consent_ledger.py --set; read by build_catalog to flag consent_status.
+create table if not exists consent (
+  run_key        text primary key,
+  run_id         text,
+  consent_method text,                 -- opt_in_verbal | opt_in_written | opt_in_form | occupant_self | building_program
+  consent_date   date,
+  terms_version  text,
+  recorded_by    text,                 -- founder pseudonym, never an occupant
+  notes          text,
+  updated_at     timestamptz default now()
+);

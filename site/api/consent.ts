@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pg from "pg";   // pg is CommonJS; default-import + destructure works under ESM ("type":"module")
-import { validateConsentPayload } from "./_validate";
+import { validateConsentPayload } from "./_validate.js";  // .js extension required for ESM relative-import resolution
 
 const { Client } = pg;
 

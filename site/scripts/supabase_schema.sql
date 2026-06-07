@@ -43,3 +43,18 @@ create table if not exists consent (
   notes          text,
   updated_at     timestamptz default now()
 );
+
+-- Raw web consent intake (occupant self-serve + cofounder-assisted). Deployment-code
+-- keyed; reconciled to a run (-> the consent table) by reconcile_consent.py. No PII.
+create table if not exists consent_submissions (
+  id                 bigint generated always as identity primary key,
+  deployment_code    text not null,
+  condition          text,
+  consent_method     text not null,          -- opt_in_form | opt_in_verbal
+  attested_by        text,                    -- 'occupant' or founder pseudonym; never a name
+  terms_version      text,
+  agreed_at          timestamptz default now(),
+  notes              text,
+  reconciled_run_key text                     -- set once matched to a run (audit)
+);
+create index if not exists idx_consent_sub_code on consent_submissions(deployment_code);

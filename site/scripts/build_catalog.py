@@ -98,11 +98,58 @@ def _now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
-    out_dir = out_dir or os.path.join(HERE, "..", "..", "library", "public", "data")
-    os.makedirs(os.path.join(out_dir, "series"), exist_ok=True)
+READING_SELECT = ("timestamp,co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition")
+
+
+def _fetch_sqlite(db_path):
+    """Local Tier-1 store. Returns (runs[list of dict], readings{run_key: [dict]})."""
     con = sqlite3.connect(db_path); con.row_factory = sqlite3.Row
     runs = [dict(r) for r in con.execute("SELECT * FROM runs ORDER BY start")]
+    readings = {}
+    for r in runs:
+        rows = con.execute(
+            f"SELECT {READING_SELECT} FROM readings WHERE run_key=? ORDER BY timestamp",
+            (r["run_key"],)).fetchall()
+        readings[r["run_key"]] = [dict(x) for x in rows]
+    con.close()
+    return runs, readings
+
+
+def _fetch_postgres(db_url):
+    """Supabase system-of-record. Same return shape as _fetch_sqlite — timestamps
+    cast to the canonical 'YYYY-MM-DD HH:MM:SS' string and start_ts/end_ts aliased
+    to start/end, so all downstream logic is identical to the SQLite path."""
+    import psycopg
+    from psycopg.rows import dict_row
+    with psycopg.connect(db_url) as con, con.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT run_key, run_id, device_id, condition, "
+            "to_char(start_ts,'YYYY-MM-DD HH24:MI:SS') AS start, "
+            "to_char(end_ts,'YYYY-MM-DD HH24:MI:SS') AS \"end\", "
+            "n_rows, co2_mean, co2_peak FROM runs ORDER BY start_ts")
+        runs = cur.fetchall()
+        readings = {}
+        for r in runs:
+            cur.execute(
+                "SELECT to_char(timestamp,'YYYY-MM-DD HH24:MI:SS') AS timestamp, "
+                "co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition "
+                "FROM readings WHERE run_key=%s ORDER BY timestamp", (r["run_key"],))
+            readings[r["run_key"]] = cur.fetchall()
+    return runs, readings
+
+
+def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR, db_url=None):
+    out_dir = out_dir or os.path.join(HERE, "..", "..", "library", "public", "data")
+    os.makedirs(os.path.join(out_dir, "series"), exist_ok=True)
+    # Source of truth: Supabase when SUPABASE_DB_URL is set (CI), else local SQLite
+    # (dev / explicit db_path in tests). Pass db_url="" to force SQLite.
+    src = db_url if db_url is not None else os.environ.get("SUPABASE_DB_URL")
+    if src:
+        runs, readings = _fetch_postgres(src)
+        print(f"(catalog source: Supabase — {len(runs)} runs)")
+    else:
+        runs, readings = _fetch_sqlite(db_path)
+        print(f"(catalog source: SQLite {db_path} — {len(runs)} runs)")
     records = [run_record(r) for r in runs]
     # annotate with verifiable consent status from the ledger (falls back to unverified)
     try:
@@ -118,9 +165,7 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
                 "fan_duty", "window_state", "condition"]
     for r in runs:
         rid = (r.get("run_id") or "").strip() or r["run_key"]
-        full = con.execute(
-            "SELECT timestamp,co2_ppm,temp_c,humidity_pct,fan_duty,window_state,condition "
-            "FROM readings WHERE run_key=? ORDER BY timestamp", (r["run_key"],)).fetchall()
+        full = readings.get(r["run_key"], [])
         # full raw CSV (downloadable from the run detail page)
         with open(os.path.join(csv_dir, f"{rid}.csv"), "w", newline="", encoding="utf-8") as cf:
             w = csv.writer(cf)
@@ -136,7 +181,6 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR):
             "temp_c":       [x["temp_c"] for x in rows],
             "humidity_pct": [x["humidity_pct"] for x in rows],
         }, open(os.path.join(out_dir, "series", f"{rid}.json"), "w"), default=str)
-    con.close()
     # copy charts (best-effort)
     cdst = os.path.join(out_dir, "charts"); os.makedirs(cdst, exist_ok=True)
     if os.path.isdir(graphs_dir):

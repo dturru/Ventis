@@ -36,15 +36,19 @@ jobs:
           VENTIS_SHEET_ID: ${{ secrets.VENTIS_SHEET_ID }}
         run: python site/scripts/refresh_backup.py --no-backup
 
-      - name: Build catalog (catalog.json + series + charts)
-        run: python site/scripts/build_catalog.py
-
       - name: Sync system-of-record to Supabase (durable, off-laptop)
-        # No-op (dry run, exit 0) until the SUPABASE_DB_URL secret is set — keeps CI green.
+        # Runs BEFORE build_catalog so the catalog is built from the freshly-synced SoR.
+        # No-op (dry run, exit 0) if SUPABASE_DB_URL is unset — keeps CI green.
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           VENTIS_SHEET_ID: ${{ secrets.VENTIS_SHEET_ID }}
         run: python site/scripts/supabase_sync.py
+
+      - name: Build catalog (catalog.json + series + charts)
+        # Reads runs/readings from Supabase when SUPABASE_DB_URL is set, else local SQLite.
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python site/scripts/build_catalog.py
 
       - uses: actions/setup-node@v4
         with:

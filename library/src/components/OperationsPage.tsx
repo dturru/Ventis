@@ -30,12 +30,13 @@ export default function OperationsPage() {
           <li><strong>Prep:</strong> device charged/powered; confirm it joins the network (or its own AP).</li>
           <li><strong>Place:</strong> on a surface ~desk height, away from direct breath/vents/windows.</li>
           <li><strong>Consent:</strong> get the occupant's opt-in (see below) <em>before</em> logging. Record it in the consent ledger.</li>
-          <li><strong>Deployment code:</strong> pick a code (format <code style={code}>VEN-####</code>)
-            and use the same condition label for this run. Capture consent via a QR/link that
-            encodes both: <code style={code}>/consent?code=VEN-####&c=&lt;condition_label&gt;</code>
-            (e.g. <code style={code}>?code=VEN-4827&c=fahey_window_1person</code>). Show the
-            occupant the QR for self-serve, or open it on your phone for the assisted opt-in. The
-            condition links their consent to this run during reconciliation.</li>
+          <li><strong>Deployment code + QR:</strong> generate the consent link and QR on the{" "}
+            <Link to="/deploy">Deployment QR generator</Link> (pick a <code style={code}>VEN-####</code>
+            code, type the condition label). The link is{" "}
+            <code style={code}>ventis.vercel.app/consent?code=VEN-####&c=&lt;condition_label&gt;</code>.
+            Show the occupant the QR for self-serve, or open it on your phone for the assisted opt-in.
+            <strong> Use the exact same condition label here and in the <code style={code}>control</code>
+            tab below</strong> — that match is what links the opt-in to this run during reconciliation.</li>
           <li><strong>Start / stop — the <code style={code}>control</code> tab is a single-row register, ONLY row 2 matters:</strong>
             <ul style={{ paddingLeft: 18 }}>
               <li><code style={code}>A2</code> = logging → <code style={code}>TRUE</code> to start, <code style={code}>FALSE</code> to stop</li>

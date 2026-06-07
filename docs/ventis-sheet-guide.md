@@ -18,9 +18,15 @@ Examples: `little_baseline_1person` · `eastwheelock_fanclosed_2person` · `midm
 > If your building isn't listed, add it as one lowercase word (no spaces). Keep it consistent across runs.
 
 ## Consent (BEFORE you start a run)
-Get the occupant's opt-in first, and tell them it's anonymized + opt-out-able. Then record it:
-`python site/scripts/consent_ledger.py --set <run_key> --method opt_in_verbal --date <YYYY-MM-DD> --terms v1-2026-06 --by <you>`
-Methods: `occupant_self` (your room) · `opt_in_verbal` · `opt_in_written` · `building_program` (ResLife-approved). No run counts until consent is recorded. Full SOP = the catalog **Operations** page.
+Get the occupant's opt-in first, and tell them it's anonymized + opt-out-able.
+
+**Easiest way — the web form + QR:** open the **Deployment QR generator** on the catalog (`/deploy`), pick a `VEN-####` code, type the condition label → it gives you a QR + link. The occupant scans it and taps **I agree** (self-serve), or you open it on your phone and submit the **assisted** opt-in. The link is `ventis.vercel.app/consent?code=VEN-####&c=<condition_label>`.
+
+> **The condition in the QR must EXACTLY match the condition you put in `B2` of the `control` tab** (same building_condition_occupancy string). That match is what links the opt-in to the run.
+
+Methods recorded automatically: `opt_in_form` (occupant self-serve) / `opt_in_verbal` (assisted). For your own room or backfilling, the CLI still works:
+`python site/scripts/consent_ledger.py --set <run_key> --method occupant_self --date <YYYY-MM-DD> --terms v1-2026-06 --by <you>`
+Full SOP = the catalog **Operations** page.
 
 ## Start / stop a run (the `control` tab)
 The `control` tab is a **single-row register — only ROW 2 matters.** Editing any other row does nothing.

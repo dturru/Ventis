@@ -4,6 +4,7 @@ import RunDetail from "./components/RunDetail";
 import ComparePage from "./components/ComparePage";
 import AboutPage from "./components/AboutPage";
 import OperationsPage from "./components/OperationsPage";
+import DeployPage from "./components/DeployPage";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/operations" element={<OperationsPage />} />
+        <Route path="/deploy" element={<DeployPage />} />
       </Routes>
     </BrowserRouter>
   );

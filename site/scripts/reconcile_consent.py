@@ -65,3 +65,52 @@ def plan_reconcile(submissions, runs, tolerance_h=TOLERANCE_H):
         })
         marks.append((s["id"], run["run_key"]))
     return upserts, marks
+
+
+def _fetch(db_url):
+    """-> (submissions, runs) from Supabase."""
+    import psycopg
+    from psycopg.rows import dict_row
+    with psycopg.connect(db_url) as con, con.cursor(row_factory=dict_row) as cur:
+        cur.execute("select id, deployment_code, condition, consent_method, attested_by, "
+                    "terms_version, to_char(agreed_at,'YYYY-MM-DD HH24:MI:SS') as agreed_at, "
+                    "notes, reconciled_run_key from consent_submissions")
+        subs = cur.fetchall()
+        cur.execute("select run_key, run_id, condition, "
+                    "to_char(start_ts,'YYYY-MM-DD HH24:MI:SS') as start from runs")
+        runs = cur.fetchall()
+    return subs, runs
+
+
+def _apply(upserts, marks, db_url):
+    import psycopg
+    from consent_ledger import _upsert_pg          # reuse the proven consent upsert
+    for rec in upserts:
+        _upsert_pg(rec, db_url)
+    with psycopg.connect(db_url) as con, con.cursor() as cur:
+        for sub_id, run_key in marks:
+            cur.execute("update consent_submissions set reconciled_run_key=%s where id=%s",
+                        (run_key, sub_id))
+        con.commit()
+
+
+def reconcile(db_url=None):
+    src = db_url if db_url is not None else os.environ.get("SUPABASE_DB_URL")
+    if not src:
+        print("(reconcile_consent: SUPABASE_DB_URL unset — skipped)")
+        return 0
+    subs, runs = _fetch(src)
+    upserts, marks = plan_reconcile(subs, runs)
+    if upserts:
+        _apply(upserts, marks, src)
+    print(f"reconcile_consent: {len(upserts)} submission(s) reconciled to runs "
+          f"({len(subs)} total submissions, {len(runs)} runs)")
+    return 0
+
+
+def main(argv):
+    return reconcile()
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

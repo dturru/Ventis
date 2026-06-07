@@ -44,6 +44,13 @@ jobs:
           VENTIS_SHEET_ID: ${{ secrets.VENTIS_SHEET_ID }}
         run: python site/scripts/supabase_sync.py
 
+      - name: Reconcile web consent submissions to runs
+        # After sync (runs exist), before build_catalog (so catalog reflects new consent).
+        # No-op if SUPABASE_DB_URL unset.
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python site/scripts/reconcile_consent.py
+
       - name: Build catalog (catalog.json + series + charts)
         # Reads runs/readings from Supabase when SUPABASE_DB_URL is set, else local SQLite.
         env:

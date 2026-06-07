@@ -8,6 +8,7 @@ import { Data } from './pages/Data'
 import { Demo } from './pages/Demo'
 import { GetInvolved } from './pages/GetInvolved'
 import { Contact } from './pages/Contact'
+import Consent from './pages/Consent'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -53,6 +54,7 @@ export function App() {
           <Route path="/demo" element={<Demo />} />
           <Route path="/get-involved" element={<GetInvolved />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/consent" element={<Consent />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>

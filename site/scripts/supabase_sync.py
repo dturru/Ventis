@@ -15,7 +15,7 @@ import os
 import sys
 
 from sqlite_sync import _load_archive_csvs, _num, _norm_ts
-from archive_runs import group_runs
+from archive_runs import group_runs, _parse
 from sheet_source import fetch_rows
 
 READING_COLS = ["timestamp", "device_id", "run_id", "run_key", "condition", "co2_ppm",
@@ -27,6 +27,10 @@ def build_reading_rows(raw_rows):
     tagged = []
     for key, run_rows in group_runs(raw_rows).items():
         for r in run_rows:
+            # Postgres timestamptz rejects ""/garbage (SQLite tolerated it). Skip rows
+            # with no parseable timestamp — they're blank/unlabeled junk, not real samples.
+            if _parse(str(r.get("timestamp", ""))) is None:
+                continue
             tagged.append({
                 "timestamp": _norm_ts(r.get("timestamp", "")),
                 "device_id": str(r.get("device_id", "")),

@@ -18,6 +18,21 @@ def test_build_reading_rows_normalizes_and_tags():
                       "co2_ppm", "temp_c", "humidity_pct", "fan_duty", "window_state", "consent"}
 
 
+def test_build_reading_rows_skips_unparseable_timestamps():
+    # Postgres timestamptz rejects ""; SQLite tolerated it. Drop junk rows with no
+    # valid timestamp (observed: 6 empty-ts/empty-condition rows in the real union).
+    raw = [
+        {"timestamp": "2026-06-01 21:00:00", "device_id": "ventis-01",
+         "condition": "fahey_window_1person", "co2_ppm": "800"},
+        {"timestamp": "", "device_id": "", "condition": "", "co2_ppm": ""},          # blank junk
+        {"timestamp": "not-a-date", "device_id": "ventis-01", "condition": "x"},      # unparseable
+    ]
+    rows = build_reading_rows(raw)
+    assert len(rows) == 1
+    assert all(r["timestamp"] for r in rows)
+    assert rows[0]["timestamp"] == "2026-06-01 21:00:00"
+
+
 def test_aggregate_runs():
     rows = [
         {"run_key": "k", "run_id": "", "device_id": "ventis-01", "condition": "fahey_window_1person",

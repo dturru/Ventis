@@ -24,6 +24,30 @@ export default function OperationsPage() {
         operator must never type a name in the first place.
       </div>
 
+      <h2 style={h2}>Solo collection — the weekly loop</h2>
+      <div style={card}>
+        Collection runs on campus without Diego (remote for the term). The data lands durably on
+        its own — your job ends at <strong>"device logging to the Sheet, with consent recorded."</strong>
+        Everything after that (system of record, catalog, backup) is automatic.
+        <ol style={{ paddingLeft: 20, margin: "10px 0 0" }}>
+          <li><strong>Place</strong> a logger at breathing height, out of direct draft/breath.</li>
+          <li><strong>Consent first</strong> — occupant scans the deploy QR and opts in. No run counts until consent exists.</li>
+          <li><strong>Start</strong> the run (device, or <code style={code}>control</code> row 2 — bump <code style={code}>seq</code>). Label = <code style={code}>building_condition_occupancy</code>.</li>
+          <li><strong>Run ≥ overnight</strong>; it auto-resumes through reboots/Wi-Fi drops.</li>
+          <li><strong>Stop</strong> cleanly; send Diego the label + context (window/door/occupancy/placement).</li>
+        </ol>
+        <p style={{ margin: "10px 0 0" }}>
+          Target <strong>1–2 clean runs/week</strong>. Priority gaps: replicate the hero conditions in a
+          new building; a clean negative control; a continuous multi-night run; an occupancy gradient
+          (1 vs 2 vs 3 people, room held constant). Always capture temp + RH, not CO₂ alone.
+        </p>
+        <p style={{ margin: "10px 0 0" }}>
+          <strong>Ping Diego</strong> if: a device won't flash / new Wi-Fi, no rows landing after start,
+          you're unsure a label or consent is valid, catalog login breaks, or a new building / staff
+          contact appears (that's a lead, not just a run).
+        </p>
+      </div>
+
       <h2 style={h2}>Logger deployment SOP</h2>
       <div style={card}>
         <ol style={{ paddingLeft: 20, margin: 0 }}>

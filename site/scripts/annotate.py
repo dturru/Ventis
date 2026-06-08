@@ -12,6 +12,9 @@ import os
 import sqlite3
 import sys
 
+from _env import load_env
+load_env()   # pick up SUPABASE_DB_URL from a gitignored .env if present
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ARCHIVE_DIR = os.path.join(HERE, "archive")
 DB = os.path.join(ARCHIVE_DIR, "ventis.db")

@@ -14,6 +14,9 @@ Usage:
 import os
 import sys
 
+from _env import load_env
+load_env()   # pick up SUPABASE_DB_URL from a gitignored .env if present (CI's env wins)
+
 from sqlite_sync import _load_archive_csvs, _num, _norm_ts
 from archive_runs import group_runs, _parse, co2_stats
 from sheet_source import fetch_rows

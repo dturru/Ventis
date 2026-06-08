@@ -107,3 +107,24 @@ def test_build_reads_from_supabase_when_db_url_set(tmp_path, monkeypatch):
     assert len(cat["runs"]) == 1 and cat["runs"][0]["building"] == "choates"
     assert json.load(open(out / "series" / "r1.json"))["co2_ppm"] == [800.0, 1100.0]
     assert open(out / "csv" / "r1.csv").read().strip().count("\n") == 2  # header + 2 rows
+
+
+def test_build_merges_annotations(tmp_path, monkeypatch):
+    # build() should annotate run records with note/quality_flag from the annotations store
+    import build_catalog as bc
+    runs = [{"run_key": "k1", "run_id": "r1", "device_id": "ventis-01",
+             "condition": "choates_x_1person", "start": "2026-06-01 21:00:00",
+             "end": "2026-06-01 22:00:00", "n_rows": 2, "co2_mean": 800.0, "co2_peak": 1100.0}]
+    readings = {"k1": [{"timestamp": "2026-06-01 21:00:00", "co2_ppm": 800.0, "temp_c": 22.0,
+                        "humidity_pct": 40.0, "fan_duty": 0.0, "window_state": "closed",
+                        "condition": "choates_x_1person"}]}
+    monkeypatch.setattr(bc, "_fetch_postgres", lambda url: (runs, readings))
+    import annotate
+    monkeypatch.setattr(annotate, "load_annotations",
+                        lambda *a, **k: {"k1": {"run_key": "k1", "note": "fan died",
+                                                "quality_flag": "caution", "tags": ""}})
+    out = tmp_path / "out"
+    bc.build(out_dir=str(out), graphs_dir=str(tmp_path), db_url="postgresql://fake")
+    cat = __import__("json").load(open(out / "catalog.json"))
+    assert cat["runs"][0]["note"] == "fan died"
+    assert cat["runs"][0]["quality_flag"] == "caution"

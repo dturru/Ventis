@@ -18,6 +18,9 @@ export interface Run {
   consent_status?: string;
   consent_method?: string;
   consent_date?: string;
+  note?: string;
+  quality_flag?: string;
+  tags?: string;
   chart: string;
   csv: string;
   series: string;

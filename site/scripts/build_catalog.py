@@ -157,6 +157,12 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR, db_url=None):
         merge_consent(records, load_ledger())
     except Exception as e:
         print(f"(consent ledger skipped: {e})")
+    # annotate with founder notes + quality flags (non-fatal if the table is absent)
+    try:
+        from annotate import load_annotations, merge_annotations
+        merge_annotations(records, load_annotations())
+    except Exception as e:
+        print(f"(annotations skipped: {e})")
     json.dump({"generated": _now(), "runs": records},
               open(os.path.join(out_dir, "catalog.json"), "w"), indent=2, default=str)
     csv_dir = os.path.join(out_dir, "csv")

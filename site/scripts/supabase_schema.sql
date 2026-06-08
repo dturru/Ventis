@@ -58,3 +58,14 @@ create table if not exists consent_submissions (
   reconciled_run_key text                     -- set once matched to a run (audit)
 );
 create index if not exists idx_consent_sub_code on consent_submissions(deployment_code);
+
+-- Founder run annotations: note + quality flag per run (keyed by run_key).
+-- Written by annotate.py; read by build_catalog into each run record. No PII.
+create table if not exists annotations (
+  run_key      text primary key,
+  note         text,
+  quality_flag text,                 -- good | caution | exclude (else: no flag)
+  tags         text,                  -- optional, comma-separated
+  updated_by   text,                  -- founder pseudonym, never an occupant
+  updated_at   timestamptz default now()
+);

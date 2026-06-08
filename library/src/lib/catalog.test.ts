@@ -14,3 +14,11 @@ describe("catalog utils", () => {
     expect(sortRuns(runs, "co2_peak", "desc")[0].run_id).toBe("a");
   });
 });
+
+describe("Run annotation fields", () => {
+  it("carries optional note/quality_flag/tags", () => {
+    const r = { run_key: "k1", quality_flag: "caution", note: "fan died" } as Run;
+    expect(r.quality_flag).toBe("caution");
+    expect(r.note).toBe("fan died");
+  });
+});

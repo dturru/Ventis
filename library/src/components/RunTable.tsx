@@ -194,6 +194,20 @@ export default function RunTable() {
                       ASHRAE
                     </span>
                   )}
+                  {(r.quality_flag === "exclude" || r.quality_flag === "caution") && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        background: r.quality_flag === "exclude" ? "var(--red-light)" : "var(--amber-light)",
+                        color: r.quality_flag === "exclude" ? "var(--red)" : "var(--amber)",
+                      }}
+                    >
+                      {r.quality_flag}
+                    </span>
+                  )}
                 </td>
                 <td style={cell}>{r.n_rows}</td>
                 <td style={cell}>

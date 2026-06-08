@@ -54,6 +54,14 @@ export default function RunDetail() {
         <span style={{ color: "var(--amber)" }}>unverified — record in the consent ledger</span>
       ),
     ],
+    ["Quality", run.quality_flag ? (
+      <span style={{
+        color: run.quality_flag === "exclude" ? "var(--red)"
+             : run.quality_flag === "caution" ? "var(--amber)" : "var(--green)",
+        fontWeight: 600,
+      }}>{run.quality_flag}</span>
+    ) : "—"],
+    ["Note", run.note || "—"],
     ["Run ID", run.run_id || run.run_key],
   ];
 

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Dodi } from '../components/Dodi'
 import { Icon } from '../components/Icon'
+import { HeroAirMoment } from '../components/HeroAirMoment'
 import { residentsCTA } from '../site.config'
 
 const PANELS = [
@@ -62,6 +63,8 @@ export function Home() {
             Get early access
           </a>
         </div>
+
+        <HeroAirMoment />
 
         <div className="panels">
           {PANELS.map((p) => (

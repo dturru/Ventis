@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loadCatalog, filterRuns, sortRuns, searchRuns, type Run } from "../lib/catalog";
 import StatsBar from "./StatsBar";
 
@@ -16,7 +16,16 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "n_rows", label: "Rows" },
 ];
 
+/** CO₂ peak → semantic air tier. */
+function tier(peak: number | null): "green" | "amber" | "red" | null {
+  if (peak == null) return null;
+  if (peak >= 1000) return "red";
+  if (peak >= 800) return "amber";
+  return "green";
+}
+
 export default function RunTable() {
+  const navigate = useNavigate();
   const [runs, setRuns] = useState<Run[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [filters, setFilters] = useState<Partial<Record<keyof Run, string>>>({});
@@ -58,174 +67,132 @@ export default function RunTable() {
     setFilters((f) => ({ ...f, [key]: value }));
   }
 
+  const canCompare = selected.size >= 2;
+
   if (err)
     return (
-      <p style={{ color: "var(--red)", padding: 24 }}>
-        Could not load catalog: {err}
-      </p>
+      <main className="lib-main">
+        <div className="wrap">
+          <p className="state state-err">Could not load catalog: {err}</p>
+        </div>
+      </main>
     );
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-        <h1 style={{ fontSize: 22, marginBottom: 4 }}>Ventis Data Library</h1>
-        <span style={{ fontSize: 14 }}>
-          <Link to="/operations">Operations</Link>
-          {" · "}
-          <Link to="/about">About / export →</Link>
-        </span>
-      </div>
-      <p style={{ color: "var(--muted)", marginBottom: 20 }}>
-        {runs.length} run{runs.length === 1 ? "" : "s"} · CO₂ peaks above 1000 ppm
-        flagged (ASHRAE)
-      </p>
+    <main className="lib-main">
+      <div className="wrap">
+        <div className="eyebrow">Indoor-air dataset</div>
+        <h1 className="page-title">Run catalog</h1>
+        <p className="page-lede">
+          {runs.length} run{runs.length === 1 ? "" : "s"} of overnight CO₂, temperature, and
+          humidity from real rooms. Peaks above ASHRAE 1,000 ppm are flagged red.
+        </p>
 
-      <StatsBar runs={runs} />
+        <StatsBar runs={runs} />
 
-      <input
-        placeholder="🔍 search runs (building, condition, date…)"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "8px 12px",
-          marginBottom: 12,
-          border: "1px solid var(--border)",
-          borderRadius: 6,
-          background: "var(--tile)",
-        }}
-      />
+        <div className="toolbar">
+          <label className="lib-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+            </svg>
+            <input
+              className="lib-input"
+              placeholder="Search runs (building, condition, date)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search runs"
+            />
+          </label>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
-        {(["building", "condition", "occupancy", "date"] as (keyof Run)[]).map((k) => (
-          <input
-            key={k}
-            placeholder={`filter ${k}`}
-            value={(filters[k] as string) ?? ""}
-            onChange={(e) => setFilter(k, e.target.value)}
-            style={{
-              padding: "6px 10px",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              background: "var(--tile)",
+          {(["building", "condition", "occupancy", "date"] as (keyof Run)[]).map((k) => (
+            <input
+              key={k}
+              className="lib-input filter-input"
+              placeholder={`filter ${k}`}
+              value={(filters[k] as string) ?? ""}
+              onChange={(e) => setFilter(k, e.target.value)}
+              aria-label={`Filter by ${k}`}
+            />
+          ))}
+
+          <Link
+            to={`/compare?ids=${encodeURIComponent(Array.from(selected).join(","))}`}
+            onClick={(e) => {
+              if (!canCompare) e.preventDefault();
             }}
-          />
-        ))}
-        <Link
-          to={`/compare?ids=${encodeURIComponent(Array.from(selected).join(","))}`}
-          onClick={(e) => {
-            if (selected.size < 2) {
-              e.preventDefault();
-            }
-          }}
-          style={{
-            marginLeft: "auto",
-            padding: "6px 14px",
-            borderRadius: 6,
-            background: selected.size >= 2 ? "var(--green)" : "var(--border)",
-            color: selected.size >= 2 ? "#fff" : "var(--muted)",
-            pointerEvents: selected.size >= 2 ? "auto" : "none",
-          }}
-          title={selected.size < 2 ? "Select 2+ runs to compare" : "Compare selected runs"}
-        >
-          Compare ({selected.size})
-        </Link>
-      </div>
+            className={`btn-compare ${canCompare ? "on" : "off"}`}
+            title={canCompare ? "Compare selected runs" : "Select 2+ runs to compare"}
+          >
+            Compare ({selected.size})
+          </Link>
+        </div>
 
-      <div style={{ overflowX: "auto", boxShadow: "var(--shadow)", borderRadius: 8 }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", background: "var(--tile)" }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: "2px solid var(--border)", padding: "10px 12px" }} />
-              {COLUMNS.map((c) => (
-                <th
-                  key={c.key}
-                  onClick={() => toggleSort(c.key)}
-                  style={{
-                    textAlign: "left",
-                    padding: "10px 12px",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    borderBottom: "2px solid var(--border)",
-                    color: "var(--green)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {c.label}
-                  {sortBy === c.key ? (dir === "asc" ? " ▲" : " ▼") : ""}
-                </th>
-              ))}
-              <th style={{ borderBottom: "2px solid var(--border)" }} />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr
-                key={r.run_id || r.run_key}
-                style={{ background: i % 2 ? "var(--tile-alt)" : "var(--tile)" }}
-              >
-                <td style={cell}>
-                  <input
-                    type="checkbox"
-                    checked={selected.has(r.run_id || r.run_key)}
-                    onChange={() => toggleSelect(r.run_id || r.run_key)}
-                    aria-label={`select ${r.condition}`}
-                  />
-                </td>
-                <td style={cell}>{r.date}</td>
-                <td style={cell}>{r.building}</td>
-                <td style={cell}>{r.occupancy ?? "—"}</td>
-                <td style={cell}>{r.condition}</td>
-                <td style={cell}>{r.duration_h ?? "—"}</td>
-                <td style={cell}>{r.co2_mean ?? "—"}</td>
-                <td style={cell}>
-                  {r.co2_peak ?? "—"}
-                  {r.ashrae_exceed && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        fontSize: 11,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: "var(--red-light)",
-                        color: "var(--red)",
-                      }}
-                    >
-                      ASHRAE
-                    </span>
-                  )}
-                  {(r.quality_flag === "exclude" || r.quality_flag === "caution") && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        fontSize: 11,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: r.quality_flag === "exclude" ? "var(--red-light)" : "var(--amber-light)",
-                        color: r.quality_flag === "exclude" ? "var(--red)" : "var(--amber)",
-                      }}
-                    >
-                      {r.quality_flag}
-                    </span>
-                  )}
-                </td>
-                <td style={cell}>{r.n_rows}</td>
-                <td style={cell}>
-                  <Link to={`/run/${encodeURIComponent(r.run_id || r.run_key)}`}>
-                    view →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-wrap">
+          <div className="table-scroll">
+            <table className="run-table">
+              <thead>
+                <tr>
+                  <th className="plain" aria-label="select" />
+                  {COLUMNS.map((c) => (
+                    <th key={c.key} onClick={() => toggleSort(c.key)}>
+                      {c.label}
+                      {sortBy === c.key && <span className="arr">{dir === "asc" ? "▲" : "▼"}</span>}
+                    </th>
+                  ))}
+                  <th className="plain" aria-label="open" />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const id = r.run_id || r.run_key;
+                  const t = tier(r.co2_peak);
+                  return (
+                    <tr key={id} onClick={() => navigate(`/run/${encodeURIComponent(id)}`)}>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <input
+                          className="run-check"
+                          type="checkbox"
+                          checked={selected.has(id)}
+                          onChange={() => toggleSelect(id)}
+                          aria-label={`select ${r.condition}`}
+                        />
+                      </td>
+                      <td>{r.date}</td>
+                      <td className="cell-name">{r.building}</td>
+                      <td className="num">{r.occupancy ?? <span className="num-dim">·</span>}</td>
+                      <td className="cell-sub">{r.condition}</td>
+                      <td className="num">{r.duration_h ?? <span className="num-dim">·</span>}</td>
+                      <td className="num">{r.co2_mean ?? <span className="num-dim">·</span>}</td>
+                      <td>
+                        {t ? (
+                          <span className={`chip chip-${t}`}>
+                            <span className="dot" />
+                            {r.co2_peak}
+                          </span>
+                        ) : (
+                          <span className="num-dim">·</span>
+                        )}
+                        {(r.quality_flag === "exclude" || r.quality_flag === "caution") && (
+                          <span className={`badge ${r.quality_flag === "exclude" ? "badge-red" : "badge-amber"}`}>
+                            {r.quality_flag}
+                          </span>
+                        )}
+                      </td>
+                      <td className="num num-dim">{r.n_rows}</td>
+                      <td>
+                        <span className="row-view">
+                          view <span className="arr">→</span>
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-const cell: React.CSSProperties = {
-  padding: "9px 12px",
-  borderBottom: "1px solid var(--border)",
-  whiteSpace: "nowrap",
-};

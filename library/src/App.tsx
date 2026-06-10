@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Header, Footer } from "./components/Header";
 import RunTable from "./components/RunTable";
 import RunDetail from "./components/RunDetail";
 import ComparePage from "./components/ComparePage";
@@ -9,6 +10,7 @@ import DeployPage from "./components/DeployPage";
 export default function App() {
   return (
     <BrowserRouter>
+      <Header />
       <Routes>
         <Route path="/" element={<RunTable />} />
         <Route path="/run/:run_id" element={<RunDetail />} />
@@ -17,6 +19,7 @@ export default function App() {
         <Route path="/operations" element={<OperationsPage />} />
         <Route path="/deploy" element={<DeployPage />} />
       </Routes>
+      <Footer />
     </BrowserRouter>
   );
 }

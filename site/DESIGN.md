@@ -183,3 +183,27 @@ Quality bar informed by the `ui-ux-pro-max-skill` pre-delivery checklist
 375/768/1024/1440 breakpoints) and anti-patterns (no AI purple/pink gradients;
 no harsh neon). Ventis intentionally diverges toward a quiet editorial palette
 rather than a trendy style — the credibility of the data is the aesthetic.
+
+---
+
+## 11. 2026-06-10 — craft pass + data-library parity
+
+**Site (dialed-up field report):**
+- **Hero air-moment** (`components/HeroAirMoment.tsx`, `.air-moment`): the one
+  signature data element. A real measured overnight CO₂ rise (the Little Hall
+  single, 1,111 ppm, ~4 h over the line) draws on, and the readout counts up from
+  a calm baseline with its color crossing green to amber to red as it passes
+  ASHRAE 1,000. Count-up and draw both honor `prefers-reduced-motion`. Numbers
+  trace to real data (§2).
+- **Paper grain** (`body::after`): a faint fractal-noise overlay over the air
+  gradients for warmth and depth. **Warmer `--bone`** (`#faf8f2`).
+- **Hero entrance stagger**: sticker → sub → air-moment → actions → panels, ~80ms
+  apart; reduced-motion safe.
+- **`.pullquote`**: serif editorial accent, available to prose pages.
+
+**Data library (`library/`)** now shares this exact system (DM Serif / Outfit /
+DM Mono, the semantic air tiers, the atmospheric backdrop, the card + shadow
+language). It was a Vite starter (system font, purple accent, inline-styled
+tables); it is now a branded data product with a glassy header, CO₂-tier run
+chips, mono numerals, and editorial SOP pages. The same voice and claim-integrity
+rules apply there. Tokens live in `library/src/theme.css`, kept in sync with this file.

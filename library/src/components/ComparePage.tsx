@@ -9,7 +9,7 @@ import {
   parseIds, toElapsedSeries, loadSeries, METRICS, type MetricKey,
 } from "../lib/compare";
 
-const PALETTE = ["#1e6e3a", "#c62828", "#1565c0", "#b87900", "#6a1b9a", "#00838f"];
+const PALETTE = ["#1e6e3a", "#c6422c", "#1565c0", "#b87900", "#6a1b9a", "#00838f"];
 
 interface Loaded {
   run: Run;
@@ -52,84 +52,93 @@ export default function ComparePage() {
   }, [runs, ids, seriesById, metric]);
 
   const unit = METRICS.find((m) => m.key === metric)!.unit;
+  const axisTick = { fill: "#5e6b5e", fontSize: 12, fontFamily: "DM Mono, monospace" };
 
-  if (err) return <div style={wrap}><Link to="/">← back</Link><p style={{ color: "var(--red)" }}>{err}</p></div>;
+  if (err)
+    return (
+      <main className="lib-main">
+        <div className="wrap">
+          <Link to="/" className="back-link"><span className="arr">←</span> back to catalog</Link>
+          <p className="state state-err">{err}</p>
+        </div>
+      </main>
+    );
 
   return (
-    <div style={wrap}>
-      <Link to="/">← back to catalog</Link>
-      <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>Compare runs</h1>
-      <p style={{ color: "var(--muted)", marginBottom: 16 }}>
-        {ids.length
-          ? `${ids.length} run${ids.length === 1 ? "" : "s"} · aligned by elapsed time from each run's start`
-          : "No runs selected — pick runs in the catalog and hit Compare."}
-      </p>
+    <main className="lib-main">
+      <div className="wrap">
+        <Link to="/" className="back-link"><span className="arr">←</span> back to catalog</Link>
+        <div className="eyebrow">Overlay</div>
+        <h1 className="page-title">Compare runs</h1>
+        <p className="page-lede">
+          {ids.length
+            ? `${ids.length} run${ids.length === 1 ? "" : "s"}, aligned by elapsed time from each run's start.`
+            : "No runs selected. Pick runs in the catalog and hit Compare."}
+        </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {METRICS.map((m) => (
-          <button
-            key={m.key}
-            onClick={() => setMetric(m.key)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: metric === m.key ? "var(--green)" : "var(--tile)",
-              color: metric === m.key ? "#fff" : "var(--fg)",
-            }}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      {ids.length > 0 && (
-        <div style={{ background: "var(--tile)", padding: 16, borderRadius: 8, boxShadow: "var(--shadow)" }}>
-          <ResponsiveContainer width="100%" height={420}>
-            <LineChart margin={{ top: 8, right: 24, bottom: 24, left: 8 }}>
-              <CartesianGrid strokeOpacity={0.25} />
-              <XAxis
-                dataKey="h"
-                type="number"
-                allowDuplicatedCategory={false}
-                domain={["dataMin", "dataMax"]}
-                tickFormatter={(h) => `${(h as number).toFixed(1)}h`}
-                label={{ value: "elapsed (hours)", position: "insideBottom", offset: -12 }}
-              />
-              <YAxis
-                dataKey="v"
-                domain={["auto", "auto"]}
-                label={{ value: `${METRICS.find((m) => m.key === metric)!.label} (${unit})`, angle: -90, position: "insideLeft" }}
-              />
-              <Tooltip
-                formatter={(v) => `${v} ${unit}`}
-                labelFormatter={(h) => `${Number(h).toFixed(2)} h`}
-              />
-              <Legend />
-              {metric === "co2_ppm" && (
-                <>
-                  <ReferenceLine y={1000} stroke="#b87900" strokeDasharray="4 4" label="ASHRAE 1000" />
-                  <ReferenceLine y={1400} stroke="#c62828" strokeDasharray="4 4" label="1400 impair" />
-                </>
-              )}
-              {loaded.map((l) => (
-                <Line
-                  key={l.run.run_id || l.run.run_key}
-                  data={l.pts}
-                  dataKey="v"
-                  name={l.run.condition || l.run.building}
-                  stroke={l.color}
-                  dot={false}
-                  strokeWidth={1.6}
-                  isAnimationActive={false}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="seg" style={{ margin: "18px 0 4px" }}>
+          {METRICS.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setMetric(m.key)}
+              className={metric === m.key ? "active" : ""}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
-      )}
-    </div>
+
+        {ids.length > 0 && (
+          <div className="chart-card">
+            <ResponsiveContainer width="100%" height={440}>
+              <LineChart margin={{ top: 10, right: 24, bottom: 28, left: 8 }}>
+                <CartesianGrid stroke="rgba(13,69,32,0.10)" strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="h"
+                  type="number"
+                  allowDuplicatedCategory={false}
+                  domain={["dataMin", "dataMax"]}
+                  tick={axisTick}
+                  stroke="rgba(13,69,32,0.25)"
+                  tickFormatter={(h) => `${(h as number).toFixed(1)}h`}
+                  label={{ value: "elapsed (hours)", position: "insideBottom", offset: -14, fill: "#5e6b5e", fontSize: 12 }}
+                />
+                <YAxis
+                  dataKey="v"
+                  domain={["auto", "auto"]}
+                  tick={axisTick}
+                  stroke="rgba(13,69,32,0.25)"
+                  label={{ value: `${METRICS.find((m) => m.key === metric)!.label} (${unit})`, angle: -90, position: "insideLeft", fill: "#5e6b5e", fontSize: 12 }}
+                />
+                <Tooltip
+                  formatter={(v) => `${v} ${unit}`}
+                  labelFormatter={(h) => `${Number(h).toFixed(2)} h`}
+                  contentStyle={{ borderRadius: 10, border: "1px solid rgba(13,69,32,0.12)", boxShadow: "0 4px 18px rgba(13,69,32,0.10)", fontFamily: "Outfit, sans-serif", fontSize: 13 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 13, fontFamily: "Outfit, sans-serif" }} />
+                {metric === "co2_ppm" && (
+                  <>
+                    <ReferenceLine y={1000} stroke="#b87900" strokeDasharray="4 4" label={{ value: "ASHRAE 1000", fill: "#b87900", fontSize: 11, position: "right" }} />
+                    <ReferenceLine y={1400} stroke="#c6422c" strokeDasharray="4 4" label={{ value: "1400 impair", fill: "#c6422c", fontSize: 11, position: "right" }} />
+                  </>
+                )}
+                {loaded.map((l) => (
+                  <Line
+                    key={l.run.run_id || l.run.run_key}
+                    data={l.pts}
+                    dataKey="v"
+                    name={l.run.condition || l.run.building}
+                    stroke={l.color}
+                    dot={false}
+                    strokeWidth={1.8}
+                    isAnimationActive={false}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
-
-const wrap: React.CSSProperties = { maxWidth: 980, margin: "0 auto", padding: 24 };

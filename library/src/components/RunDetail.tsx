@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadCatalog, type Run } from "../lib/catalog";
+
+function tier(peak: number | null): "green" | "amber" | "red" | null {
+  if (peak == null) return null;
+  if (peak >= 1000) return "red";
+  if (peak >= 800) return "amber";
+  return "green";
+}
 
 export default function RunDetail() {
   const { run_id } = useParams<{ run_id: string }>();
@@ -19,128 +26,114 @@ export default function RunDetail() {
 
   if (notFound)
     return (
-      <div style={wrap}>
-        <Link to="/">← back</Link>
-        <p style={{ marginTop: 16 }}>Run not found: {run_id}</p>
-      </div>
+      <main className="lib-main">
+        <div className="wrap" style={{ maxWidth: 880 }}>
+          <Link to="/" className="back-link"><span className="arr">←</span> back to catalog</Link>
+          <p className="state">Run not found: {run_id}</p>
+        </div>
+      </main>
     );
-  if (!run) return <div style={wrap}>Loading…</div>;
+  if (!run)
+    return (
+      <main className="lib-main">
+        <div className="wrap"><p className="state">Loading…</p></div>
+      </main>
+    );
 
-  const stats: [string, React.ReactNode][] = [
-    ["Building", run.building || "—"],
-    ["Condition", run.condition || "—"],
-    ["Occupancy", run.occupancy ?? "—"],
-    ["Window", run.window_state || "—"],
-    ["Start", run.start || "—"],
-    ["End", run.end || "—"],
-    ["Duration (h)", run.duration_h ?? "—"],
-    ["Readings", run.n_rows ?? "—"],
-    ["CO₂ mean (ppm)", run.co2_mean ?? "—"],
+  const t = tier(run.co2_peak);
+  const rows: [string, React.ReactNode][] = [
+    ["Building", run.building || "·"],
+    ["Condition", run.condition || "·"],
+    ["Occupancy", run.occupancy ?? "·"],
+    ["Window", run.window_state || "·"],
+    ["Start", <span className="num">{run.start || "·"}</span>],
+    ["End", <span className="num">{run.end || "·"}</span>],
+    ["Duration", run.duration_h != null ? <span className="num">{run.duration_h} h</span> : "·"],
+    ["Readings", <span className="num">{run.n_rows ?? "·"}</span>],
+    ["CO₂ mean", run.co2_mean != null ? <span className="num">{run.co2_mean} ppm</span> : "·"],
     [
-      "CO₂ peak (ppm)",
-      <>
-        {run.co2_peak ?? "—"}
-        {run.ashrae_exceed && <span style={badge}>ASHRAE &gt; 1000</span>}
-      </>,
+      "CO₂ peak",
+      run.co2_peak != null ? (
+        <span className={`chip chip-${t}`}><span className="dot" />{run.co2_peak} ppm</span>
+      ) : (
+        "·"
+      ),
     ],
     [
       "Consent",
       run.consent_status === "verified" ? (
-        <span style={{ color: "var(--green)" }}>
-          ✓ verified{run.consent_method ? ` — ${run.consent_method}` : ""}
-          {run.consent_date ? ` (${run.consent_date})` : ""}
+        <span className="badge badge-green" style={{ marginLeft: 0 }}>
+          verified{run.consent_method ? ` · ${run.consent_method}` : ""}
+          {run.consent_date ? ` · ${run.consent_date}` : ""}
         </span>
       ) : (
-        <span style={{ color: "var(--amber)" }}>unverified — record in the consent ledger</span>
+        <span className="badge badge-amber" style={{ marginLeft: 0 }}>unverified</span>
       ),
     ],
-    ["Quality", run.quality_flag ? (
-      <span style={{
-        color: run.quality_flag === "exclude" ? "var(--red)"
-             : run.quality_flag === "caution" ? "var(--amber)" : "var(--green)",
-        fontWeight: 600,
-      }}>{run.quality_flag}</span>
-    ) : "—"],
-    ["Note", run.note || "—"],
-    ["Run ID", run.run_id || run.run_key],
+    [
+      "Quality",
+      run.quality_flag ? (
+        <span
+          className={`badge ${
+            run.quality_flag === "exclude" ? "badge-red" : run.quality_flag === "caution" ? "badge-amber" : "badge-green"
+          }`}
+          style={{ marginLeft: 0 }}
+        >
+          {run.quality_flag}
+        </span>
+      ) : (
+        "·"
+      ),
+    ],
+    ["Note", run.note || "·"],
+    ["Run ID", <span className="num num-dim">{run.run_id || run.run_key}</span>],
   ];
 
   return (
-    <div style={wrap}>
-      <Link to="/">← back to catalog</Link>
-      <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
-        {run.building || run.condition || "Run"}
-      </h1>
-      <p style={{ color: "var(--muted)", marginBottom: 12 }}>{run.date}</p>
+    <main className="lib-main">
+      <div className="wrap" style={{ maxWidth: 880 }}>
+        <Link to="/" className="back-link"><span className="arr">←</span> back to catalog</Link>
 
-      <a
-        href={`/data/csv/${run.csv}`}
-        download={run.csv}
-        style={{
-          display: "inline-block",
-          marginBottom: 20,
-          padding: "6px 14px",
-          borderRadius: 6,
-          border: "1px solid var(--green)",
-          color: "var(--green)",
-          fontSize: 14,
-        }}
-      >
-        ⬇ Download raw CSV
-      </a>
-
-      <img
-        src={`/data/charts/${run.chart}`}
-        alt={`CO₂ chart for ${run.condition}`}
-        style={{
-          maxWidth: "100%",
-          borderRadius: 8,
-          boxShadow: "var(--shadow)",
-          background: "var(--tile)",
-          marginBottom: 24,
-        }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = "none";
-        }}
-      />
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "max-content 1fr",
-          gap: "8px 20px",
-          background: "var(--tile)",
-          padding: 20,
-          borderRadius: 8,
-          boxShadow: "var(--shadow)",
-        }}
-      >
-        {stats.map(([k, v]) => (
-          <div key={k} style={{ display: "contents" }}>
-            <div style={{ color: "var(--muted)" }}>{k}</div>
-            <div>{v}</div>
+        <div className="detail-head">
+          <div>
+            <div className="eyebrow">{run.date}</div>
+            <h1 className="page-title">{run.building || run.condition || "Run"}</h1>
           </div>
-        ))}
-      </div>
-
-      {run.notes && (
-        <div style={{ marginTop: 20, lineHeight: 1.5 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 6, color: "var(--green)" }}>
-            Notes
-          </h2>
-          <p>{run.notes}</p>
+          <a className="dl-csv" href={`/data/csv/${run.csv}`} download={run.csv}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path d="M12 3v12" strokeLinecap="round" />
+              <path d="M7 11l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M5 21h14" strokeLinecap="round" />
+            </svg>
+            Download raw CSV
+          </a>
         </div>
-      )}
-    </div>
+
+        <img
+          className="detail-chart"
+          src={`/data/charts/${run.chart}`}
+          alt={`CO₂ chart for ${run.condition}`}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+
+        <dl className="def-grid">
+          {rows.map(([k, v]) => (
+            <Fragment key={k as string}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </Fragment>
+          ))}
+        </dl>
+
+        {run.notes && (
+          <div className="prose" style={{ marginTop: 26 }}>
+            <h2>Notes</h2>
+            <p>{run.notes}</p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
-
-const wrap: React.CSSProperties = { maxWidth: 820, margin: "0 auto", padding: 24 };
-const badge: React.CSSProperties = {
-  marginLeft: 8,
-  fontSize: 11,
-  padding: "2px 6px",
-  borderRadius: 4,
-  background: "var(--red-light)",
-  color: "var(--red)",
-};

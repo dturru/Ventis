@@ -242,6 +242,30 @@ img, svg { display: block; }
 .data-dict .k { font-family: var(--mono); font-size: 13px; color: var(--green-deep); white-space: nowrap; }
 .data-dict .d { color: #2c382e; }
 
+/* ── Coverage (internal collection map) ────────────────────────────── */
+.cov-h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(19px, 2.4vw, 24px); color: var(--ink); letter-spacing: -0.3px; margin: 34px 0 4px; }
+.cov-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; max-width: 64ch; }
+.cov-foot { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+
+/* Collection priorities — the to-do list */
+.cov-priorities { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.prio { display: flex; align-items: flex-start; gap: 11px; background: var(--tile); border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--r-sm); padding: 12px 15px; font-size: 14px; color: #2c382e; box-shadow: var(--shadow-sm); }
+.prio-tag { flex: none; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-top: 1px; }
+.prio-high { border-left-color: var(--red); }
+.prio-high .prio-tag { background: var(--red-soft); color: var(--red); }
+.prio-med { border-left-color: var(--amber); }
+.prio-med .prio-tag { background: var(--amber-soft); color: var(--amber); }
+.prio-low { border-left-color: var(--faint); }
+.prio-low .prio-tag { background: var(--green-mist); color: var(--muted); }
+
+/* Coverage matrix — counts, green-only (never air-tier red/amber here) */
+.cov-matrix th.cov-col { text-align: center; }
+.cov-matrix .cov-td { text-align: center; }
+.cov-have { display: inline-block; min-width: 26px; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--green-deep); background: var(--green-soft); border-radius: 999px; padding: 2px 9px; }
+.cov-gap { color: var(--faint); font-family: var(--mono); }
+.cov-pair { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--faint); border: 1px dashed var(--line); border-radius: 5px; padding: 2px 7px; margin: 0 2px; }
+.cov-pair.on { color: var(--green-deep); background: var(--green-soft); border-style: solid; border-color: transparent; }
+
 @media (max-width: 760px) {
   .lib-links a { padding: 7px 9px; font-size: 13px; }
   .lib-word .sub { display: none; }

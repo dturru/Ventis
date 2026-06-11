@@ -2,6 +2,35 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json, sqlite3
 from build_catalog import parse_label, run_record, build
+from build_catalog import window_from_label, fan_from_label, compose_scenario
+
+
+def _toks(s):
+    import re
+    return [t for t in re.split(r"[^a-z0-9]+", str(s).lower()) if t]
+
+
+def test_window_from_label():
+    assert window_from_label(_toks("little_window_1_person")) == "open"
+    assert window_from_label(_toks("midmass_windowfan_3person")) == "open"
+    assert window_from_label(_toks("eastwheelock_fanclosed_2person")) == "closed"
+    assert window_from_label(_toks("little_baseline_1person")) == "closed"
+    assert window_from_label(_toks("1RSingle - Fahey")) == ""        # silent -> blank
+    assert window_from_label(_toks("Judge_3RDouble")) == ""          # silent -> blank
+
+
+def test_fan_from_label():
+    assert fan_from_label(_toks("eastwheelock_fanclosed_2person")) == "on"
+    assert fan_from_label(_toks("midmass_windowfan_3person")) == "on"
+    assert fan_from_label(_toks("little_window_1_person")) == "off"  # default off
+    assert fan_from_label(_toks("1RSingle - Fahey")) == "off"
+
+
+def test_compose_scenario():
+    assert compose_scenario("open", "off") == "window open · fan off"
+    assert compose_scenario("closed", "on") == "window closed · fan on"
+    assert compose_scenario("", "off") == "fan off"                  # window unknown -> omit
+    assert compose_scenario("open→closed→open", "off") == "window open→closed→open · fan off"
 
 
 def test_parse_label_standard():

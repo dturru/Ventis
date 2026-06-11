@@ -49,6 +49,33 @@ def _occupancy(toks):
     return None
 
 
+_WINDOW_OPEN = {"window", "windowopen", "windowfan", "open"}
+_WINDOW_CLOSED = {"closed", "fanclosed", "baseline"}
+
+
+def window_from_label(toks):
+    """'open' / 'closed' / '' — never assert when the label is silent (blank)."""
+    if any(t in _WINDOW_OPEN for t in toks):
+        return "open"
+    if any(t in _WINDOW_CLOSED for t in toks):
+        return "closed"
+    return ""
+
+
+def fan_from_label(toks):
+    """A fan is OFF unless the label names one (any token containing 'fan')."""
+    return "on" if any("fan" in t for t in toks) else "off"
+
+
+def compose_scenario(window, fan):
+    """Readable ventilation descriptor. Window omitted when unknown; fan always shown."""
+    parts = []
+    if window:
+        parts.append(f"window {window}")
+    parts.append(f"fan {fan}")
+    return " · ".join(parts)
+
+
 def parse_label(condition: str):
     """building_condition_occupancy -> {building, occupancy}. Tolerant of legacy.
     Building = first KNOWN_BUILDINGS token found anywhere, else first token."""

@@ -72,10 +72,13 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          # Run from library/ so wrangler picks up functions/ (the /api/annotate
+          # Pages Function) and wrangler.toml (nodejs_compat + pages_build_output_dir).
           # --branch=main forces a PRODUCTION deploy. Preview deploys get unique
           # *.pages.dev subdomains that a single-hostname Access policy may NOT
           # cover -> moat leak. Keep deploys production-only.
-          command: pages deploy library/dist --project-name=ventis-data-library --branch=main
+          workingDirectory: library
+          command: pages deploy --project-name=ventis-data-library --branch=main
 
       - name: Clean up key
         if: always()

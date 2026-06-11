@@ -16,7 +16,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     context.request.headers.get("Cf-Access-Authenticated-User-Email"),
   );
 
-  const sql = postgres(url, { ssl: "require", prepare: false, fetch_types: false });
+  const sql = postgres(url, { ssl: "require", prepare: false, fetch_types: false, connect_timeout: 10 });
   try {
     // Same upsert as site/scripts/annotate.py::_upsert_pg.
     await sql`
@@ -33,7 +33,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ ok: true });
   } catch (e) {
     console.error("annotation upsert failed:", e);
-    return Response.json({ error: "could not save annotation" }, { status: 500 });
+    // TEMP debug: surface the real error + the port the env value uses, so we can
+    // tell a connection timeout (wrong port / edge can't reach pooler) from a
+    // SQL/auth error. Revert to the generic message once the path is proven.
+    const port = (url.match(/:(\d+)\//) || [])[1] || "?";
+    const detail = String((e as { message?: string })?.message || e).slice(0, 200);
+    return Response.json({ error: `upsert failed (port ${port}): ${detail}` }, { status: 500 });
   } finally {
     context.waitUntil(sql.end());
   }

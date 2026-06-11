@@ -13,6 +13,7 @@ const MARK = (
 
 const LINKS = [
   { to: "/", label: "Runs", end: true },
+  { to: "/coverage", label: "Coverage", end: false },
   { to: "/compare", label: "Compare", end: false },
   { to: "/about", label: "About", end: false },
   { to: "/operations", label: "Operations", end: false },

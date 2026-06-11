@@ -22,20 +22,22 @@ _NUM_WORDS = {
     "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
     "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
 }
-# Occupancy plurals collapsed to a single canonical token.
-_PLURALS = {"people": "person", "persons": "person"}
+# Occupancy tokens (plurals + shorthand) all collapse to a single canonical token.
+_OCCUPANCY = {"people": "person", "persons": "person",
+              "p": "person", "ppl": "person", "ppls": "person"}
 
 
 def canonical(s):
     """A comparable form of a condition label, tolerant of how it was *written*
     but never of what it *says*. Lowercases, maps number-words to digits
-    (one -> 1), singularizes occupancy (people/persons -> person), and drops all
-    separators/spaces. So 'Little_window_one person' and 'little_window_1_person'
-    both canonicalize to 'littlewindow1person' and match — but 'little_window_1person'
-    and 'little_window_2person' stay distinct (different occupancy = different consent).
+    (one -> 1), folds occupancy shorthand to one token (person/persons/people/p/ppl
+    -> person), and drops all separators/spaces. So 'Little_window_one person',
+    'little_window_1_person', and 'little_window_1p' all canonicalize to
+    'littlewindow1person' and match — but 'little_window_1person' and
+    'little_window_2person' stay distinct (different occupancy = different consent).
     """
     tokens = re.findall(r"[a-z]+|[0-9]+", str(s or "").lower())
-    out = [_PLURALS.get(t, _NUM_WORDS.get(t, t)) for t in tokens]
+    out = [_OCCUPANCY.get(t, _NUM_WORDS.get(t, t)) for t in tokens]
     return "".join(out)
 
 

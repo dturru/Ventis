@@ -75,6 +75,14 @@ def test_canonical_singularizes_occupancy_only():
     assert canonical("ew_baseline_persons") == canonical("ew_baseline_person")
 
 
+def test_canonical_occupancy_shorthand():
+    # 1p / 1ppl should canonicalize to the same thing as 1person.
+    assert canonical("little_window_1p") == canonical("little_window_1_person")
+    assert canonical("little_window_1ppl") == canonical("little_window_1person")
+    # ...but shorthand must still keep occupancy distinct.
+    assert canonical("little_window_1p") != canonical("little_window_2p")
+
+
 def test_canonical_keeps_genuinely_different_labels_distinct():
     # Different occupancy / building must NEVER canonicalize to the same string.
     assert canonical("little_window_1person") != canonical("little_window_2person")

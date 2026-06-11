@@ -68,6 +68,21 @@ def test_parse_label_occupancy_variants():
     assert parse_label("little_baseline_occupied")["occupancy"] is None
 
 
+def test_parse_label_occupancy_underscored_and_shorthand():
+    # the 2026-06-10 bug: "1_person" splits to ["1","person"] (underscore) and was missed
+    assert parse_label("little_window_1_person")["occupancy"] == 1
+    assert parse_label("little_window_1p")["occupancy"] == 1
+    assert parse_label("ew_baseline_2_person")["occupancy"] == 2
+
+
+def test_parse_label_occupancy_room_type():
+    # single/double/triple imply nominal occupancy when no explicit person count
+    assert parse_label("1RSingle - Fahey")["occupancy"] == 1
+    assert parse_label("Judge_3RDouble")["occupancy"] == 2
+    # an explicit person count still wins over a room-type word
+    assert parse_label("little_double_1person")["occupancy"] == 1
+
+
 def test_build_emits_catalog_and_series(tmp_path):
     db = tmp_path / "ventis.db"; _fixture_db(str(db))
     out = tmp_path / "out"

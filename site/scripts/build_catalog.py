@@ -18,18 +18,34 @@ KNOWN_BUILDINGS = {
 }
 
 WORD_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+ROOM_TYPE = {"single": 1, "double": 2, "triple": 3}
+PERSON_TOK = {"person", "people", "persons", "ppl", "ppls"}
+_PERSON_SUFFIX = r"(?:person|people|persons|ppl|ppls|p)"
 
 
 def _occupancy(toks):
-    # digit forms: "2person", "2ppl"
+    # joined digit forms: "2person", "2ppl", "1p"
     for t in toks:
-        m = re.match(r"(\d+)(person|ppl)$", t)
+        m = re.match(rf"(\d+){_PERSON_SUFFIX}$", t)
         if m:
             return int(m.group(1))
-    # word forms: "two" immediately before "ppl"/"person"
+    # digit token immediately before a person token: "1","person" (underscored label)
     for i, t in enumerate(toks):
-        if t in ("ppl", "person") and i > 0 and toks[i - 1] in WORD_NUM:
+        if re.fullmatch(r"\d+", t) and i + 1 < len(toks) and toks[i + 1] in PERSON_TOK:
+            return int(t)
+    # word number before a person token, separate ("two ppl") or joined ("twoperson")
+    for i, t in enumerate(toks):
+        if t in PERSON_TOK and i > 0 and toks[i - 1] in WORD_NUM:
             return WORD_NUM[toks[i - 1]]
+    for t in toks:
+        m = re.match(rf"(one|two|three|four|five|six){_PERSON_SUFFIX}$", t)
+        if m:
+            return WORD_NUM[m.group(1)]
+    # fallback: a room-type word implies nominal occupancy (1RSingle, 3RDouble)
+    for t in toks:
+        for rt, n in ROOM_TYPE.items():
+            if rt in t:
+                return n
     return None
 
 

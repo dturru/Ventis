@@ -73,3 +73,17 @@ No schema change. Reuses the existing `annotations` table (`run_key`, `note`, `q
 ## Compatibility
 
 `annotate.py` stays as-is — the CLI and the web UI write to the same table via the same upsert semantics, so they coexist. Nothing about the existing CLI / CI path changes.
+
+## Deployment notes (one-time, Diego)
+
+Code is built, unit-tested, and committed on `Ventis/feat-annotation-ui`. The remaining steps need the Supabase secret + dashboard access, so they're Diego's:
+
+1. **Local end-to-end (verifies the postgres.js-on-Workers path):**
+   - Paste the Session-pooler URI into `library/.dev.vars` (gitignored) — replace the `__PASTE_SESSION_POOLER_URI_HERE__` placeholder.
+   - `cd library && npm run build && npx wrangler pages dev dist`
+   - Open `/curate`, set a flag on a real run, Save → expect "Saved…". Confirm the row in Supabase Table Editor → `annotations`.
+   - (Optional) `python site/scripts/build_catalog.py` then check the flag appears in `library/public/data/catalog.json`. Revert the test flag after.
+2. **Cloudflare Pages → ventis-data-library → Settings → Environment variables:** add `SUPABASE_DB_URL` (Session-pooler URI) for Production **and** Preview.
+3. **Settings → Functions → Compatibility flags:** add `nodejs_compat` for Production and Preview (also set in `library/wrangler.toml`; the dashboard setting is belt-and-suspenders).
+4. **Cloudflare Access:** confirm the Founders access application covers the whole `ventis-data-library.pages.dev` host (default), so `/api/annotate` is gated — hit `/api/annotate` from a non-allowlisted browser and expect the Access wall, not a 200.
+5. **Verify in production:** after deploy, open `/curate`, set a flag, confirm the Supabase row, confirm it renders after the hourly build.

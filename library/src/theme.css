@@ -247,6 +247,12 @@ img, svg { display: block; }
 .cov-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; max-width: 64ch; }
 .cov-foot { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
 
+/* Forward link from the Runs page to the coverage map */
+.cov-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--green); margin: 2px 0 4px; }
+.cov-link:hover { color: var(--green-deep); }
+.cov-link .arr { transition: transform .16s ease; }
+.cov-link:hover .arr { transform: translateX(3px); }
+
 /* Collection priorities — the to-do list */
 .cov-priorities { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .prio { display: flex; align-items: flex-start; gap: 11px; background: var(--tile); border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--r-sm); padding: 12px 15px; font-size: 14px; color: #2c382e; box-shadow: var(--shadow-sm); }

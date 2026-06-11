@@ -90,6 +90,11 @@ export default function RunTable() {
 
         <StatsBar runs={runs} />
 
+        <Link to="/coverage" className="cov-link">
+          See what we have and where the gaps are — collection coverage map
+          <span className="arr">→</span>
+        </Link>
+
         <div className="toolbar">
           <label className="lib-search">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">

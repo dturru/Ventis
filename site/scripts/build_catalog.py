@@ -103,6 +103,23 @@ def _slug(s):
     return re.sub(r"[^a-z0-9]+", "_", str(s).lower()).strip("_") or "run"
 
 
+def apply_attr_overrides(rec, anno):
+    """Annotation override wins over the label-derived value, per field. A blank/None
+    override means 'no override' (keep the label value). Records which fields were
+    overridden in rec['attr_overrides'] so the UI can mark them. Recomposes scenario."""
+    overridden = []
+    occ = anno.get("occupancy")
+    if occ not in (None, "", "None"):
+        rec["occupancy"] = int(occ); overridden.append("occupancy")
+    for f in ("window", "fan"):
+        v = anno.get(f)
+        if v not in (None, "", "None"):
+            rec[f] = v; overridden.append(f)
+    rec["scenario"] = compose_scenario(rec.get("window", ""), rec.get("fan", "off"))
+    rec["attr_overrides"] = overridden
+    return rec
+
+
 def run_record(run: dict) -> dict:
     lab = parse_label(run.get("condition", ""))
     toks = [t for t in re.split(r"[^a-z0-9]+", str(run.get("condition", "")).lower()) if t]
@@ -209,7 +226,10 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR, db_url=None):
     # annotate with founder notes + quality flags (non-fatal if the table is absent)
     try:
         from annotate import load_annotations, merge_annotations
-        merge_annotations(records, load_annotations())
+        annos = load_annotations()
+        merge_annotations(records, annos)              # note/quality_flag/tags
+        for r in records:                              # occupancy/window/fan overrides
+            apply_attr_overrides(r, annos.get(r["run_key"], {}))
     except Exception as e:
         print(f"(annotations skipped: {e})")
     json.dump({"generated": _now(), "runs": records},

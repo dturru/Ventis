@@ -6,6 +6,7 @@ import ComparePage from "./components/ComparePage";
 import AboutPage from "./components/AboutPage";
 import OperationsPage from "./components/OperationsPage";
 import DeployPage from "./components/DeployPage";
+import CuratePage from "./components/CuratePage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/operations" element={<OperationsPage />} />
         <Route path="/deploy" element={<DeployPage />} />
+        <Route path="/curate" element={<CuratePage />} />
       </Routes>
       <Footer />
     </BrowserRouter>

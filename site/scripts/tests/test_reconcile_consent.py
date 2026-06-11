@@ -1,6 +1,6 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from reconcile_consent import match_run, plan_reconcile
+from reconcile_consent import match_run, plan_reconcile, canonical
 
 RUNS = [
     {"run_key": "k_fahey", "run_id": "r1", "condition": "fahey_window_1person",
@@ -62,6 +62,38 @@ def test_reconcile_is_nonfatal_on_db_error(monkeypatch):
 
     monkeypatch.setattr(rc, "_fetch", boom)
     assert rc.reconcile(db_url="postgresql://fake") == 0   # returns 0, no exception
+
+
+def test_canonical_absorbs_number_words_separators_case():
+    # The real 2026-06-10 failure: "one" vs "1", spaces vs underscores, case.
+    assert canonical("Little_window_one person") == canonical("little_window_1_person")
+    assert canonical("FAHEY  Window-1person") == canonical("fahey_window_1_person")
+
+
+def test_canonical_singularizes_occupancy_only():
+    assert canonical("ew_baseline_2people") == canonical("ew_baseline_2person")
+    assert canonical("ew_baseline_persons") == canonical("ew_baseline_person")
+
+
+def test_canonical_keeps_genuinely_different_labels_distinct():
+    # Different occupancy / building must NEVER canonicalize to the same string.
+    assert canonical("little_window_1person") != canonical("little_window_2person")
+    assert canonical("little_window_1person") != canonical("choates_window_1person")
+
+
+def test_match_run_links_across_formatting_and_number_words():
+    runs = [{"run_key": "k_lw", "condition": "little_window_1_person",
+             "start": "2026-06-10 21:00:00"}]
+    sub = {"condition": "Little_window_one person", "agreed_at": "2026-06-10 20:40:00"}
+    assert match_run(sub, runs)["run_key"] == "k_lw"
+
+
+def test_match_run_refuses_to_link_different_occupancy():
+    # 1person vs 2person within the time window must still NOT link — guardrail.
+    runs = [{"run_key": "k1", "condition": "little_window_1person",
+             "start": "2026-06-10 21:00:00"}]
+    sub = {"condition": "little_window_2person", "agreed_at": "2026-06-10 20:40:00"}
+    assert match_run(sub, runs) is None
 
 
 def test_plan_reconcile_skips_already_reconciled():

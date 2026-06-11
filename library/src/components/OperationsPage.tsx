@@ -63,6 +63,12 @@ export default function OperationsPage() {
                 that match is what links the opt-in to this run during reconciliation.
               </li>
               <li>
+                <strong>After the run — flag its quality:</strong> set a note and a
+                good/caution/exclude flag on the{" "}
+                <Link to="/curate">run curation page</Link>. It saves to the dataset and shows in
+                the catalog on the next hourly build.
+              </li>
+              <li>
                 <strong>Start / stop — the <code>control</code> tab is a single-row register, ONLY row 2 matters:</strong>
                 <ul>
                   <li><code>A2</code> = logging → <code>TRUE</code> to start, <code>FALSE</code> to stop</li>

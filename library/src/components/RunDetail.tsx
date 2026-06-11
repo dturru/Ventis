@@ -41,11 +41,15 @@ export default function RunDetail() {
     );
 
   const t = tier(run.co2_peak);
+  const noted = (f: string) => (run.attr_overrides?.includes(f) ? " (noted)" : "");
   const rows: [string, React.ReactNode][] = [
     ["Building", run.building || "·"],
     ["Condition", run.condition || "·"],
-    ["Occupancy", run.occupancy ?? "·"],
-    ["Window", run.window_state || "·"],
+    ["Scenario", run.scenario || "·"],
+    ["Occupancy", (run.occupancy ?? "·") + noted("occupancy")],
+    ["Window", (run.window || "·") + noted("window")],
+    ["Fan", (run.fan || "·") + noted("fan")],
+    ["Window (logged)", run.window_state || "·"],
     ["Start", <span className="num">{run.start || "·"}</span>],
     ["End", <span className="num">{run.end || "·"}</span>],
     ["Duration", run.duration_h != null ? <span className="num">{run.duration_h} h</span> : "·"],

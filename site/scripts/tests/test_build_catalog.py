@@ -2,6 +2,35 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json, sqlite3
 from build_catalog import parse_label, run_record, build
+from build_catalog import window_from_label, fan_from_label, compose_scenario
+
+
+def _toks(s):
+    import re
+    return [t for t in re.split(r"[^a-z0-9]+", str(s).lower()) if t]
+
+
+def test_window_from_label():
+    assert window_from_label(_toks("little_window_1_person")) == "open"
+    assert window_from_label(_toks("midmass_windowfan_3person")) == "open"
+    assert window_from_label(_toks("eastwheelock_fanclosed_2person")) == "closed"
+    assert window_from_label(_toks("little_baseline_1person")) == "closed"
+    assert window_from_label(_toks("1RSingle - Fahey")) == ""        # silent -> blank
+    assert window_from_label(_toks("Judge_3RDouble")) == ""          # silent -> blank
+
+
+def test_fan_from_label():
+    assert fan_from_label(_toks("eastwheelock_fanclosed_2person")) == "on"
+    assert fan_from_label(_toks("midmass_windowfan_3person")) == "on"
+    assert fan_from_label(_toks("little_window_1_person")) == "off"  # default off
+    assert fan_from_label(_toks("1RSingle - Fahey")) == "off"
+
+
+def test_compose_scenario():
+    assert compose_scenario("open", "off") == "window open · fan off"
+    assert compose_scenario("closed", "on") == "window closed · fan on"
+    assert compose_scenario("", "off") == "fan off"                  # window unknown -> omit
+    assert compose_scenario("open→closed→open", "off") == "window open→closed→open · fan off"
 
 
 def test_parse_label_standard():
@@ -35,6 +64,28 @@ def test_run_record_shape():
     assert r["ashrae_exceed"] is True          # peak 1100 > 1000
     assert r["date"] == "2026-06-01"
     assert abs(r["duration_h"] - 2.0) < 0.01
+
+
+def test_apply_attr_overrides():
+    from build_catalog import apply_attr_overrides
+    rec = {"run_key": "k", "occupancy": 1, "window": "open", "fan": "off",
+           "scenario": "window open · fan off"}
+    anno = {"occupancy": "2", "window": "", "fan": ""}   # only occupancy overridden
+    out = apply_attr_overrides(rec, anno)
+    assert out["occupancy"] == 2            # coerced to int, from annotation
+    assert out["window"] == "open"          # blank override = keep label value
+    assert out["scenario"] == "window open · fan off"
+    assert out["attr_overrides"] == ["occupancy"]
+
+
+def test_run_record_emits_label_scenario():
+    rec = run_record({"run_key": "k", "condition": "little_window_1_person",
+                      "start": "2026-06-10 17:48:00", "end": "2026-06-11 00:00:00"})
+    assert rec["window"] == "open"
+    assert rec["fan"] == "off"
+    assert rec["scenario"] == "window open · fan off"
+    assert rec["occupancy"] == 1
+    assert rec["window_state"] == ""   # logged field untouched
 
 
 def _fixture_db(path):

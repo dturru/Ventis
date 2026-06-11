@@ -161,7 +161,10 @@ export default function RunTable() {
                       <td>{r.date}</td>
                       <td className="cell-name">{r.building}</td>
                       <td className="num">{r.occupancy ?? <span className="num-dim">·</span>}</td>
-                      <td className="cell-sub">{r.condition}</td>
+                      <td className="cell-sub">
+                        {r.condition}
+                        {r.scenario && <div className="cell-scenario">{r.scenario}</div>}
+                      </td>
                       <td className="num">{r.duration_h ?? <span className="num-dim">·</span>}</td>
                       <td className="num">{r.co2_mean ?? <span className="num-dim">·</span>}</td>
                       <td>

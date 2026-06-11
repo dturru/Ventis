@@ -41,6 +41,19 @@ def test_load_annotations_routes_to_supabase(monkeypatch):
     assert seen["url"] == "postgresql://fake" and a["k"]["note"] == "x"
 
 
+def test_upsert_carries_override_fields(tmp_path):
+    store = tmp_path / "annotations.csv"
+    upsert_annotation(
+        {"run_key": "k1", "note": "roommate moved in", "quality_flag": "caution",
+         "tags": "occupancy-change", "occupancy": "2", "window": "open", "fan": "off",
+         "updated_by": "diego"},
+        path=str(store), db_url="")
+    annos = load_annotations(path=str(store), db_url="")
+    assert annos["k1"]["occupancy"] == "2"
+    assert annos["k1"]["window"] == "open"
+    assert annos["k1"]["fan"] == "off"
+
+
 def test_upsert_annotation_routes_to_supabase(monkeypatch):
     cap = {}
     monkeypatch.setattr(annotate, "_upsert_pg", lambda rec, url: cap.update(rec=rec, url=url))

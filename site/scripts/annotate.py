@@ -17,7 +17,8 @@ ARCHIVE_DIR = os.path.join(HERE, "archive")
 DB = os.path.join(ARCHIVE_DIR, "ventis.db")
 STORE = os.path.join(ARCHIVE_DIR, "annotations.csv")
 
-COLS = ["run_key", "note", "quality_flag", "tags", "updated_by"]
+COLS = ["run_key", "note", "quality_flag", "tags",
+        "occupancy", "window", "fan", "updated_by"]
 VALID_FLAGS = {"good", "caution", "exclude"}
 
 
@@ -44,7 +45,8 @@ def _load_annotations_pg(db_url):
     import psycopg
     from psycopg.rows import dict_row
     with psycopg.connect(db_url) as con, con.cursor(row_factory=dict_row) as cur:
-        cur.execute("select run_key, note, quality_flag, tags, updated_by from annotations")
+        cur.execute('select run_key, note, quality_flag, tags, '
+                    'occupancy, "window", fan, updated_by from annotations')
         rows = cur.fetchall()
     return {r["run_key"]: {k: ("" if v is None else v) for k, v in r.items()}
             for r in rows if r.get("run_key")}
@@ -73,13 +75,18 @@ def write_annotations(annos, path=STORE):
 def _upsert_pg(rec, db_url):
     import psycopg
     p = {c: rec.get(c, "") for c in COLS}
+    # occupancy is an int column: blank/None override -> NULL (not "")
+    p["occupancy"] = int(p["occupancy"]) if str(p["occupancy"]).strip() not in ("", "None") else None
     with psycopg.connect(db_url) as con, con.cursor() as cur:
         cur.execute(
-            "insert into annotations (run_key,note,quality_flag,tags,updated_by) "
-            "values (%(run_key)s,%(note)s,%(quality_flag)s,%(tags)s,%(updated_by)s) "
+            'insert into annotations '
+            '(run_key,note,quality_flag,tags,occupancy,"window",fan,updated_by) '
+            "values (%(run_key)s,%(note)s,%(quality_flag)s,%(tags)s,"
+            "%(occupancy)s,%(window)s,%(fan)s,%(updated_by)s) "
             "on conflict (run_key) do update set note=excluded.note, "
             "quality_flag=excluded.quality_flag, tags=excluded.tags, "
-            "updated_by=excluded.updated_by, updated_at=now()", p)
+            'occupancy=excluded.occupancy, "window"=excluded."window", '
+            "fan=excluded.fan, updated_by=excluded.updated_by, updated_at=now()", p)
         con.commit()
 
 
@@ -123,6 +130,9 @@ def main(argv):
             "note": _arg(argv, "--note", existing.get("note", "")),
             "quality_flag": _arg(argv, "--flag", existing.get("quality_flag", "")),
             "tags": _arg(argv, "--tags", existing.get("tags", "")),
+            "occupancy": _arg(argv, "--occupancy", existing.get("occupancy", "")),
+            "window": _arg(argv, "--window", existing.get("window", "")),
+            "fan": _arg(argv, "--fan", existing.get("fan", "")),
             "updated_by": _arg(argv, "--by", existing.get("updated_by", "")),
         }
         upsert_annotation(rec)

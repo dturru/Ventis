@@ -6,6 +6,10 @@ export interface Run {
   condition: string;
   occupancy: number | null;
   window_state: string;
+  window?: string;       // label-derived (or annotation-overridden) window: open | closed | ""
+  fan?: string;          // on | off
+  scenario?: string;     // "window open · fan off"
+  attr_overrides?: string[];  // which attrs came from the annotation
   date: string;
   start: string;
   end: string;

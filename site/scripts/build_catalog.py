@@ -49,6 +49,33 @@ def _occupancy(toks):
     return None
 
 
+_WINDOW_OPEN = {"window", "windowopen", "windowfan", "open"}
+_WINDOW_CLOSED = {"closed", "fanclosed", "baseline"}
+
+
+def window_from_label(toks):
+    """'open' / 'closed' / '' — never assert when the label is silent (blank)."""
+    if any(t in _WINDOW_OPEN for t in toks):
+        return "open"
+    if any(t in _WINDOW_CLOSED for t in toks):
+        return "closed"
+    return ""
+
+
+def fan_from_label(toks):
+    """A fan is OFF unless the label names one (any token containing 'fan')."""
+    return "on" if any("fan" in t for t in toks) else "off"
+
+
+def compose_scenario(window, fan):
+    """Readable ventilation descriptor. Window omitted when unknown; fan always shown."""
+    parts = []
+    if window:
+        parts.append(f"window {window}")
+    parts.append(f"fan {fan}")
+    return " · ".join(parts)
+
+
 def parse_label(condition: str):
     """building_condition_occupancy -> {building, occupancy}. Tolerant of legacy.
     Building = first KNOWN_BUILDINGS token found anywhere, else first token."""
@@ -76,8 +103,28 @@ def _slug(s):
     return re.sub(r"[^a-z0-9]+", "_", str(s).lower()).strip("_") or "run"
 
 
+def apply_attr_overrides(rec, anno):
+    """Annotation override wins over the label-derived value, per field. A blank/None
+    override means 'no override' (keep the label value). Records which fields were
+    overridden in rec['attr_overrides'] so the UI can mark them. Recomposes scenario."""
+    overridden = []
+    occ = anno.get("occupancy")
+    if occ not in (None, "", "None"):
+        rec["occupancy"] = int(occ); overridden.append("occupancy")
+    for f in ("window", "fan"):
+        v = anno.get(f)
+        if v not in (None, "", "None"):
+            rec[f] = v; overridden.append(f)
+    rec["scenario"] = compose_scenario(rec.get("window", ""), rec.get("fan", "off"))
+    rec["attr_overrides"] = overridden
+    return rec
+
+
 def run_record(run: dict) -> dict:
     lab = parse_label(run.get("condition", ""))
+    toks = [t for t in re.split(r"[^a-z0-9]+", str(run.get("condition", "")).lower()) if t]
+    window = window_from_label(toks)
+    fan = fan_from_label(toks)
     a, b = _parse_dt(run.get("start")), _parse_dt(run.get("end"))
     dur = round((b - a).total_seconds() / 3600, 2) if a and b else None
     peak = run.get("co2_peak")
@@ -89,6 +136,9 @@ def run_record(run: dict) -> dict:
         "building": lab["building"],
         "condition": run.get("condition", ""),
         "occupancy": lab["occupancy"],
+        "window": window,
+        "fan": fan,
+        "scenario": compose_scenario(window, fan),
         "window_state": run.get("window_state", ""),
         "date": str(run.get("start", ""))[:10],
         "start": run.get("start", ""),
@@ -176,7 +226,10 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR, db_url=None):
     # annotate with founder notes + quality flags (non-fatal if the table is absent)
     try:
         from annotate import load_annotations, merge_annotations
-        merge_annotations(records, load_annotations())
+        annos = load_annotations()
+        merge_annotations(records, annos)              # note/quality_flag/tags
+        for r in records:                              # occupancy/window/fan overrides
+            apply_attr_overrides(r, annos.get(r["run_key"], {}))
     except Exception as e:
         print(f"(annotations skipped: {e})")
     json.dump({"generated": _now(), "runs": records},

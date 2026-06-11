@@ -66,6 +66,16 @@ def test_run_record_shape():
     assert abs(r["duration_h"] - 2.0) < 0.01
 
 
+def test_run_record_emits_label_scenario():
+    rec = run_record({"run_key": "k", "condition": "little_window_1_person",
+                      "start": "2026-06-10 17:48:00", "end": "2026-06-11 00:00:00"})
+    assert rec["window"] == "open"
+    assert rec["fan"] == "off"
+    assert rec["scenario"] == "window open · fan off"
+    assert rec["occupancy"] == 1
+    assert rec["window_state"] == ""   # logged field untouched
+
+
 def _fixture_db(path):
     con = sqlite3.connect(path)
     con.executescript("""

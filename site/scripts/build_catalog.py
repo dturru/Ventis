@@ -105,6 +105,9 @@ def _slug(s):
 
 def run_record(run: dict) -> dict:
     lab = parse_label(run.get("condition", ""))
+    toks = [t for t in re.split(r"[^a-z0-9]+", str(run.get("condition", "")).lower()) if t]
+    window = window_from_label(toks)
+    fan = fan_from_label(toks)
     a, b = _parse_dt(run.get("start")), _parse_dt(run.get("end"))
     dur = round((b - a).total_seconds() / 3600, 2) if a and b else None
     peak = run.get("co2_peak")
@@ -116,6 +119,9 @@ def run_record(run: dict) -> dict:
         "building": lab["building"],
         "condition": run.get("condition", ""),
         "occupancy": lab["occupancy"],
+        "window": window,
+        "fan": fan,
+        "scenario": compose_scenario(window, fan),
         "window_state": run.get("window_state", ""),
         "date": str(run.get("start", ""))[:10],
         "start": run.get("start", ""),

@@ -66,6 +66,14 @@ create table if not exists annotations (
   note         text,
   quality_flag text,                 -- good | caution | exclude (else: no flag)
   tags         text,                  -- optional, comma-separated
+  occupancy    int,                   -- override: actual occupancy when label is wrong
+  window       text,                  -- override: open | closed | free text (e.g. open→closed→open)
+  fan          text,                  -- override: on | off
   updated_by   text,                  -- founder pseudonym, never an occupant
   updated_at   timestamptz default now()
 );
+-- For an EXISTING annotations table, add the override columns (run in Supabase SQL editor):
+--   alter table annotations
+--     add column if not exists occupancy int,
+--     add column if not exists "window" text,
+--     add column if not exists fan text;

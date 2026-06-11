@@ -5,6 +5,7 @@ import { Home } from './pages/Home'
 import { Problem } from './pages/Problem'
 import { How } from './pages/How'
 import { Data } from './pages/Data'
+import { Proof } from './pages/Proof'
 import { Demo } from './pages/Demo'
 import { GetInvolved } from './pages/GetInvolved'
 import { Contact } from './pages/Contact'
@@ -51,6 +52,7 @@ export function App() {
           <Route path="/problem" element={<Problem />} />
           <Route path="/how" element={<How />} />
           <Route path="/data" element={<Data />} />
+          <Route path="/proof" element={<Proof />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/get-involved" element={<GetInvolved />} />
           <Route path="/contact" element={<Contact />} />

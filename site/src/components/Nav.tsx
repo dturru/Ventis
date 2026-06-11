@@ -5,6 +5,7 @@ import { residentsCTA } from '../site.config'
 const LINKS = [
   { to: '/problem', label: 'The Problem' },
   { to: '/how', label: 'How It Works' },
+  { to: '/proof', label: 'The Proof' },
   { to: '/data', label: 'The Data' },
   { to: '/demo', label: 'Demo' },
   { to: '/get-involved', label: 'Get Involved' },

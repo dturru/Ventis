@@ -16,6 +16,7 @@ const LINKS = [
   { to: "/compare", label: "Compare", end: false },
   { to: "/about", label: "About", end: false },
   { to: "/operations", label: "Operations", end: false },
+  { to: "/curate", label: "Curate", end: false },
 ];
 
 export function Header() {

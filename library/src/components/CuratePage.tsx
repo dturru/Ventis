@@ -66,6 +66,15 @@ export default function CuratePage() {
         catalog on the next hourly build. Runs without a flag are listed first.
       </p>
 
+      <div style={{ ...card, background: "var(--tile-alt)", marginBottom: 16, fontSize: 13,
+                    color: "var(--muted)" }}>
+        <strong style={{ color: "inherit" }}>Saving here is paused.</strong> The database write needs the
+        Cloudflare Workers Paid plan (the free tier's per-request limit blocks it). Until we upgrade,
+        curate in the <strong>Supabase Table Editor</strong> → <code>annotations</code> table — it lands in
+        the same place and shows in the catalog on the next hourly build. This page is built and ready;
+        it goes live the day we upgrade.
+      </div>
+
       <form onSubmit={submit} style={card}>
         <label style={label} htmlFor="run">Run</label>
         <select id="run" style={input} value={selected}

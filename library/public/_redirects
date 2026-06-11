@@ -1,0 +1,4 @@
+# SPA fallback: serve index.html for client-side routes (e.g. /curate, /operations)
+# so direct loads, refreshes, and bookmarks work instead of 404ing.
+# /api/* is handled by Pages Functions and is excluded automatically.
+/*  /index.html  200

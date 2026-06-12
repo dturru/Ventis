@@ -32,8 +32,8 @@ import json
 import os
 import re
 import sys
-from collections import defaultdict
-from datetime import datetime
+from collections import defaultdict, deque
+from datetime import datetime, timedelta
 
 from sheet_source import fetch_rows, COLUMNS
 from merge_runs import apply_merges, load_merges
@@ -111,10 +111,56 @@ def group_runs(rows, merges=None):
     return runs
 
 
+def _co2_val(v):
+    s = str(v).strip()
+    if s in ("", "None"):
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def co2_stats(rows, warmup_min=15, peak_window_min=5):
+    """Robust per-run CO2 stats that reject deployment / boundary artifacts.
+
+    - co2_mean: arithmetic mean AFTER dropping the first `warmup_min` minutes — the
+      SCD40 warm-up + handling at deployment bias the opening readings high.
+    - co2_peak: the max of a `peak_window_min`-minute ROLLING MEAN, so a brief spike
+      (startup, reboot-resume, the pull) can't masquerade as the peak while a genuine
+      sustained high survives. Computed on the warm-up-trimmed series too.
+
+    Falls back to the full series when trimming would leave too little data (short
+    runs). Returns {co2_mean, co2_peak}; both None if there is no usable CO2."""
+    pts = []
+    for r in rows:
+        dt = _parse(_ts(r))
+        c = _co2_val(r.get("co2_ppm"))
+        if dt is not None and c is not None:
+            pts.append((dt, c))
+    if not pts:
+        return {"co2_mean": None, "co2_peak": None}
+    pts.sort(key=lambda p: p[0])
+    kept = [p for p in pts if p[0] >= pts[0][0] + timedelta(minutes=warmup_min)]
+    if len(kept) < max(2, len(pts) // 10):     # short run -> don't over-trim
+        kept = pts
+    vals = [c for _, c in kept]
+    co2_mean = round(sum(vals) / len(vals), 1)
+    win = timedelta(minutes=peak_window_min)
+    dq = deque(); run = 0.0; k = 0; best = None; n = len(kept)
+    for i in range(n):
+        while k < n and kept[k][0] <= kept[i][0] + win:
+            dq.append(kept[k][1]); run += kept[k][1]; k += 1
+        if dq:
+            m = run / len(dq)
+            best = m if best is None or m > best else best
+        run -= dq.popleft()
+    return {"co2_mean": co2_mean, "co2_peak": round(best) if best is not None else None}
+
+
 def _meta(key, run_rows):
-    co2 = [float(r["co2_ppm"]) for r in run_rows
-           if str(r.get("co2_ppm", "")).strip() not in ("", "None")]
     conds = [str(r.get("condition", "")) for r in run_rows if r.get("condition")]
+    st = co2_stats(run_rows)
     return {
         "run_key": key,
         "run_id": str(run_rows[0].get("run_id", "")).strip(),
@@ -123,8 +169,8 @@ def _meta(key, run_rows):
         "start": _ts(run_rows[0]),
         "end": _ts(run_rows[-1]),
         "n_rows": len(run_rows),
-        "co2_mean": round(sum(co2) / len(co2), 1) if co2 else None,
-        "co2_peak": max(co2) if co2 else None,
+        "co2_mean": st["co2_mean"],
+        "co2_peak": st["co2_peak"],
         "csv": _safe(key) + ".csv",
     }
 

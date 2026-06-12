@@ -15,7 +15,7 @@ import os
 import sys
 
 from sqlite_sync import _load_archive_csvs, _num, _norm_ts
-from archive_runs import group_runs, _parse
+from archive_runs import group_runs, _parse, co2_stats
 from sheet_source import fetch_rows
 
 READING_COLS = ["timestamp", "device_id", "run_id", "run_key", "condition", "co2_ppm",
@@ -55,19 +55,19 @@ def aggregate_runs(rows):
     out = []
     for key, rs in by.items():
         ts = sorted(x["timestamp"] for x in rs)
-        co2 = [x["co2_ppm"] for x in rs if x["co2_ppm"] is not None]
         conds = {}
         for x in rs:
             conds[x["condition"]] = conds.get(x["condition"], 0) + 1
         cond = max(conds, key=conds.get) if conds else ""
+        st = co2_stats(rs)   # robust: warm-up-trimmed mean + 5-min rolling-mean peak
         out.append({
             "run_key": key,
             "run_id": next((x["run_id"] for x in rs if x["run_id"]), ""),
             "device_id": next((x["device_id"] for x in rs if x["device_id"]), ""),
             "condition": cond,
             "start_ts": ts[0], "end_ts": ts[-1], "n_rows": len(rs),
-            "co2_mean": round(sum(co2) / len(co2), 1) if co2 else None,
-            "co2_peak": max(co2) if co2 else None,
+            "co2_mean": st["co2_mean"],
+            "co2_peak": st["co2_peak"],
         })
     return out
 

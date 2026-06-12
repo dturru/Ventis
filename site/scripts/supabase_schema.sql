@@ -77,3 +77,14 @@ create table if not exists annotations (
 --     add column if not exists occupancy int,
 --     add column if not exists "window" text,
 --     add column if not exists fan text;
+
+-- Run merges: fold runs the grouper wrongly split (e.g. a logger reboot read as a
+-- >60min gap) back into one. Each row maps a folded-in member run_key -> the
+-- surviving canonical run id. Written by merge_runs.py; applied in group_runs on
+-- every sync (durable across the hourly rebuild). No PII.
+create table if not exists run_merges (
+  member_key       text primary key,   -- a run_key/run_id to fold in
+  canonical_run_id text not null,      -- the surviving run id all members collapse into
+  updated_by       text,               -- founder pseudonym, never an occupant
+  updated_at       timestamptz default now()
+);

@@ -36,6 +36,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from sheet_source import fetch_rows, COLUMNS
+from merge_runs import apply_merges, load_merges
 
 GAP_MINUTES = 60   # legacy grouping: a gap longer than this starts a new run
 
@@ -70,11 +71,15 @@ def _dt(r):
     return _parse(_ts(r)) or datetime.min
 
 
-def group_runs(rows):
+def group_runs(rows, merges=None):
     """Group rows into runs. Rows with a run_id group directly. Legacy rows (no
     run_id) are split into contiguous sessions: a new run starts on a condition
     change or a time gap > GAP_MINUTES, so an overnight run stays whole while two
-    separate same-label sessions don't merge."""
+    separate same-label sessions don't merge.
+
+    A founder merge overlay (merge_runs.py) is then applied to fold runs the
+    grouper wrongly split (e.g. a reboot read as a >GAP_MINUTES gap) back into one.
+    Pass merges={} to disable, or a {member_key: canonical_id} map to override."""
     runs = defaultdict(list)
     legacy = []
     for r in rows:
@@ -95,6 +100,11 @@ def group_runs(rows):
             cur_key = f"legacy_{_safe(cond)}_{start}"
         runs[cur_key].append(r)
         last_dt, last_cond = (dt or last_dt), cond
+
+    try:
+        runs = apply_merges(runs, load_merges() if merges is None else merges)
+    except Exception as e:
+        print(f"(run merges skipped: {e})")
 
     for k in runs:
         runs[k].sort(key=_dt)

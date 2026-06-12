@@ -22,21 +22,22 @@ export function Proof() {
     <div className="page">
       <div className="wrap" style={{ maxWidth: 900 }}>
         <div className="eyebrow">The proof</div>
-        <h1 className="section-title">We closed the window. The fan kept running. CO₂ climbed anyway.</h1>
+        <h1 className="section-title">The window was open. Then it closed for the night.</h1>
         <p className="lede">
-          One overnight run in a real Dartmouth dorm room, same person, same room, logged at
-          30-second resolution. We changed one thing across the night, the window, and watched
-          what the air did. It is the cleanest answer we have to the question every student asks:
-          <em> doesn't a fan fix this?</em>
+          One real overnight run in a Dartmouth dorm, logged at 30-second resolution. Early on the
+          window is open and the air is fine. Then, the way it goes most nights, it closes, for
+          warmth, for quiet, for sleep. The fix was free and right there, and a real person stopped
+          using it at exactly the hours it mattered most. Watch what the air does over the next
+          eight hours, while no one is awake to notice.
         </p>
 
         {run && (
           <div className="card run-card hero-run" style={{ marginTop: 28 }}>
             <div className="run-head">
               <span className="run-tag">Within-run experiment · Fahey single</span>
-              <div className="run-name">One room, one night, one variable: the window</div>
+              <div className="run-name">One overnight run, a real dorm, a free fix left unused</div>
               <div className="run-peak">
-                peak <b>979 ppm</b> · reached while the fan was running
+                peak <b>979 ppm</b> · reached overnight, while the room slept
               </div>
             </div>
             <Legend />
@@ -48,28 +49,31 @@ export function Proof() {
         <div className="cta-grid" style={{ marginTop: 14 }}>
           <div className="cta-card">
             <h3>1 · Window open</h3>
-            <p>Fan off. CO₂ sits low and flat, around 600 ppm. Fresh air is doing the work on its own.</p>
+            <p>The air is fine. CO₂ sits low and flat, around 600 ppm. The free fix works, while it is actually in use.</p>
           </div>
           <div className="cta-card">
-            <h3>2 · Window closed, fan on</h3>
+            <h3>2 · Closed for the night</h3>
             <p>
-              The recirculating fan runs the entire phase. CO₂ still climbs past the 1,000 ppm
-              guideline to a peak of <b>979 ppm</b>. Moving stale air around the room does not
-              remove it.
+              The window shuts for warmth and sleep. Over the next hours CO₂ climbs past the
+              1,000 ppm guideline to a peak of <b>979 ppm</b>, and no one is awake to notice.
+              (A fan ran the whole time. Moving air around a closed room is not the same as
+              bringing fresh air in, so it barely moved the number.)
             </p>
           </div>
           <div className="cta-card">
-            <h3>3 · Window reopened</h3>
-            <p>Fan off again. CO₂ flushes back down toward 550 ppm within the hour. Air exchange, not the fan, is the lever.</p>
+            <h3>3 · Morning, window reopened</h3>
+            <p>CO₂ flushes back toward 550 ppm within the hour. The fix still works. It just was not in use for the eight hours that counted.</p>
           </div>
         </div>
 
         <div className="callout" style={{ marginTop: 32 }}>
-          <strong>Why this matters.</strong> Indoor CO₂ tracks how much fresh air a room is getting,
-          and above roughly 1,000 ppm studies link the rise to measurably slower focus and
-          decision-making. The common fix, turning on a fan, recirculates the same air instead of
-          exchanging it, so the number barely moves. Ventis automates the one thing that does work:
-          bringing outdoor air in, on its own, when the conditions actually help.
+          <strong>Why this matters.</strong> Ventis does not compete with an open window. It
+          competes with forgetting it, with freezing if you leave it open in January, and with not
+          being able to feel the problem in the first place, since nothing about 1,000 ppm registers
+          as you fall asleep. Above that level studies link rising indoor CO₂ to measurably slower
+          focus and decision-making. Ventis senses the air and brings in outdoor air on its own,
+          only when the conditions make it worth it, so the room stays fresh through the hours you
+          are not awake to manage it.
         </div>
 
         <div className="cta-card feature" style={{ marginTop: 32 }}>

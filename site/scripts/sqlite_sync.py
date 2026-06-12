@@ -60,6 +60,10 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 """
 
+# NOTE: SQLite is the local dev cache; the live catalog reads Supabase, where
+# co2_mean/co2_peak are the robust (warm-up-trimmed mean + 5-min rolling-mean peak)
+# values from supabase_sync.aggregate_runs / archive_runs.co2_stats. Here they stay
+# raw AVG/MAX for a cheap local view — don't treat these as the published figures.
 REBUILD_RUNS = """
 DELETE FROM runs;
 INSERT INTO runs (run_key, run_id, device_id, condition, start, "end", n_rows, co2_mean, co2_peak)

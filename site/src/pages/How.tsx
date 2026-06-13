@@ -53,7 +53,7 @@ export function How() {
           </div>
         </div>
 
-        <div className="eyebrow" style={{ marginTop: 8 }}>What you actually feel</div>
+        <h2 className="section-title" style={{ fontSize: 26, marginTop: 8 }}>What you actually feel</h2>
         <div className="feels">
           <div className="feel">
             <div className="feel-ico ico-badge"><Icon name="wind" size={20} /></div>
@@ -96,8 +96,7 @@ export function How() {
         </div>
 
         {/* ── The hardware, today ─────────────────────────────────────────── */}
-        <div className="eyebrow" style={{ marginTop: 40 }}>The hardware, today</div>
-        <h2 className="section-title" style={{ fontSize: 26 }}>A working prototype, not a render</h2>
+        <h2 className="section-title" style={{ fontSize: 26, marginTop: 40 }}>A working prototype, not a render</h2>
         <figure className="hw-shot">
           <img
             src="/hardware-v1.jpg"
@@ -116,8 +115,7 @@ export function How() {
         </figure>
 
         {/* ── Where Ventis is headed ──────────────────────────────────────── */}
-        <div className="eyebrow" style={{ marginTop: 40 }}>Where Ventis is headed</div>
-        <h2 className="section-title" style={{ fontSize: 26 }}>From prototype to window unit</h2>
+        <h2 className="section-title" style={{ fontSize: 26, marginTop: 40 }}>From prototype to window unit</h2>
         <div className="roadmap">
           <div className="rm">
             <div className="rm-k">v1</div>

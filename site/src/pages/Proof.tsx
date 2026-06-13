@@ -45,7 +45,7 @@ export function Proof() {
           </div>
         )}
 
-        <div className="eyebrow" style={{ marginTop: 40 }}>What the three phases show</div>
+        <h2 className="section-title" style={{ marginTop: 40, fontSize: 26 }}>What the three phases show</h2>
         <div className="cta-grid" style={{ marginTop: 14 }}>
           <div className="cta-card">
             <h3>1 · Window open</h3>

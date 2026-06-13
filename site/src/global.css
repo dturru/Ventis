@@ -49,6 +49,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  text-wrap: pretty; /* §12: reduce prose orphans */
 }
 
 /* subtle atmospheric backdrop — like air, faint green gradients */
@@ -94,6 +95,7 @@ img, svg { display: block; }
   line-height: 1.08;
   letter-spacing: -0.5px;
   margin: 10px 0 14px;
+  text-wrap: balance; /* §12: even heading line lengths */
 }
 
 .lede {
@@ -183,6 +185,7 @@ img, svg { display: block; }
   line-height: 0.92;
   letter-spacing: -2px;
   color: var(--green);
+  text-wrap: balance; /* §12: even hero line lengths */
 }
 .sticker-tag {
   margin-top: 6px;
@@ -253,9 +256,9 @@ img, svg { display: block; }
 }
 
 .callout {
-  border-left: 3px solid var(--green);
+  border: 1px solid var(--green); /* §12: full border, not a side-stripe */
   background: var(--green-mist);
-  border-radius: 0 var(--r-md) var(--r-md) 0;
+  border-radius: var(--r-md);
   padding: 18px 22px;
   margin: 24px 0;
   font-size: 16px; color: #25342a;
@@ -413,7 +416,7 @@ img, svg { display: block; }
   background: var(--bone); border: 1px solid var(--line); border-radius: var(--r-sm);
   padding: 12px 14px; width: 100%; transition: all 0.15s ease; resize: vertical;
 }
-.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); } /* §12: placeholder ≥4.5:1, was --faint (~2.8:1, fails AA) */
 .field input:focus, .field textarea:focus {
   outline: none; border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(30, 110, 58, 0.12); background: #fff;

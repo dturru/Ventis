@@ -207,3 +207,87 @@ language). It was a Vite starter (system font, purple accent, inline-styled
 tables); it is now a branded data product with a glassy header, CO₂-tier run
 chips, mono numerals, and editorial SOP pages. The same voice and claim-integrity
 rules apply there. Tokens live in `library/src/theme.css`, kept in sync with this file.
+
+---
+
+## 12. 2026-06-13 — Impeccable craft layer
+
+A second layer of design parameters, adopted from the Impeccable design skill
+(`pbakaus/impeccable`). We take its **brand-agnostic craft discipline and
+anti-slop bans** and **preserve our own brand** (green editorial; DM Serif /
+Outfit / DM Mono; semantic air tiers). We do **not** adopt Impeccable's own
+"Neo Kinpaku" gold/lacquer identity. Where Impeccable already overlaps §§3–10,
+the existing rule stands; this section is only the *delta* plus two explicit
+conflict resolutions. Apply it on every change, alongside the §9 pre-ship list.
+
+### Deltas (new rules — not already covered above)
+
+**Typography**
+- **Line length 65–75ch** on any prose/body block. Add `max-width` in `ch` to
+  long-text containers; don't let lede or paragraph copy run full-width.
+- **`text-wrap: balance` on h1–h3**; **`text-wrap: pretty` on long prose** (kills
+  orphans). Cheap, global, high-yield.
+- **Display letter-spacing floor ≥ -0.04em.** Hero/`.section-title`/`.sticker-word`
+  may tighten for optics but never below -0.04em (letters touch = cramped, not
+  designed). The hero clamp ceiling is **≤ 6rem / 96px** — `.sticker-word` is at
+  the limit (`clamp(52px,11vw,96px)`); hold it, don't raise.
+- **Placeholder text needs 4.5:1 too** (same as body) — not the muted-gray default.
+
+**Layout**
+- **Cards are the lazy answer.** Reach for a card only when it's truly the best
+  affordance. **Nested cards are always wrong** — flatten to sections, dividers,
+  or tinted bands. Audit `.card`/`.panel` density on each page; if a grid is just
+  identical icon+heading+text cards repeated, redesign the rhythm.
+- Responsive grids without breakpoints: **`repeat(auto-fit, minmax(280px, 1fr))`.**
+- **Semantic z-index scale** (in `:root`): dropdown → sticky → modal-backdrop →
+  modal → toast → tooltip. **No arbitrary `999` / `9999`.**
+- Flexbox for 1D, Grid for 2D. Don't default to Grid when `flex-wrap` works.
+
+**Motion** (extends §7)
+- Prefer **ease-out exponential** curves (`ease-out-quart/quint/expo`) over plain
+  `ease` for entrances. **No bounce, no elastic.** Reduced-motion fallback stays
+  mandatory (§7).
+- Reveal animations must **enhance an already-visible default** — never gate
+  content visibility on a class-triggered transition (it never fires on hidden
+  tabs / headless renders → blank section).
+
+### Absolute bans (match-and-refuse — rewrite the element if you're about to ship one)
+
+- **Side-stripe borders** — `border-left/right` > 1px as a colored accent on cards,
+  callouts, or alerts. Use full borders, background tints, or a leading icon/number.
+  (Our `.callout.amber` must use a full tint/border, not a left stripe.)
+- **Gradient text** (`background-clip:text` + gradient). Solid color; emphasis via
+  weight/size.
+- **Glassmorphism as default.** Permitted exactly where it already is and no more:
+  the nav header (`global.css` `backdrop-filter`) + the library glassy header are
+  "rare and purposeful." **Do not add new glass.**
+- **The hero-metric template** (big number / small label / supporting stats /
+  gradient accent). Our hero air-moment is a *real measured* signature element,
+  not this SaaS cliché — keep it that way.
+- **Identical card grids** repeated endlessly.
+- **Numbered section markers as scaffolding** (`01 · About / 02 · Process`). Only
+  when the section genuinely IS an ordered sequence.
+- **Text that overflows its container** at any breakpoint. Test heading copy at
+  375/768/1024/1440; if it overflows, lower the clamp max or rewrite the copy.
+
+### Conflict resolutions (Impeccable vs. our existing system)
+
+1. **Eyebrows — KEEP, with discipline.** Impeccable flags the tracked-uppercase
+   eyebrow above *every section* as its #1 slop tell, but exempts "one named kicker
+   as a deliberate brand system." Our eyebrow → title → lede is exactly that: a
+   documented, page-level brand rhythm (§5). **Resolution:** the eyebrow stays as a
+   **page-top** device. Do not sprinkle it above every sub-section within a page,
+   and never let it be the *only* hierarchy signal. Audit pages with 2+ eyebrows.
+2. **Glass — KEEP the two we have, freeze the count.** See the glassmorphism ban
+   above: the nav + library headers are purposeful; no new instances.
+
+### The AI-slop test (review heuristic for new work)
+
+Before shipping a new page/section, run the category-reflex check at two altitudes:
+- **First-order:** could someone guess the theme + palette from the category alone
+  ("air-quality startup → green + clean")? If yes, the first reflex won.
+- **Second-order:** could they guess it from category-plus-anti-reference
+  ("air-quality but not generic-green → ...")? If yes, the trap one tier deeper won.
+Our defensible answer is the **editorial field-report** posture (§1): the
+credibility of the data is the aesthetic. Keep proof in front; don't let styling
+hide it.

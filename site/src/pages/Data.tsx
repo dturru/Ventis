@@ -53,12 +53,12 @@ export function Data() {
 
         {hero && (
           <>
-            <div style={{ marginTop: 32 }} className="eyebrow">What students are actually breathing</div>
+            <h2 className="section-title" style={{ marginTop: 32, fontSize: 26 }}>What students are actually breathing</h2>
             <RunCard run={hero} hero />
           </>
         )}
 
-        <div style={{ marginTop: 40 }} className="eyebrow">The rest of the picture</div>
+        <h2 className="section-title" style={{ marginTop: 40, fontSize: 26 }}>The rest of the picture</h2>
         {rest.map((run) => (
           <RunCard key={run.id} run={run} />
         ))}

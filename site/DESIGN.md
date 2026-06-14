@@ -114,7 +114,7 @@ Scale uses `clamp()` for fluid sizing (see `.section-title`, `.lede`,
 ## 5. Layout, spacing, elevation
 
 - Container `.wrap` max-width `--maxw 1080px`; prose pages narrow to 860–900.
-- Radii: **0 everywhere — sharp corners** (`--r-lg/md/sm` all `0px`, set 2026-06-13, §12). Editorial/field-report direction. Exceptions kept: the device-demo phone + its internal UI (`.device-*`/`.dd-*`, mirrors physical hardware) and true circles (status dots, round avatar).
+- Radii: **moderate** (`--r-lg 12 / --r-md 10 / --r-sm 8`, set 2026-06-13 "bolder pass" — dialed back from the all-`0` sharp experiment, which read as too many hard corners). Pills/chips/badges stay fully rounded (`999px`); device-demo phone + true circles unchanged. Elevation is **hairline-led**: crisper `--line` (0.16) + flatter resting shadows; lift on hover.
 - Shadows: `--shadow-sm` / `--shadow` / `--shadow-lg` — soft, green-tinted, never
   harsh black. Elevation rises on hover, not at rest.
 - Page rhythm: `eyebrow` (12px, tracked, green) → `section-title` → `lede`.

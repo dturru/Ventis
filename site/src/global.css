@@ -240,9 +240,9 @@ html { accent-color: var(--green); }
    Gated to no-preference so reduced-motion keeps it perfectly still. */
 @media (prefers-reduced-motion: no-preference) {
   .dodi-wing { transform-box: fill-box; }
-  .dodi-wing-l { transform-origin: right top; animation: dodi-wing-l 6s ease-in-out infinite; }
-  .dodi-wing-r { transform-origin: left top;  animation: dodi-wing-r 6s ease-in-out infinite; }
-  .dodi-eyes  { transform-box: fill-box; transform-origin: center; animation: dodi-blink 5.2s ease-in-out infinite; }
+  .dodi-wing-l { transform-origin: right top; animation: dodi-wing-l 4s ease-in-out infinite; }
+  .dodi-wing-r { transform-origin: left top;  animation: dodi-wing-r 4s ease-in-out infinite; }
+  .dodi-eyes  { transform-box: fill-box; transform-origin: center; animation: dodi-blink 3.6s ease-in-out infinite; }
 }
 @keyframes dodi-wing-l {
   0%, 82%, 100% { transform: rotate(0deg); }

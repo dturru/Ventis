@@ -235,6 +235,31 @@ html { accent-color: var(--green); }
 .dodi-float { animation: dodi-bob 4.5s ease-in-out infinite; }
 @keyframes dodi-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
+/* §12: richer hero Dodi — periodic wing-flap + blink (composes with the bob).
+   Gated to no-preference so reduced-motion keeps it perfectly still. */
+@media (prefers-reduced-motion: no-preference) {
+  .dodi-wing { transform-box: fill-box; }
+  .dodi-wing-l { transform-origin: right top; animation: dodi-wing-l 6s ease-in-out infinite; }
+  .dodi-wing-r { transform-origin: left top;  animation: dodi-wing-r 6s ease-in-out infinite; }
+  .dodi-eyes  { transform-box: fill-box; transform-origin: center; animation: dodi-blink 5.2s ease-in-out infinite; }
+}
+@keyframes dodi-wing-l {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  87% { transform: rotate(-17deg); }
+  91% { transform: rotate(0deg); }
+  95% { transform: rotate(-12deg); }
+}
+@keyframes dodi-wing-r {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  87% { transform: rotate(17deg); }
+  91% { transform: rotate(0deg); }
+  95% { transform: rotate(12deg); }
+}
+@keyframes dodi-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.12); }
+}
+
 .hero-sub {
   margin: 28px auto 0;
   font-size: clamp(18px, 2.4vw, 23px);

@@ -18,9 +18,11 @@ export function Dodi({ size = 96, className }: Props) {
         role="img"
         aria-label="Dodi, the Ventis mascot"
       >
-        {/* Resting wings (down) */}
-        <g>
+        {/* Resting wings (down) — split L/R so each can flap periodically (CSS) */}
+        <g className="dodi-wing dodi-wing-l">
           <rect x="3" y="21" width="2" height="1" fill="#0d4520" /><rect x="3" y="22" width="2" height="1" fill="#155026" /><rect x="5" y="22" width="1" height="1" fill="#0d4520" /><rect x="3" y="23" width="3" height="1" fill="#155026" /><rect x="6" y="23" width="1" height="1" fill="#0d4520" /><rect x="3" y="24" width="3" height="1" fill="#155026" /><rect x="6" y="24" width="1" height="1" fill="#0d4520" /><rect x="3" y="25" width="3" height="1" fill="#155026" /><rect x="6" y="25" width="1" height="1" fill="#0d4520" /><rect x="3" y="26" width="1" height="1" fill="#0d4520" /><rect x="4" y="26" width="2" height="1" fill="#155026" /><rect x="6" y="26" width="1" height="1" fill="#0d4520" /><rect x="4" y="27" width="2" height="1" fill="#0d4520" />
+        </g>
+        <g className="dodi-wing dodi-wing-r">
           <rect x="27" y="21" width="2" height="1" fill="#0d4520" /><rect x="26" y="22" width="1" height="1" fill="#0d4520" /><rect x="27" y="22" width="2" height="1" fill="#155026" /><rect x="25" y="23" width="1" height="1" fill="#0d4520" /><rect x="26" y="23" width="3" height="1" fill="#155026" /><rect x="25" y="24" width="1" height="1" fill="#0d4520" /><rect x="26" y="24" width="3" height="1" fill="#155026" /><rect x="25" y="25" width="1" height="1" fill="#0d4520" /><rect x="26" y="25" width="3" height="1" fill="#155026" /><rect x="25" y="26" width="1" height="1" fill="#0d4520" /><rect x="26" y="26" width="2" height="1" fill="#155026" /><rect x="28" y="26" width="1" height="1" fill="#0d4520" /><rect x="26" y="27" width="2" height="1" fill="#0d4520" />
         </g>
 
@@ -51,9 +53,11 @@ export function Dodi({ size = 96, className }: Props) {
           <rect x="9" y="28" width="1" height="1" fill="#0d4520" /><rect x="10" y="28" width="12" height="1" fill="#1e6e3a" /><rect x="22" y="28" width="1" height="1" fill="#0d4520" />
           <rect x="10" y="29" width="1" height="1" fill="#0d4520" /><rect x="11" y="29" width="10" height="1" fill="#1e6e3a" /><rect x="21" y="29" width="1" height="1" fill="#0d4520" />
           <rect x="11" y="30" width="10" height="1" fill="#0d4520" />
-          {/* calm eyes */}
-          <rect x="10" y="9" width="3" height="3" fill="#ffffff" /><rect x="19" y="9" width="3" height="3" fill="#ffffff" />
-          <rect x="11" y="10" width="1" height="1" fill="#1a1a1a" /><rect x="20" y="10" width="1" height="1" fill="#1a1a1a" />
+          {/* calm eyes — wrapped for periodic blink (CSS) */}
+          <g className="dodi-eyes">
+            <rect x="10" y="9" width="3" height="3" fill="#ffffff" /><rect x="19" y="9" width="3" height="3" fill="#ffffff" />
+            <rect x="11" y="10" width="1" height="1" fill="#1a1a1a" /><rect x="20" y="10" width="1" height="1" fill="#1a1a1a" />
+          </g>
         </g>
 
         {/* Legs */}

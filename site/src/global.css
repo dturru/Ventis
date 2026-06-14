@@ -71,6 +71,10 @@ img, svg { display: block; }
 
 ::selection { background: var(--green); color: #fff; }
 
+/* §12: visible keyboard focus ring (square — coheres with sharp corners) + brand native controls */
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+html { accent-color: var(--green); }
+
 /* ── Layout primitives ─────────────────────────────────────────────────── */
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
 
@@ -159,7 +163,7 @@ img, svg { display: block; }
 .btn-primary:hover { background: var(--green-deep); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .btn-ghost { background: var(--tile); color: var(--ink); border: 1px solid var(--line); }
 .btn-ghost:hover { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
-.btn-arrow { transition: transform 0.16s; }
+.btn-arrow { transition: transform 0.16s var(--ease-out); }
 .btn:hover .btn-arrow { transform: translateX(3px); }
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
@@ -223,13 +227,13 @@ img, svg { display: block; }
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-sm);
-  transition: all 0.18s ease;
+  transition: all 0.18s var(--ease-out);
   overflow: hidden;
 }
 .panel::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   background: var(--green); transform: scaleY(0); transform-origin: bottom;
-  transition: transform 0.22s ease;
+  transition: transform 0.22s var(--ease-out);
 }
 .panel:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: rgba(30,110,58,0.25); }
 .panel:hover::before { transform: scaleY(1); }
@@ -237,7 +241,7 @@ img, svg { display: block; }
   width: 42px; height: 42px; border-radius: 0;
   display: grid; place-items: center;
   background: var(--green-soft); color: var(--green);
-  transition: all 0.18s ease;
+  transition: all 0.18s var(--ease-out);
 }
 .panel-ico { margin-bottom: 14px; }
 .panel:hover .ico-badge { background: var(--green); color: #fff; }

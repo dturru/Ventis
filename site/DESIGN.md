@@ -150,7 +150,8 @@ regress to emoji eyebrows or bullets.
 
 - [ ] Text contrast ≥ 4.5:1 (3:1 for ≥24px bold).
 - [ ] Interactive elements are real `<button>`/`<a>`, keyboard-reachable, with a
-      visible focus state.
+      visible focus state. (Global `:focus-visible` square green ring lives in
+      `global.css` as of 2026-06-13 §12; `accent-color: var(--green)` on native controls.)
 - [ ] Images have descriptive `alt`; decorative SVGs `aria-hidden`.
 - [ ] Looping/auto motion respects `prefers-reduced-motion`.
 - [ ] Tap targets ≥ ~40px on the controls people actually use.

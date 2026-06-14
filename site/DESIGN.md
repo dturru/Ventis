@@ -114,7 +114,7 @@ Scale uses `clamp()` for fluid sizing (see `.section-title`, `.lede`,
 ## 5. Layout, spacing, elevation
 
 - Container `.wrap` max-width `--maxw 1080px`; prose pages narrow to 860–900.
-- Radii: `--r-lg 20px` (cards), `--r-md 14px`, `--r-sm 10px`.
+- Radii: **0 everywhere — sharp corners** (`--r-lg/md/sm` all `0px`, set 2026-06-13, §12). Editorial/field-report direction. Exceptions kept: the device-demo phone + its internal UI (`.device-*`/`.dd-*`, mirrors physical hardware) and true circles (status dots, round avatar).
 - Shadows: `--shadow-sm` / `--shadow` / `--shadow-lg` — soft, green-tinted, never
   harsh black. Elevation rises on hover, not at rest.
 - Page rhythm: `eyebrow` (12px, tracked, green) → `section-title` → `lede`.
@@ -291,3 +291,21 @@ Before shipping a new page/section, run the category-reflex check at two altitud
 Our defensible answer is the **editorial field-report** posture (§1): the
 credibility of the data is the aesthetic. Keep proof in front; don't let styling
 hide it.
+
+### 2026-06-13 — sharp-corner pass (bolder)
+
+A deliberate move from soft to **sharp**: all radius tokens → `0`, and every
+hardcoded rectangular radius squared (nav, buttons, icon badges, pills/tags →
+square editorial tags, tooltip, hero sticker). This sharpens the field-report
+posture and reads more technical/instrument-like.
+
+- **Kept curved (intentional exceptions):** the device-demo phone frame + its
+  internal UI (`.device-*` / `.dd-*`) because it represents physical hardware; a
+  sharp "phone" reads as broken, not designed (same spirit as the §3 device-token
+  exception). True circles (status dots, the round avatar) are circles, not
+  corners — also kept.
+- **Motion:** added `--ease-out: cubic-bezier(0.16, 1, 0.3, 1)` (ease-out-expo)
+  and applied it to nav/button transitions. Sharp corners + crisp exponential
+  motion cohere. Reduced-motion rules (§7) still apply.
+- New default: **don't reintroduce `border-radius`** on rectangular surfaces. Use
+  `var(--r-*)` (now 0) so the decision stays centralized.

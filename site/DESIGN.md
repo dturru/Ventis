@@ -138,7 +138,13 @@ regress to emoji eyebrows or bullets.
 
 - Transitions **150–300ms**, `ease`. Used for hover lift, tier color crossfades,
   bar fills.
-- Entrances: `fade-up` on `.page`. Ambient: hero Dodi `dodi-float`.
+- Entrances: `fade-up` on `.page`; the hero staggers (sticker→sub→air→actions→
+  panels). Ambient: hero Dodi `dodi-float`.
+- **Scroll reveals** (`reveal-up`, §12): below-fold content on non-hero pages rises
+  in as it enters the viewport, via CSS scroll-driven `animation-timeline: view()`
+  (no JS). Wrapped in `@media (prefers-reduced-motion: no-preference)` +
+  `@supports (animation-timeline: view())`, so it degrades to fully-visible — never
+  a blank section. Hero + device demo excluded (they own their motion).
 - Demo Dodi (`DodiMascot.tsx`) reacts to live state: breathing bob, emotion eyes
   (calm/alert/distress by CO₂ tier), wing-flap while the fan runs.
 - **Always gate motion behind `@media (prefers-reduced-motion: reduce)`** — the

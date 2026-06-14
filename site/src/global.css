@@ -85,6 +85,38 @@ html { accent-color: var(--green); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* §12: scroll-reveal transitions (PowerPoint-style). Content below the fold rises
+   in as it enters the viewport. CSS scroll-driven (no JS); naturally staggers as
+   you scroll. Degrades to fully visible where unsupported or under reduced-motion,
+   so a section never ships blank (the §12 reveal-must-enhance rule). Hero excluded
+   (it has its own load stagger); device demo excluded (its own animation). */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .page:not(.hero) .section-title,
+    .page:not(.hero) .card,
+    .page:not(.hero) .point,
+    .page:not(.hero) .feel,
+    .page:not(.hero) .flow-step,
+    .page:not(.hero) .cta-card,
+    .page:not(.hero) .run-card,
+    .page:not(.hero) .evidence,
+    .page:not(.hero) .callout,
+    .page:not(.hero) .rm,
+    .page:not(.hero) .hw-shot,
+    .page:not(.hero) .pullquote {
+      animation-name: reveal-up;
+      animation-fill-mode: both;
+      animation-timing-function: var(--ease-out);
+      animation-timeline: view();
+      animation-range: entry 0% entry 38%;
+    }
+  }
+}
+
 .eyebrow {
   font-size: 12px;
   font-weight: 700;

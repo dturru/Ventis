@@ -54,6 +54,19 @@ describe("handleRunLaunch", () => {
     expect(d.insertLaunch).toHaveBeenCalledWith(expect.objectContaining({ consent_status: "deferred" }));
   });
 
+  it("persists the override reason and flags when a soft check is overridden", async () => {
+    const d = deps({ getControl: vi.fn(async () => ({ logging: false, seq: 4, lastTelemetryAt: "2026-06-16T17:00:00Z" })) });
+    const r = await handleRunLaunch(
+      d,
+      { ...body, overrides: ["device_online"], override_reason: "device briefly rebooting" },
+      "founder@ventis.app",
+    );
+    expect(r.status).toBe("started");
+    expect(d.insertLaunch).toHaveBeenCalledWith(
+      expect.objectContaining({ override_reason: "device briefly rebooting", override_flags: ["device_online"] }),
+    );
+  });
+
   it("is idempotent: a repeated nonce does not start twice", async () => {
     const d = deps({ recentDuplicate: vi.fn(async () => false), insertLaunch: vi.fn(async () => { throw { code: "23505" }; }) });
     const r = await handleRunLaunch(d, body, "founder@ventis.app");

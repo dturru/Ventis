@@ -19,6 +19,7 @@ export interface LaunchBody {
   consent: LaunchConsent;
   nonce: string;
   overrides: string[];
+  override_reason?: string; // operator's reason when any soft check is overridden
   notes?: string; // optional end-of-run notes on stop
 }
 
@@ -67,7 +68,7 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
     return { status: "stopped", verdicts: [], label, seq };
   }
 
-  const labelCheck = validateLabelInputs(body);
+  const labelCheck = validateLabelInputs({ building: body.building, scenario: body.scenario, occupancy: body.occupancy });
   const consentComplete = !!(body.consent?.consent_method && body.consent?.attested_by && body.consent?.terms_version);
 
   // Phase 1: read-only checks (consent not yet attempted).
@@ -107,6 +108,7 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
     device_last_seen_secs: lastSeen,
     consent_status: consentPersisted ? "recorded" : "deferred",
     override_flags: body.overrides ?? [],
+    override_reason: body.override_reason,
     launched_by: authedEmail ?? "",
     nonce: body.nonce,
   };

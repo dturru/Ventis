@@ -25,18 +25,33 @@ _NUM_WORDS = {
 # Occupancy tokens (plurals + shorthand) all collapse to a single canonical token.
 _OCCUPANCY = {"people": "person", "persons": "person",
               "p": "person", "ppl": "person", "ppls": "person"}
+# Occupancy words a number-word can be glued onto (e.g. "oneperson", "twopeople").
+_OCC_WORDS = set(_OCCUPANCY) | {"person"}
+
+
+def _split_glued_numword(tok):
+    """Peel a leading number-word off a glued occupancy token: 'oneperson' -> ['one',
+    'person']. Splits ONLY when the remainder is a recognized occupancy word, so
+    ordinary words keep their shape ('tenant' stays 'tenant', never '10ant'). Pure
+    number-words are left whole ('one' -> ['one'])."""
+    for w in _NUM_WORDS:
+        if tok != w and tok.startswith(w) and tok[len(w):] in _OCC_WORDS:
+            return [w, tok[len(w):]]
+    return [tok]
 
 
 def canonical(s):
     """A comparable form of a condition label, tolerant of how it was *written*
     but never of what it *says*. Lowercases, maps number-words to digits
     (one -> 1), folds occupancy shorthand to one token (person/persons/people/p/ppl
-    -> person), and drops all separators/spaces. So 'Little_window_one person',
-    'little_window_1_person', and 'little_window_1p' all canonicalize to
-    'littlewindow1person' and match — but 'little_window_1person' and
+    -> person), splits a number-word glued to an occupancy word ('oneperson' ->
+    'one'+'person'), and drops all separators/spaces. So 'Little_window_one person',
+    'little_window_1_person', 'little_window_1p', and 'french_window_oneperson' vs
+    'french_window_one_person' all match — but 'little_window_1person' and
     'little_window_2person' stay distinct (different occupancy = different consent).
     """
     tokens = re.findall(r"[a-z]+|[0-9]+", str(s or "").lower())
+    tokens = [part for t in tokens for part in _split_glued_numword(t)]
     out = [_OCCUPANCY.get(t, _NUM_WORDS.get(t, t)) for t in tokens]
     return "".join(out)
 

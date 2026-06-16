@@ -15,6 +15,9 @@ import re
 import sys
 from datetime import datetime
 
+from _env import load_env
+load_env()   # pick up SUPABASE_DB_URL from a gitignored .env if present (CI's env wins)
+
 TOLERANCE_H = 36
 
 # Number words the cofounder might spell out in a condition label.

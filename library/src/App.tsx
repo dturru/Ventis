@@ -8,6 +8,7 @@ import AboutPage from "./components/AboutPage";
 import OperationsPage from "./components/OperationsPage";
 import DeployPage from "./components/DeployPage";
 import CuratePage from "./components/CuratePage";
+import RunLauncherPage from "./components/RunLauncherPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/operations" element={<OperationsPage />} />
         <Route path="/deploy" element={<DeployPage />} />
         <Route path="/curate" element={<CuratePage />} />
+        <Route path="/launch" element={<RunLauncherPage />} />
       </Routes>
       <Footer />
     </BrowserRouter>

@@ -105,7 +105,8 @@ export default function ComparePage() {
                 />
                 <YAxis
                   dataKey="v"
-                  domain={["auto", "auto"]}
+                  domain={metric === "co2_ppm" ? [400, "auto"] : ["auto", "auto"]}
+                  allowDataOverflow={false}
                   tick={axisTick}
                   stroke="rgba(13,69,32,0.25)"
                   label={{ value: `${METRICS.find((m) => m.key === metric)!.label} (${unit})`, angle: -90, position: "insideLeft", fill: "#5e6b5e", fontSize: 12 }}
@@ -115,11 +116,14 @@ export default function ComparePage() {
                   labelFormatter={(h) => `${Number(h).toFixed(2)} h`}
                   contentStyle={{ borderRadius: 10, border: "1px solid rgba(13,69,32,0.12)", boxShadow: "0 4px 18px rgba(13,69,32,0.10)", fontFamily: "Outfit, sans-serif", fontSize: 13 }}
                 />
-                <Legend wrapperStyle={{ fontSize: 13, fontFamily: "Outfit, sans-serif" }} />
+                <Legend
+                  iconSize={10}
+                  wrapperStyle={{ fontSize: 13, fontFamily: "Outfit, sans-serif", paddingTop: 12, lineHeight: "1.7" }}
+                />
                 {metric === "co2_ppm" && (
                   <>
-                    <ReferenceLine y={1000} stroke="#b87900" strokeDasharray="4 4" label={{ value: "ASHRAE 1000", fill: "#b87900", fontSize: 11, position: "right" }} />
-                    <ReferenceLine y={1400} stroke="#c6422c" strokeDasharray="4 4" label={{ value: "1400 impair", fill: "#c6422c", fontSize: 11, position: "right" }} />
+                    <ReferenceLine y={1000} stroke="#b87900" strokeDasharray="4 4" label={{ value: "ASHRAE 1000", fill: "#b87900", fontSize: 11, position: "insideTopRight" }} />
+                    <ReferenceLine y={1400} stroke="#c6422c" strokeDasharray="4 4" label={{ value: "1400 impair", fill: "#c6422c", fontSize: 11, position: "insideTopRight" }} />
                   </>
                 )}
                 {loaded.map((l) => (

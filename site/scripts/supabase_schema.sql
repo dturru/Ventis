@@ -88,3 +88,22 @@ create table if not exists run_merges (
   updated_by       text,               -- founder pseudonym, never an occupant
   updated_at       timestamptz default now()
 );
+
+-- Run Launcher audit log: one row per launch attempt that started a device.
+-- Surfaces overridden runs ("needs attention") and lets reconcile/backfill find
+-- deferred-consent runs by canonical_label. No PII (label is building_scenario_Nperson).
+create table if not exists run_launches (
+  id                    bigint generated always as identity primary key,
+  label                 text not null,           -- composed label sent to device + consent
+  canonical_label       text not null,           -- canonical() form, for dup-guard + reconcile
+  started_at            timestamptz default now(),
+  stopped_at            timestamptz,
+  device_last_seen_secs integer,                 -- device liveness at launch (null = unknown)
+  consent_status        text not null default 'recorded',  -- recorded | deferred
+  override_flags        text[] not null default '{}',      -- checkpoint ids overridden
+  override_reason       text,
+  launched_by           text,                    -- Cf-Access email of the operator
+  nonce                 text unique,             -- idempotency key from the client
+  notes                 text                     -- optional end-of-run notes
+);
+create index if not exists idx_run_launches_canon on run_launches(canonical_label, started_at desc);

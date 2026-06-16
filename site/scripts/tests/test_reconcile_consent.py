@@ -83,6 +83,32 @@ def test_canonical_occupancy_shorthand():
     assert canonical("little_window_1p") != canonical("little_window_2p")
 
 
+def test_canonical_splits_glued_number_word():
+    # The 2026-06-15 French-run orphan: run "french_window_oneperson" (glued) vs
+    # form "french_window_one_person" (separated) must canonicalize identically.
+    assert canonical("french_window_oneperson") == canonical("french_window_one_person")
+    assert canonical("french_window_oneperson") == canonical("french_window_1person")
+    assert canonical("ew_baseline_twopeople") == canonical("ew_baseline_2person")
+
+
+def test_canonical_glued_does_not_oversplit_ordinary_words():
+    # A number-word that merely prefixes an ordinary word (no occupancy remainder)
+    # must NOT split: 'tenant' stays 'tenant', never '10ant'.
+    assert canonical("ew_tenant_note") == "ewtenantnote"
+
+
+def test_canonical_glued_keeps_occupancy_distinct():
+    # Splitting must not collapse different counts: oneperson != twoperson.
+    assert canonical("x_y_oneperson") != canonical("x_y_twoperson")
+
+
+def test_match_run_links_glued_number_word():
+    runs = [{"run_key": "k_fr", "condition": "french_window_oneperson",
+             "start": "2026-06-14 20:57:00"}]
+    sub = {"condition": "french_window_one_person", "agreed_at": "2026-06-14 23:38:00"}
+    assert match_run(sub, runs)["run_key"] == "k_fr"
+
+
 def test_canonical_keeps_genuinely_different_labels_distinct():
     # Different occupancy / building must NEVER canonicalize to the same string.
     assert canonical("little_window_1person") != canonical("little_window_2person")

@@ -44,6 +44,16 @@ export function compose(building: string, scenario: string, occupancy: number): 
   return `${building}_${scenario}_${occupancy}person`;
 }
 
+/** Accept a digit string ("2") or a number-word ("two") → a non-negative integer;
+ *  null if unparseable. Lets the form take either form while the stored label stays
+ *  a digit (compose() always emits Nperson). */
+export function parseOccupancy(input: string): number | null {
+  const t = String(input ?? "").trim().toLowerCase();
+  if (/^\d+$/.test(t)) return parseInt(t, 10);
+  if (Object.prototype.hasOwnProperty.call(NUM_WORDS, t)) return Number(NUM_WORDS[t]);
+  return null;
+}
+
 const TOKEN = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** Hard-checkpoint H2: label inputs are well-formed (kills the divergence bug class). */

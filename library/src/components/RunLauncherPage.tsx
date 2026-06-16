@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BUILDINGS, SCENARIOS, compose } from "../lib/runLabel";
+import { BUILDINGS, SCENARIOS, compose, parseOccupancy } from "../lib/runLabel";
 import type { Verdict } from "../lib/preflight";
 
 type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "duplicate_nonce" | "error";
@@ -7,7 +7,7 @@ type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "d
 export default function RunLauncherPage() {
   const [building, setBuilding] = useState<string>(BUILDINGS[0]);
   const [scenario, setScenario] = useState<string>(SCENARIOS[0]);
-  const [occupancy, setOccupancy] = useState<number>(1);
+  const [occupancyInput, setOccupancyInput] = useState<string>("1");
   const [method, setMethod] = useState("opt_in_verbal");
   const [attestedBy, setAttestedBy] = useState("occupant");
   const [terms, setTerms] = useState("v1-2026-06");
@@ -17,7 +17,8 @@ export default function RunLauncherPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [busy, setBusy] = useState(false);
 
-  const label = compose(building, scenario, occupancy);
+  const occupancy = parseOccupancy(occupancyInput); // number | null (accepts "2" or "two")
+  const label = occupancy != null ? compose(building, scenario, occupancy) : null;
 
   async function submit(action: "start" | "stop") {
     setBusy(true);
@@ -25,7 +26,7 @@ export default function RunLauncherPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action, building, scenario, occupancy,
+        action, building, scenario, occupancy: occupancy ?? -1,
         consent: { consent_method: method, attested_by: attestedBy, terms_version: terms, notes: "" },
         nonce: crypto.randomUUID(), overrides, override_reason: reason,
       }),
@@ -52,7 +53,13 @@ export default function RunLauncherPage() {
         </select>
       </label>
       <label>Occupancy
-        <input type="number" min={0} value={occupancy} onChange={(e) => setOccupancy(parseInt(e.target.value || "0", 10))} />
+        <input
+          type="text"
+          inputMode="numeric"
+          value={occupancyInput}
+          placeholder="e.g. 2 or two"
+          onChange={(e) => setOccupancyInput(e.target.value)}
+        />
       </label>
 
       <fieldset>
@@ -67,7 +74,11 @@ export default function RunLauncherPage() {
         <label>Terms <input value={terms} onChange={(e) => setTerms(e.target.value)} /></label>
       </fieldset>
 
-      <p className="label-preview">Label: <code>{label}</code></p>
+      <p className="label-preview">
+        {label != null
+          ? <>Label: <code>{label}</code></>
+          : <span className="hard">Enter occupancy as a number or word (e.g. 2 or two)</span>}
+      </p>
 
       {verdicts.length > 0 && (
         <ul className="preflight">
@@ -96,7 +107,7 @@ export default function RunLauncherPage() {
       )}
 
       <div className="actions">
-        <button disabled={busy || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
+        <button disabled={busy || occupancy == null || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
           {status === "needs_override" ? "Override & start" : "Start run"}
         </button>
         <button disabled={busy} onClick={() => submit("stop")}>Stop run</button>

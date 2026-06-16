@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { canonical, compose, validateLabelInputs, BUILDINGS, SCENARIOS } from "./runLabel";
+import { canonical, compose, validateLabelInputs, parseOccupancy, BUILDINGS, SCENARIOS } from "./runLabel";
 
 describe("canonical", () => {
   it("lowercases, maps number-words to digits, folds occupancy shorthand, drops separators", () => {
@@ -25,6 +25,25 @@ describe("compose", () => {
   it("builds building_scenario_Nperson with a digit occupancy", () => {
     expect(compose("fahey", "window", 1)).toBe("fahey_window_1person");
     expect(compose("east_wheelock", "negcontrol", 2)).toBe("east_wheelock_negcontrol_2person");
+  });
+});
+
+describe("parseOccupancy", () => {
+  it("accepts digit strings", () => {
+    expect(parseOccupancy("2")).toBe(2);
+    expect(parseOccupancy(" 0 ")).toBe(0);
+  });
+
+  it("accepts number-words (case-insensitive)", () => {
+    expect(parseOccupancy("two")).toBe(2);
+    expect(parseOccupancy("One")).toBe(1);
+    expect(parseOccupancy("ten")).toBe(10);
+  });
+
+  it("returns null for unparseable input", () => {
+    expect(parseOccupancy("")).toBeNull();
+    expect(parseOccupancy("lots")).toBeNull();
+    expect(parseOccupancy("2.5")).toBeNull();
   });
 });
 

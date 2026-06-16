@@ -127,12 +127,15 @@ Override mechanics: each soft block surfaces in the form; the operator types a *
 - **Apps Script `doPost` control**: token reject; `seq` bump; start/stop set `logging` + `label`.
 - Parity check: `label.ts` canonical output matches `reconcile_consent.canonical()` on a shared fixture set (prevents the TS and Python rules drifting).
 
-## Open questions (visual/UX — for Diego's sign-off)
+## UX decisions (resolved 2026-06-16)
 
-1. **Preflight panel presentation** — recommend: hard blocks shown red (Start disabled), soft blocks amber with an inline reason field + "Override & start." Confirm styling/wording.
-2. **One-button vs two-step** — recommend a single **Start run** that runs preflight, then either starts or reveals blocks/overrides inline (no separate "run preflight" click).
-3. **Stop-run notes** — recommend the Stop control prompts for end-of-run notes (door/placement) appended via the existing annotate path. Confirm whether notes are required or optional.
-4. **Field order / building+scenario option lists** — confirm the exact dropdown contents (which buildings/scenarios are first-class).
+1. **Preflight panel** — hard blocks render **red** and disable Start; soft blocks render **amber** with an inline reason field + "Override & start."
+2. **Start flow** — a single **Start run** button runs preflight, then either starts or reveals blocks/overrides inline (no separate preflight click).
+3. **Stop-run notes** — Stop ends the run immediately; an **optional** notes field captures door/placement notes when available (appended via the existing annotate path). Never blocks ending a run.
+4. **Dropdown contents** (editable defaults; `other` always falls back to a free-text field that must pass `canonical()` validation):
+   - **building:** `fahey`, `choates`, `little`, `east_wheelock`, `mid_mass`, `summit`, `apt`, `other`
+   - **scenario:** `baseline`, `window`, `windowclosed`, `fan`, `fan_window`, `negcontrol`, `other`
+   - **occupancy:** stepper, integer ≥ 0, emitted as `Nperson`
 
 ## Rollout
 

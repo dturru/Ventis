@@ -57,3 +57,41 @@ export function gate(verdicts: Verdict[]): Gate {
   if (verdicts.some((v) => v.tier === "soft" && !v.pass && !v.overridden)) return "needs_override";
   return "ok";
 }
+
+export interface CheckpointHelp {
+  what: string; // plain-language meaning of the failure
+  fix: string;  // how the operator resolves it
+}
+
+// Operator-facing help for each checkpoint, shown in the form when a check fails.
+// Every id that evaluatePreflight can emit MUST have an entry here (guarded by a test).
+export const CHECKPOINT_HELP: Record<string, CheckpointHelp> = {
+  auth: {
+    what: "You are not signed in through Cloudflare Access.",
+    fix: "Open the data-library URL and sign in with your authorized team account (not a direct or incognito link that bypasses Access), then reload.",
+  },
+  label: {
+    what: "The run label is not well-formed.",
+    fix: "Choose a building and scenario, and enter occupancy as a number or word. The label preview should read like `fahey_window_1person` — lowercase letters, numbers, and underscores only.",
+  },
+  consent_captured: {
+    what: "The consent details are incomplete.",
+    fix: "Fill the Consent section: method (verbal or form), who attested (occupant or your pseudonym), and the terms version.",
+  },
+  device_online: {
+    what: "The device has not reported telemetry recently, so it may be offline.",
+    fix: "Power it on, confirm Wi-Fi, and wait ~30–90s for it to report, then retry. If you know it is about to come online, override with a reason — it will pick up the start command on its next poll.",
+  },
+  no_active_run: {
+    what: "A run is already logging on the device.",
+    fix: "Stop the current run first (Stop run), or override with a reason if this is an intentional restart (e.g. after a brownout).",
+  },
+  not_duplicate: {
+    what: "An identical label was launched in the last 6 hours (usually a double-submit).",
+    fix: "Confirm this is not a repeat. If it is a legitimate repeat run, override with a reason.",
+  },
+  consent_persisted: {
+    what: "The consent record failed to save to the database (often a brief pooler timeout).",
+    fix: "Retry in a moment. If it keeps failing, override to defer — the run starts now and the consent backfills and reconciles later by the matching label.",
+  },
+};

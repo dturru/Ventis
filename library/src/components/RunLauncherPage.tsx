@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BUILDINGS, SCENARIOS, compose, parseOccupancy } from "../lib/runLabel";
-import type { Verdict } from "../lib/preflight";
+import { CHECKPOINT_HELP, type Verdict } from "../lib/preflight";
 
 type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "duplicate_nonce" | "error";
 
@@ -85,6 +85,11 @@ export default function RunLauncherPage() {
           {verdicts.map((v) => (
             <li key={v.id} className={v.pass ? "ok" : v.tier === "hard" ? "hard" : "soft"}>
               <strong>{v.id}</strong>: {v.pass ? "✓" : "✗"} {v.detail}
+              {!v.pass && CHECKPOINT_HELP[v.id] && (
+                <p className="checkpoint-help">
+                  {CHECKPOINT_HELP[v.id].what} <em>How to fix:</em> {CHECKPOINT_HELP[v.id].fix}
+                </p>
+              )}
               {!v.pass && v.tier === "soft" && (
                 <label className="override">
                   <input

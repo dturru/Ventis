@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluatePreflight, gate, type PreflightInputs } from "./preflight";
+import { evaluatePreflight, gate, CHECKPOINT_HELP, type PreflightInputs } from "./preflight";
 
 const base: PreflightInputs = {
   authedEmail: "founder@ventis.app",
@@ -40,5 +40,15 @@ describe("evaluatePreflight + gate", () => {
   it("defers consent when the DB write failed but the operator overrode it", () => {
     const v = evaluatePreflight({ ...base, consentPersisted: false, overrides: ["consent_persisted"] });
     expect(gate(v)).toBe("ok");
+  });
+
+  it("has operator help (what + fix) for every checkpoint id it can emit", () => {
+    const v = evaluatePreflight({ ...base, consentPersisted: false }); // consentPersisted set => includes that verdict
+    for (const verdict of v) {
+      const help = CHECKPOINT_HELP[verdict.id];
+      expect(help, `missing help for "${verdict.id}"`).toBeDefined();
+      expect(help.what.length).toBeGreaterThan(0);
+      expect(help.fix.length).toBeGreaterThan(0);
+    }
   });
 });

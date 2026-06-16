@@ -47,6 +47,11 @@ function doPost(e) {
     if (expected && p.token !== expected) {
       return json_({ ok: false, error: 'unauthorized' });
     }
+    // Run Launcher: set the control tab and bump seq so the device starts/stops.
+    if (p.action === 'control') {
+      const seq = setControl_(p.logging === true, p.label != null ? p.label : '');
+      return json_({ ok: true, seq: seq });
+    }
     const sheet = getSheet_();
     sheet.appendRow(buildRow_(p));
     return json_({ ok: true, rows: sheet.getLastRow() - 1 });
@@ -55,17 +60,44 @@ function doPost(e) {
   }
 }
 
+// Write the control tab atomically and return the new seq. label is sanitized through
+// the same label_() guard the telemetry path uses, so it stays anonymized + canonical-safe.
+function setControl_(logging, label) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('control');
+  if (!sh) {
+    sh = ss.insertSheet('control');
+    sh.getRange('A1:C1').setValues([['logging', 'label', 'seq']]);
+    sh.getRange('A2:C2').setValues([[false, '', 0]]);
+  }
+  const cur = sh.getRange('A2:C2').getValues()[0];
+  const nextSeq = (Number(cur[2]) || 0) + 1;
+  sh.getRange('A2:C2').setValues([[logging, label_(label), nextSeq]]);
+  return nextSeq;
+}
+
 // Remote logging control. The device polls this (GET) every minute and applies a
 // command only when `seq` changes — so it never fights the on-device web UI.
 // To start/stop a run from ANY device (incl. your phone, off-campus): open the
 // `control` tab, set logging TRUE/FALSE, set the label, and BUMP seq by 1.
+// `lastTelemetryAt` is extra (device ignores it) — used by the Run Launcher to
+// judge device liveness before issuing a start/stop command.
 function doGet() {
   try {
     const c = getControl_();
-    return json_({ logging: c.logging, label: c.label, seq: c.seq });
+    return json_({ logging: c.logging, label: c.label, seq: c.seq, lastTelemetryAt: lastTelemetryAt_() });
   } catch (err) {
-    return json_({ logging: false, label: '', seq: 0, error: String(err) });
+    return json_({ logging: false, label: '', seq: 0, lastTelemetryAt: null, error: String(err) });
   }
+}
+
+// ISO timestamp of the most recent telemetry row (first column), or null if none.
+// Used by the Run Launcher to judge device liveness. Device ignores this extra field.
+function lastTelemetryAt_() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.sheetName);
+  if (!sheet || sheet.getLastRow() < 2) return null;
+  const v = sheet.getRange(sheet.getLastRow(), 1).getValue();
+  return v ? new Date(v).toISOString() : null;
 }
 
 function getControl_() {

@@ -27,3 +27,30 @@ export function canonical(s: string): string {
   const split = tokens.flatMap(splitGluedNumword);
   return split.map((t) => OCCUPANCY[t] ?? NUM_WORDS[t] ?? t).join("");
 }
+
+// Suggested dropdown values for the UI. The server validates by SHAPE (not membership)
+// so an "other" free-text entry is allowed as long as it is a clean token.
+export const BUILDINGS = ["fahey", "choates", "little", "east_wheelock", "mid_mass", "summit", "apt"] as const;
+export const SCENARIOS = ["baseline", "window", "windowclosed", "fan", "fan_window", "negcontrol"] as const;
+
+export interface LabelInputs {
+  building: string;
+  scenario: string;
+  occupancy: number;
+}
+
+/** Compose the canonical-by-construction label. Occupancy is always a digit. */
+export function compose(building: string, scenario: string, occupancy: number): string {
+  return `${building}_${scenario}_${occupancy}person`;
+}
+
+const TOKEN = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+/** Hard-checkpoint H2: label inputs are well-formed (kills the divergence bug class). */
+export function validateLabelInputs(i: LabelInputs): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  if (!TOKEN.test(i.building)) errors.push("building must be lowercase tokens (a-z, 0-9, _)");
+  if (!TOKEN.test(i.scenario)) errors.push("scenario must be lowercase tokens (a-z, 0-9, _)");
+  if (!Number.isInteger(i.occupancy) || i.occupancy < 0) errors.push("occupancy must be a non-negative integer");
+  return { ok: errors.length === 0, errors };
+}

@@ -323,3 +323,14 @@ img, svg { display: block; }
 .end-run .actions { display: flex; gap: 10px; margin-top: 4px; }
 .end-run .actions .cancel { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 .end-run-btn { background: transparent; color: var(--red); border: 1px solid var(--red); }
+
+/* End-run step 2: the derived categorization, rendered read-only for review */
+.end-review { margin: 4px 0; display: grid; gap: 8px; }
+.end-review > div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: baseline; }
+.end-review dt { font-weight: 700; color: var(--muted); font-size: 13px; }
+.end-review dd { margin: 0; color: var(--ink); }
+.end-review .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.end-review .tag {
+  font-family: var(--mono); font-size: 12px; background: var(--tile);
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--green-deep);
+}

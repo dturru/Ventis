@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BUILDINGS, SCENARIOS, compose, parseOccupancy } from "../lib/runLabel";
 import { CHECKPOINT_HELP, type Verdict } from "../lib/preflight";
+import { buildEndFields, type EndCapture } from "../lib/endFields";
 
 type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "duplicate_nonce" | "error";
 
@@ -27,14 +28,22 @@ export default function RunLauncherPage() {
   const [endDeviation, setEndDeviation] = useState(false);
   const [endQuality, setEndQuality] = useState("good");
   const [endNote, setEndNote] = useState("");
+  const [endStage, setEndStage] = useState<"conditions" | "review">("conditions");
 
   const occupancy = parseOccupancy(occupancyInput); // number | null (accepts "2" or "two")
   const label = occupancy != null ? compose(building, scenario, occupancy) : null;
 
-  interface EndCapture {
-    window: string; door: string; occupancy: number; visitors: boolean;
-    placement: string; power: string; deviation: boolean; quality: string; note: string;
+  function currentCapture(): EndCapture {
+    return {
+      window: endWindow, door: endDoor, occupancy: occupancy ?? -1, visitors: endVisitors,
+      placement: endPlacement, power: endPower, deviation: endDeviation, quality: endQuality, note: endNote,
+    };
   }
+  // The exact categorization that will be written — same function the backend runs.
+  const endPreview = buildEndFields(currentCapture());
+
+  function openEnd() { setEnding(true); setEndStage("conditions"); }
+  function cancelEnd() { setEnding(false); setEndStage("conditions"); }
 
   async function submit(action: "start" | "stop", endCapture?: EndCapture) {
     setBusy(true);
@@ -51,14 +60,7 @@ export default function RunLauncherPage() {
     setStatus(j.status);
     setVerdicts(j.verdicts ?? []);
     setBusy(false);
-    if (action === "stop") setEnding(false);
-  }
-
-  function confirmEnd() {
-    submit("stop", {
-      window: endWindow, door: endDoor, occupancy: occupancy ?? -1, visitors: endVisitors,
-      placement: endPlacement, power: endPower, deviation: endDeviation, quality: endQuality, note: endNote,
-    });
+    if (action === "stop") { setEnding(false); setEndStage("conditions"); }
   }
 
   const softFailures = verdicts.filter((v) => v.tier === "soft" && !v.pass);
@@ -139,15 +141,15 @@ export default function RunLauncherPage() {
         <button disabled={busy || occupancy == null || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
           {status === "needs_override" ? "Override & start" : "Start run"}
         </button>
-        <button className="end-run-btn" disabled={busy || ending} onClick={() => setEnding(true)}>End run…</button>
+        <button className="end-run-btn" disabled={busy || ending} onClick={openEnd}>End run…</button>
       </div>
 
-      {ending && (
+      {ending && endStage === "conditions" && (
         <fieldset className="end-run">
-          <legend>End run — confirm</legend>
+          <legend>End run — step 1 of 2: conditions</legend>
           <p className="hard">
-            This stops logging on <code>{label ?? "(set the run above)"}</code> and kicks off the
-            end-of-run procedure. Confirm the run's final conditions — they categorize the run in the catalog.
+            This will stop logging on <code>{label ?? "(set the run above)"}</code>. First record the
+            run's final conditions — next you'll review exactly how they categorize the run before anything is written.
           </p>
           <label>Window (final / during run)
             <select value={endWindow} onChange={(e) => setEndWindow(e.target.value)}>
@@ -190,8 +192,29 @@ export default function RunLauncherPage() {
             <input value={endNote} onChange={(e) => setEndNote(e.target.value)} placeholder="anything else worth recording" />
           </label>
           <div className="actions">
-            <button className="cancel" disabled={busy} onClick={() => setEnding(false)}>Cancel</button>
-            <button disabled={busy} onClick={confirmEnd}>Confirm &amp; end run</button>
+            <button className="cancel" disabled={busy} onClick={cancelEnd}>Cancel</button>
+            <button disabled={busy || occupancy == null} onClick={() => setEndStage("review")}>Review categorization →</button>
+          </div>
+        </fieldset>
+      )}
+
+      {ending && endStage === "review" && (
+        <fieldset className="end-run">
+          <legend>End run — step 2 of 2: review categorization</legend>
+          <p className="hard">
+            Ending <code>{label}</code> will stop logging and write this categorization to the catalog.
+            Check it's right — go back to fix any input.
+          </p>
+          <dl className="end-review">
+            <div><dt>Quality flag</dt><dd>{endPreview.quality_flag || <em>none</em>}</dd></div>
+            <div><dt>Window</dt><dd>{endPreview.window}</dd></div>
+            <div><dt>Occupancy</dt><dd>{endPreview.occupancy >= 0 ? endPreview.occupancy : <em>not set</em>}</dd></div>
+            <div><dt>Tags</dt><dd className="tag-row">{endPreview.tags.split(",").map((t) => <span key={t} className="tag">{t}</span>)}</dd></div>
+            <div><dt>Note</dt><dd>{endPreview.note}</dd></div>
+          </dl>
+          <div className="actions">
+            <button className="cancel" disabled={busy} onClick={() => setEndStage("conditions")}>← Back to conditions</button>
+            <button disabled={busy} onClick={() => submit("stop", currentCapture())}>Confirm &amp; end run</button>
           </div>
         </fieldset>
       )}

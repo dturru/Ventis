@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { handleRunLaunch, type LaunchDeps, type LaunchBody } from "./run-launch";
+import { handleRunLaunch, buildEndFields, type LaunchDeps, type LaunchBody, type EndCapture } from "./run-launch";
 
 function deps(over: Partial<LaunchDeps> = {}): LaunchDeps {
   return {
@@ -9,9 +9,15 @@ function deps(over: Partial<LaunchDeps> = {}): LaunchDeps {
     insertConsent: vi.fn(async () => {}),
     recentDuplicate: vi.fn(async () => false),
     insertLaunch: vi.fn(async () => {}),
+    recordEnd: vi.fn(async () => {}),
     ...over,
   };
 }
+
+const capture: EndCapture = {
+  window: "open", door: "closed", occupancy: 1, visitors: true,
+  placement: "floor", power: "ext_cord", deviation: false, quality: "caution", note: "ran 52h",
+};
 
 const body: LaunchBody = {
   action: "start",
@@ -71,5 +77,56 @@ describe("handleRunLaunch", () => {
     const d = deps({ recentDuplicate: vi.fn(async () => false), insertLaunch: vi.fn(async () => { throw { code: "23505" }; }) });
     const r = await handleRunLaunch(d, body, "founder@ventis.app");
     expect(r.status).toBe("duplicate_nonce");
+  });
+
+  it("stops the device and records the end-of-run capture on stop", async () => {
+    const d = deps();
+    const r = await handleRunLaunch(d, { ...body, action: "stop", endCapture: capture }, "founder@ventis.app");
+    expect(r.status).toBe("stopped");
+    expect(d.setControl).toHaveBeenCalledWith(false, "fahey_window_1person");
+    expect(d.recordEnd).toHaveBeenCalledWith(
+      "faheywindow1person", "fahey_window_1person",
+      expect.objectContaining({ quality_flag: "caution", window: "open", occupancy: 1, ended_by: "founder@ventis.app" }),
+    );
+  });
+
+  it("a bare stop (no capture) still stops without recording", async () => {
+    const d = deps();
+    const r = await handleRunLaunch(d, { ...body, action: "stop" }, "founder@ventis.app");
+    expect(r.status).toBe("stopped");
+    expect(d.setControl).toHaveBeenCalledWith(false, "fahey_window_1person");
+    expect(d.recordEnd).not.toHaveBeenCalled();
+  });
+
+  it("never undoes the device stop if the capture write fails", async () => {
+    const d = deps({ recordEnd: vi.fn(async () => { throw new Error("pooler timeout"); }) });
+    const r = await handleRunLaunch(d, { ...body, action: "stop", endCapture: capture }, "founder@ventis.app");
+    expect(r.status).toBe("stopped");
+    expect(r.message).toMatch(/deferred/);
+  });
+});
+
+describe("buildEndFields", () => {
+  it("derives provenance + deviation tags and a composed note", () => {
+    const f = buildEndFields(capture);
+    expect(f.window).toBe("open");
+    expect(f.occupancy).toBe(1);
+    expect(f.quality_flag).toBe("caution");
+    const tags = f.tags.split(",");
+    expect(tags).toEqual(expect.arrayContaining(["scd40-pas", "window-open", "floor-placement", "bad-power", "sop-deviation", "internal-only"]));
+    expect(f.note).toContain("daytime visitors noted");
+    expect(f.note).toContain("ran 52h");
+  });
+
+  it("a clean breathing-zone run carries no deviation tags", () => {
+    const f = buildEndFields({ ...capture, placement: "breathing", power: "usb", deviation: false, quality: "good", visitors: false });
+    const tags = f.tags.split(",");
+    expect(tags).not.toContain("sop-deviation");
+    expect(tags).not.toContain("internal-only");
+    expect(f.note).toContain("no daytime visitors");
+  });
+
+  it("drops an invalid quality flag rather than passing it through", () => {
+    expect(buildEndFields({ ...capture, quality: "bogus" }).quality_flag).toBe("");
   });
 });

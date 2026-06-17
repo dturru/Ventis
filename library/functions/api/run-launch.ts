@@ -21,6 +21,67 @@ export interface LaunchBody {
   overrides: string[];
   override_reason?: string; // operator's reason when any soft check is overridden
   notes?: string; // optional end-of-run notes on stop
+  endCapture?: EndCapture; // operator's end-of-run conditions (stop action)
+}
+
+// What the operator confirms when ending a run (the end-of-run SOP, Phase A).
+export interface EndCapture {
+  window: string; // open | closed | changed
+  door: string; // open | closed
+  occupancy: number; // confirmed at end
+  visitors: boolean; // daytime visitors observed
+  placement: string; // breathing | floor | desk | near_window
+  power: string; // usb | 12v | ext_cord
+  deviation: boolean; // any other SOP deviation
+  quality: string; // good | caution | exclude
+  note: string; // free text
+}
+
+// The annotation-shaped fields derived from a capture (1:1 with the annotations table,
+// so reconcile_run_ends just copies them onto the run by run_key).
+export interface EndFields {
+  window: string;
+  occupancy: number;
+  quality_flag: string;
+  tags: string;
+  note: string;
+}
+
+const VALID_QUALITY = new Set(["good", "caution", "exclude"]);
+
+/** Compose the catalog annotation from an operator's end-of-run capture. Pure +
+ *  testable. Provenance + deviation tags are derived so the catalog categorizes the
+ *  run automatically the moment it's reconciled. */
+export function buildEndFields(c: EndCapture): EndFields {
+  const offBreathing = !!c.placement && c.placement !== "breathing";
+  const tags = ["scd40-pas"]; // v1 sensor provenance
+  if (c.window === "open") tags.push("window-open");
+  else if (c.window === "closed") tags.push("window-closed");
+  else if (c.window === "changed") tags.push("window-changed");
+  if (offBreathing) tags.push(`${c.placement.replace(/_/g, "-")}-placement`);
+  if (c.power === "ext_cord") tags.push("bad-power");
+  if (c.deviation || offBreathing || c.power === "ext_cord") tags.push("sop-deviation");
+  if (c.quality !== "good") tags.push("internal-only");
+
+  const note = [
+    `door ${c.door || "?"}`,
+    c.visitors ? "daytime visitors noted" : "no daytime visitors",
+    `placement ${c.placement || "?"}`,
+    `power ${c.power || "?"}`,
+    c.note?.trim(),
+  ].filter(Boolean).join("; ");
+
+  return {
+    window: c.window,
+    occupancy: c.occupancy,
+    quality_flag: VALID_QUALITY.has(c.quality) ? c.quality : "",
+    tags: Array.from(new Set(tags)).join(","),
+    note,
+  };
+}
+
+export interface EndRecord extends EndFields {
+  ended_by: string;
 }
 
 export interface LaunchRecord {
@@ -41,6 +102,7 @@ export interface LaunchDeps {
   insertConsent: (code: string, condition: string, c: LaunchConsent) => Promise<void>;
   recentDuplicate: (canonicalLabel: string, sinceHours: number) => Promise<boolean>;
   insertLaunch: (rec: LaunchRecord) => Promise<void>;
+  recordEnd: (canonicalLabel: string, label: string, rec: EndRecord) => Promise<void>;
 }
 
 export interface LaunchResult {
@@ -62,10 +124,18 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
   const control = await deps.getControl();
   const lastSeen = secsSince(deps.now(), control.lastTelemetryAt);
 
-  // --- STOP: just flip logging off (and record the stop). ---
+  // --- STOP: flip logging off, then auto-kick the end-of-run capture. ---
   if (body.action === "stop") {
     const seq = await deps.setControl(false, label);
-    return { status: "stopped", verdicts: [], label, seq };
+    if (!body.endCapture) return { status: "stopped", verdicts: [], label, seq, message: "ended" };
+    // The device stop is the critical action; a capture write must never undo it.
+    try {
+      const fields = buildEndFields(body.endCapture);
+      await deps.recordEnd(canon, label, { ...fields, ended_by: authedEmail ?? "" });
+      return { status: "stopped", verdicts: [], label, seq, message: "ended; end-of-run capture recorded" };
+    } catch {
+      return { status: "stopped", verdicts: [], label, seq, message: "ended; capture deferred (will not auto-categorize)" };
+    }
   }
 
   const labelCheck = validateLabelInputs({ building: body.building, scenario: body.scenario, occupancy: body.occupancy });
@@ -173,6 +243,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           (label, canonical_label, device_last_seen_secs, consent_status, override_flags, override_reason, launched_by, nonce, notes)
         values (${rec.label}, ${rec.canonical_label}, ${rec.device_last_seen_secs}, ${rec.consent_status},
                 ${rec.override_flags}, ${rec.override_reason ?? null}, ${rec.launched_by}, ${rec.nonce}, ${null})`;
+    },
+    recordEnd: async (canonLabel, label, rec) => {
+      // Stamp the most recent still-open launch for this label; if there isn't one
+      // (run started outside the launcher), record a standalone end row so the
+      // capture is never lost. reconcile_run_ends folds either into annotations.
+      const updated = await sql`
+        update run_launches
+        set stopped_at = now(), notes = ${rec.note}, end_window = ${rec.window},
+            end_occupancy = ${rec.occupancy}, end_quality_flag = ${rec.quality_flag},
+            end_tags = ${rec.tags}, ended_by = ${rec.ended_by}
+        where id = (select id from run_launches
+                    where canonical_label = ${canonLabel} and stopped_at is null
+                    order by started_at desc limit 1)
+        returning id`;
+      if (updated.length === 0) {
+        await sql`
+          insert into run_launches
+            (label, canonical_label, consent_status, stopped_at, notes,
+             end_window, end_occupancy, end_quality_flag, end_tags, ended_by, nonce)
+          values (${label}, ${canonLabel}, 'recorded', now(), ${rec.note},
+                  ${rec.window}, ${rec.occupancy}, ${rec.quality_flag}, ${rec.tags}, ${rec.ended_by},
+                  ${"end-" + crypto.randomUUID()})`;
+      }
     },
   };
 

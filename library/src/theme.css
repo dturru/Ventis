@@ -305,3 +305,21 @@ img, svg { display: block; }
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   html { scroll-behavior: auto; }
 }
+
+/* Run Launcher — end-of-run confirmation (destructive: read as a distinct block) */
+.end-run {
+  border: 1px solid var(--red);
+  border-left: 4px solid var(--red);
+  background: var(--red-soft);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 16px 0;
+  display: grid;
+  gap: 10px;
+}
+.end-run legend { font-weight: 700; color: var(--red); padding: 0 6px; }
+.end-run label { display: block; }
+.end-run label.check { display: flex; align-items: center; gap: 8px; }
+.end-run .actions { display: flex; gap: 10px; margin-top: 4px; }
+.end-run .actions .cancel { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.end-run-btn { background: transparent; color: var(--red); border: 1px solid var(--red); }

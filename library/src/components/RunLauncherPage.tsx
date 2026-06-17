@@ -17,10 +17,26 @@ export default function RunLauncherPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [busy, setBusy] = useState(false);
 
+  // End-of-run capture (shown behind the "End run" confirmation checkpoint).
+  const [ending, setEnding] = useState(false);
+  const [endWindow, setEndWindow] = useState("open");
+  const [endDoor, setEndDoor] = useState("closed");
+  const [endVisitors, setEndVisitors] = useState(false);
+  const [endPlacement, setEndPlacement] = useState("breathing");
+  const [endPower, setEndPower] = useState("usb");
+  const [endDeviation, setEndDeviation] = useState(false);
+  const [endQuality, setEndQuality] = useState("good");
+  const [endNote, setEndNote] = useState("");
+
   const occupancy = parseOccupancy(occupancyInput); // number | null (accepts "2" or "two")
   const label = occupancy != null ? compose(building, scenario, occupancy) : null;
 
-  async function submit(action: "start" | "stop") {
+  interface EndCapture {
+    window: string; door: string; occupancy: number; visitors: boolean;
+    placement: string; power: string; deviation: boolean; quality: string; note: string;
+  }
+
+  async function submit(action: "start" | "stop", endCapture?: EndCapture) {
     setBusy(true);
     const res = await fetch("/api/run-launch", {
       method: "POST",
@@ -28,13 +44,21 @@ export default function RunLauncherPage() {
       body: JSON.stringify({
         action, building, scenario, occupancy: occupancy ?? -1,
         consent: { consent_method: method, attested_by: attestedBy, terms_version: terms, notes: "" },
-        nonce: crypto.randomUUID(), overrides, override_reason: reason,
+        nonce: crypto.randomUUID(), overrides, override_reason: reason, endCapture,
       }),
     });
     const j = (await res.json()) as { status: Status; verdicts: Verdict[] };
     setStatus(j.status);
     setVerdicts(j.verdicts ?? []);
     setBusy(false);
+    if (action === "stop") setEnding(false);
+  }
+
+  function confirmEnd() {
+    submit("stop", {
+      window: endWindow, door: endDoor, occupancy: occupancy ?? -1, visitors: endVisitors,
+      placement: endPlacement, power: endPower, deviation: endDeviation, quality: endQuality, note: endNote,
+    });
   }
 
   const softFailures = verdicts.filter((v) => v.tier === "soft" && !v.pass);
@@ -115,10 +139,65 @@ export default function RunLauncherPage() {
         <button disabled={busy || occupancy == null || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
           {status === "needs_override" ? "Override & start" : "Start run"}
         </button>
-        <button disabled={busy} onClick={() => submit("stop")}>Stop run</button>
+        <button className="end-run-btn" disabled={busy || ending} onClick={() => setEnding(true)}>End run…</button>
       </div>
 
+      {ending && (
+        <fieldset className="end-run">
+          <legend>End run — confirm</legend>
+          <p className="hard">
+            This stops logging on <code>{label ?? "(set the run above)"}</code> and kicks off the
+            end-of-run procedure. Confirm the run's final conditions — they categorize the run in the catalog.
+          </p>
+          <label>Window (final / during run)
+            <select value={endWindow} onChange={(e) => setEndWindow(e.target.value)}>
+              <option value="open">open</option>
+              <option value="closed">closed</option>
+              <option value="changed">changed mid-run</option>
+            </select>
+          </label>
+          <label>Door
+            <select value={endDoor} onChange={(e) => setEndDoor(e.target.value)}>
+              <option value="closed">closed</option>
+              <option value="open">open</option>
+            </select>
+          </label>
+          <label>Sensor placement
+            <select value={endPlacement} onChange={(e) => setEndPlacement(e.target.value)}>
+              <option value="breathing">breathing height</option>
+              <option value="floor">floor</option>
+              <option value="desk">desk</option>
+              <option value="near_window">near window</option>
+            </select>
+          </label>
+          <label>Power source
+            <select value={endPower} onChange={(e) => setEndPower(e.target.value)}>
+              <option value="usb">clean USB</option>
+              <option value="12v">12V supply</option>
+              <option value="ext_cord">extension cord</option>
+            </select>
+          </label>
+          <label>Quality
+            <select value={endQuality} onChange={(e) => setEndQuality(e.target.value)}>
+              <option value="good">good</option>
+              <option value="caution">caution (soft upper bound)</option>
+              <option value="exclude">exclude</option>
+            </select>
+          </label>
+          <label className="check"><input type="checkbox" checked={endVisitors} onChange={(e) => setEndVisitors(e.target.checked)} /> daytime visitors observed</label>
+          <label className="check"><input type="checkbox" checked={endDeviation} onChange={(e) => setEndDeviation(e.target.checked)} /> other SOP deviation</label>
+          <label>Notes
+            <input value={endNote} onChange={(e) => setEndNote(e.target.value)} placeholder="anything else worth recording" />
+          </label>
+          <div className="actions">
+            <button className="cancel" disabled={busy} onClick={() => setEnding(false)}>Cancel</button>
+            <button disabled={busy} onClick={confirmEnd}>Confirm &amp; end run</button>
+          </div>
+        </fieldset>
+      )}
+
       {status === "started" && <p className="ok">Run started — device will pick it up within its poll interval.</p>}
+      {status === "stopped" && <p className="ok">Run ended — logging stopped and the end-of-run capture was recorded for categorization.</p>}
       {status === "blocked" && <p className="hard">Blocked. Fix the red checks above.</p>}
       {status === "duplicate_nonce" && <p>Already submitted — ignored a duplicate.</p>}
     </div>

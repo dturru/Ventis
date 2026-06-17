@@ -1,6 +1,11 @@
 import postgres from "postgres";
 import { compose, validateLabelInputs, canonical } from "../../src/lib/runLabel";
 import { evaluatePreflight, gate, type PreflightInputs, type Verdict } from "../../src/lib/preflight";
+import { buildEndFields, type EndCapture, type EndRecord } from "../../src/lib/endFields";
+
+// Re-export the categorization helpers so existing importers (and tests) stay stable.
+export { buildEndFields } from "../../src/lib/endFields";
+export type { EndCapture, EndFields, EndRecord } from "../../src/lib/endFields";
 
 const DEVICE_FRESH_SECS = 90;   // ~3x the device's telemetry cadence
 const DUP_WINDOW_H = 6;
@@ -21,6 +26,7 @@ export interface LaunchBody {
   overrides: string[];
   override_reason?: string; // operator's reason when any soft check is overridden
   notes?: string; // optional end-of-run notes on stop
+  endCapture?: EndCapture; // operator's end-of-run conditions (stop action)
 }
 
 export interface LaunchRecord {
@@ -41,6 +47,7 @@ export interface LaunchDeps {
   insertConsent: (code: string, condition: string, c: LaunchConsent) => Promise<void>;
   recentDuplicate: (canonicalLabel: string, sinceHours: number) => Promise<boolean>;
   insertLaunch: (rec: LaunchRecord) => Promise<void>;
+  recordEnd: (canonicalLabel: string, label: string, rec: EndRecord) => Promise<void>;
 }
 
 export interface LaunchResult {
@@ -62,10 +69,18 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
   const control = await deps.getControl();
   const lastSeen = secsSince(deps.now(), control.lastTelemetryAt);
 
-  // --- STOP: just flip logging off (and record the stop). ---
+  // --- STOP: flip logging off, then auto-kick the end-of-run capture. ---
   if (body.action === "stop") {
     const seq = await deps.setControl(false, label);
-    return { status: "stopped", verdicts: [], label, seq };
+    if (!body.endCapture) return { status: "stopped", verdicts: [], label, seq, message: "ended" };
+    // The device stop is the critical action; a capture write must never undo it.
+    try {
+      const fields = buildEndFields(body.endCapture);
+      await deps.recordEnd(canon, label, { ...fields, ended_by: authedEmail ?? "" });
+      return { status: "stopped", verdicts: [], label, seq, message: "ended; end-of-run capture recorded" };
+    } catch {
+      return { status: "stopped", verdicts: [], label, seq, message: "ended; capture deferred (will not auto-categorize)" };
+    }
   }
 
   const labelCheck = validateLabelInputs({ building: body.building, scenario: body.scenario, occupancy: body.occupancy });
@@ -173,6 +188,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           (label, canonical_label, device_last_seen_secs, consent_status, override_flags, override_reason, launched_by, nonce, notes)
         values (${rec.label}, ${rec.canonical_label}, ${rec.device_last_seen_secs}, ${rec.consent_status},
                 ${rec.override_flags}, ${rec.override_reason ?? null}, ${rec.launched_by}, ${rec.nonce}, ${null})`;
+    },
+    recordEnd: async (canonLabel, label, rec) => {
+      // Stamp the most recent still-open launch for this label; if there isn't one
+      // (run started outside the launcher), record a standalone end row so the
+      // capture is never lost. reconcile_run_ends folds either into annotations.
+      const updated = await sql`
+        update run_launches
+        set stopped_at = now(), notes = ${rec.note}, end_window = ${rec.window},
+            end_occupancy = ${rec.occupancy}, end_quality_flag = ${rec.quality_flag},
+            end_tags = ${rec.tags}, ended_by = ${rec.ended_by}
+        where id = (select id from run_launches
+                    where canonical_label = ${canonLabel} and stopped_at is null
+                    order by started_at desc limit 1)
+        returning id`;
+      if (updated.length === 0) {
+        await sql`
+          insert into run_launches
+            (label, canonical_label, consent_status, stopped_at, notes,
+             end_window, end_occupancy, end_quality_flag, end_tags, ended_by, nonce)
+          values (${label}, ${canonLabel}, 'recorded', now(), ${rec.note},
+                  ${rec.window}, ${rec.occupancy}, ${rec.quality_flag}, ${rec.tags}, ${rec.ended_by},
+                  ${"end-" + crypto.randomUUID()})`;
+      }
     },
   };
 

@@ -104,6 +104,24 @@ create table if not exists run_launches (
   override_reason       text,
   launched_by           text,                    -- Cf-Access email of the operator
   nonce                 text unique,             -- idempotency key from the client
-  notes                 text                     -- optional end-of-run notes
+  notes                 text,                    -- composed end-of-run note (door/visitors/placement/power)
+  -- End-of-run capture (operator confirms conditions when ending the run via the form).
+  -- Folded into the annotations table by reconcile_run_ends.py -> read by build_catalog.
+  end_window            text,                    -- open | closed | changed (final/intra-run window)
+  end_occupancy         int,                     -- confirmed occupancy at end
+  end_quality_flag      text,                    -- good | caution | exclude
+  end_tags              text,                    -- comma-separated provenance/deviation tags
+  ended_by              text,                    -- Cf-Access email of the operator who ended it
+  reconciled_run_key    text                     -- set once folded into annotations (audit; idempotency)
 );
 create index if not exists idx_run_launches_canon on run_launches(canonical_label, started_at desc);
+
+-- For an EXISTING run_launches table, add the end-of-run capture columns
+-- (run once in the Supabase SQL editor):
+--   alter table run_launches
+--     add column if not exists end_window text,
+--     add column if not exists end_occupancy int,
+--     add column if not exists end_quality_flag text,
+--     add column if not exists end_tags text,
+--     add column if not exists ended_by text,
+--     add column if not exists reconciled_run_key text;

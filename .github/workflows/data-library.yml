@@ -51,6 +51,13 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: python site/scripts/reconcile_consent.py
 
+      - name: Reconcile end-of-run captures to runs
+        # Folds Run Launcher end-of-run captures (run_launches) into annotations by
+        # run_key, so the catalog auto-categorizes the run. No-op if SUPABASE_DB_URL unset.
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python site/scripts/reconcile_run_ends.py
+
       - name: Build catalog (catalog.json + series + charts)
         # Reads runs/readings from Supabase when SUPABASE_DB_URL is set, else local SQLite.
         env:

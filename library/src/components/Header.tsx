@@ -17,6 +17,7 @@ const LINKS = [
   { to: "/compare", label: "Compare", end: false },
   { to: "/about", label: "About", end: false },
   { to: "/operations", label: "Operations", end: false },
+  { to: "/launch", label: "Launch", end: false },
   { to: "/curate", label: "Curate", end: false },
 ];
 

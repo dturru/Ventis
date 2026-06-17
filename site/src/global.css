@@ -444,6 +444,18 @@ html { accent-color: var(--green); }
 .chart-legend .swatch i.dash { background: repeating-linear-gradient(90deg, var(--faint) 0 4px, transparent 4px 7px); height: 2px; }
 .data-note { font-size: 13px; color: var(--faint); margin-top: 26px; text-align: center; }
 
+/* supporting runs — compact sparkline rows */
+.mini-runs { display: grid; gap: 14px; margin: 14px 0 4px; }
+.mini-run { display: flex; align-items: center; gap: 22px; padding: 16px 20px; }
+.mini-run-text { flex: 1 1 auto; min-width: 0; }
+.mini-run-name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; margin-top: 7px; }
+.mini-run-take { font-size: 13px; color: var(--green-deep); font-weight: 600; margin-top: 7px; }
+.spark { width: 180px; height: 48px; flex: 0 0 auto; display: block; }
+@media (max-width: 560px) {
+  .mini-run { flex-direction: column; align-items: stretch; gap: 12px; }
+  .spark { width: 100%; height: 56px; }
+}
+
 /* recharts tooltip */
 .tip {
   background: var(--ink); color: #fff; border-radius: 8px; padding: 8px 11px; font-size: 12px;

@@ -306,6 +306,66 @@ img, svg { display: block; }
   html { scroll-behavior: auto; }
 }
 
+/* Run Launcher — start-run form. Scoped to match the polished end-run block below.
+   fieldset/legend rules use :not(.end-run) so they never clobber the red destructive
+   framing; field rules (input/select) intentionally apply to .end-run too, since it
+   had no scoped styling of its own. */
+.run-launcher { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+.run-launcher h1 { font-size: 26px; margin: 0; }
+
+.run-launcher fieldset:not(.end-run) {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--tile); box-shadow: var(--shadow-sm);
+  padding: 16px 18px; display: grid; gap: 12px;
+}
+.run-launcher fieldset:not(.end-run) legend {
+  font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  color: var(--green); padding: 0 6px;
+}
+.run-launcher label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.run-launcher select,
+.run-launcher input:not([type="checkbox"]) {
+  width: 100%; font-size: 14px; font-weight: 400; color: var(--ink);
+  background: var(--tile); border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: 10px 13px; transition: border-color .15s ease;
+}
+.run-launcher select:focus,
+.run-launcher input:focus { outline: none; border-color: var(--green); }
+
+/* Live canonical label — the centerpiece */
+.label-preview {
+  margin: 0; padding: 13px 16px; border-radius: var(--r-sm);
+  background: var(--bg); border: 1px solid var(--line); font-size: 14px; color: var(--muted);
+}
+.label-preview code { font-family: var(--mono); font-size: 14px; color: var(--green-deep); }
+.label-preview .hard { color: var(--red); font-weight: 600; }
+
+/* Preflight checks — color-coded by tier via left-border accent */
+.preflight { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.preflight li {
+  font-size: 13px; padding: 9px 12px; border-radius: var(--r-sm);
+  border-left: 3px solid var(--line); background: var(--tile);
+}
+.preflight li.ok { border-left-color: var(--green); }
+.preflight li.soft { border-left-color: #b87900; background: #fff7e0; }
+.preflight li.hard { border-left-color: var(--red); background: var(--red-soft); }
+.preflight strong { font-family: var(--mono); font-size: 12px; }
+.checkpoint-help { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.preflight .override { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; font-weight: 600; }
+.preflight .override input { width: auto; }
+
+/* Actions — direct child only, so the end-run's own .actions row is untouched */
+.run-launcher > .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.run-launcher > .actions button {
+  font-size: 14px; font-weight: 600; padding: 11px 20px; border-radius: var(--r-sm);
+  transition: all .16s var(--ease-out);
+}
+.run-launcher > .actions button:first-child { background: var(--green); color: #fff; box-shadow: var(--shadow-sm); }
+.run-launcher > .actions button:disabled { opacity: .5; cursor: not-allowed; }
+
+.run-launcher > .ok { color: var(--green-deep); font-weight: 600; }
+.run-launcher > .hard { color: var(--red); font-weight: 600; }
+
 /* Run Launcher — end-of-run confirmation (destructive: read as a distinct block) */
 .end-run {
   border: 1px solid var(--red);

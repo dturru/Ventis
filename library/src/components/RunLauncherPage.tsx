@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BUILDINGS, SCENARIOS, compose, parseOccupancy } from "../lib/runLabel";
 import { CHECKPOINT_HELP, type Verdict } from "../lib/preflight";
 import { buildEndFields, type EndCapture } from "../lib/endFields";
+import { buildConsentUrl, randomCode } from "../lib/deploy";
 
 type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "duplicate_nonce" | "error";
 
@@ -16,6 +17,8 @@ export default function RunLauncherPage() {
   const [method, setMethod] = useState("opt_in_verbal");
   const [attestedBy, setAttestedBy] = useState("occupant");
   const [terms, setTerms] = useState("v1-2026-06");
+  const [deployCode, setDeployCode] = useState(randomCode()); // VEN-#### for the self-serve QR
+  const [copied, setCopied] = useState(false);
   const [reason, setReason] = useState("");
   const [overrides, setOverrides] = useState<string[]>([]);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
@@ -37,6 +40,17 @@ export default function RunLauncherPage() {
   const occupancy = parseOccupancy(occupancyInput); // number | null (accepts "2" or "two")
   const buildingOk = building.length > 0;
   const label = occupancy != null && buildingOk ? compose(building, scenario, occupancy) : null;
+
+  // Self-serve consent form: the occupant-facing URL for THIS run. condition c = the
+  // canonical label, so reconcile_consent ties their opt-in to the run.
+  const consentUrl = label != null ? buildConsentUrl(deployCode, label) : null;
+  function copyConsentUrl() {
+    if (!consentUrl) return;
+    navigator.clipboard.writeText(consentUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   function currentCapture(): EndCapture {
     return {
@@ -118,6 +132,41 @@ export default function RunLauncherPage() {
         <label>Attested by <input value={attestedBy} onChange={(e) => setAttestedBy(e.target.value)} /></label>
         <label>Terms <input value={terms} onChange={(e) => setTerms(e.target.value)} /></label>
       </fieldset>
+
+      {method === "opt_in_form" && (
+        <fieldset className="consent-qr">
+          <legend>Consent form — occupant self-serve</legend>
+          {consentUrl != null ? (
+            <>
+              <p className="qr-help">
+                Have the occupant scan this and tap <strong>I agree</strong>. The run starts with
+                consent <strong>deferred</strong> and links automatically once they submit — no
+                row is recorded on your behalf.
+              </p>
+              <label>Deployment code
+                <div className="code-row">
+                  <input value={deployCode} onChange={(e) => setDeployCode(e.target.value)} />
+                  <button type="button" onClick={() => setDeployCode(randomCode())}>New code</button>
+                </div>
+              </label>
+              <div className="qr-out">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data=${encodeURIComponent(consentUrl)}`}
+                  width={180}
+                  height={180}
+                  alt={`Consent QR for ${label}`}
+                />
+                <div className="qr-link">
+                  <code>{consentUrl}</code>
+                  <button type="button" onClick={copyConsentUrl}>{copied ? "Copied" : "Copy link"}</button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="hard">Set building, scenario, and occupancy above to generate the form.</p>
+          )}
+        </fieldset>
+      )}
 
       <p className="label-preview">
         {label != null

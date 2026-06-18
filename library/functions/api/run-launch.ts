@@ -103,12 +103,19 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
   const g1 = gate(v1);
   if (g1 !== "ok") return { status: g1 === "blocked" ? "blocked" : "needs_override", verdicts: v1, label };
 
-  // Phase 2: attempt consent insert; evaluate the consent_persisted soft check.
-  let consentPersisted = true;
-  try {
-    await deps.insertConsent(canon /* deployment_code = canonical label */, label, body.consent);
-  } catch {
-    consentPersisted = false;
+  // Phase 2: consent. For opt_in_form the occupant self-serves (the launcher hands them a
+  // QR), so we must NOT fabricate an "occupant opted in" row before they actually tap — we
+  // defer to their public /consent submission, which reconcile_consent links by label.
+  // For opt_in_verbal (operator attestation) we insert now and evaluate consent_persisted.
+  const deferConsent = body.consent?.consent_method === "opt_in_form";
+  let consentPersisted: boolean | null = null; // null = not attempted (deferred or phase 1)
+  if (!deferConsent) {
+    consentPersisted = true;
+    try {
+      await deps.insertConsent(canon /* deployment_code = canonical label */, label, body.consent);
+    } catch {
+      consentPersisted = false;
+    }
   }
   const inputs2: PreflightInputs = { ...inputs1, consentPersisted };
   const v2 = evaluatePreflight(inputs2);

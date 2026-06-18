@@ -5,8 +5,12 @@ import { buildEndFields, type EndCapture } from "../lib/endFields";
 
 type Status = "idle" | "blocked" | "needs_override" | "started" | "stopped" | "duplicate_nonce" | "error";
 
+const OTHER = "__other__";
+
 export default function RunLauncherPage() {
-  const [building, setBuilding] = useState<string>(BUILDINGS[0]);
+  const [buildingSel, setBuildingSel] = useState<string>(BUILDINGS[0]);
+  const [buildingOther, setBuildingOther] = useState<string>("");
+  const building = buildingSel === OTHER ? buildingOther.trim().toLowerCase() : buildingSel;
   const [scenario, setScenario] = useState<string>(SCENARIOS[0]);
   const [occupancyInput, setOccupancyInput] = useState<string>("1");
   const [method, setMethod] = useState("opt_in_verbal");
@@ -31,7 +35,8 @@ export default function RunLauncherPage() {
   const [endStage, setEndStage] = useState<"conditions" | "review">("conditions");
 
   const occupancy = parseOccupancy(occupancyInput); // number | null (accepts "2" or "two")
-  const label = occupancy != null ? compose(building, scenario, occupancy) : null;
+  const buildingOk = building.length > 0;
+  const label = occupancy != null && buildingOk ? compose(building, scenario, occupancy) : null;
 
   function currentCapture(): EndCapture {
     return {
@@ -68,25 +73,39 @@ export default function RunLauncherPage() {
   return (
     <div className="run-launcher">
       <h1>Start a Run</h1>
-      <label>Building
-        <select value={building} onChange={(e) => setBuilding(e.target.value)}>
-          {BUILDINGS.map((b) => <option key={b} value={b}>{b}</option>)}
-        </select>
-      </label>
-      <label>Scenario
-        <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
-          {SCENARIOS.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </label>
-      <label>Occupancy
-        <input
-          type="text"
-          inputMode="numeric"
-          value={occupancyInput}
-          placeholder="e.g. 2 or two"
-          onChange={(e) => setOccupancyInput(e.target.value)}
-        />
-      </label>
+
+      <fieldset className="run-setup">
+        <legend>Run setup</legend>
+        <label>Building
+          <select value={buildingSel} onChange={(e) => setBuildingSel(e.target.value)}>
+            {BUILDINGS.map((b) => <option key={b} value={b}>{b}</option>)}
+            <option value={OTHER}>Other…</option>
+          </select>
+        </label>
+        {buildingSel === OTHER && (
+          <label>Other building (lowercase, use _ for spaces)
+            <input
+              value={buildingOther}
+              placeholder="e.g. mclaughlin"
+              onChange={(e) => setBuildingOther(e.target.value)}
+            />
+          </label>
+        )}
+        <label>Scenario
+          <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
+            {SCENARIOS.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </label>
+        <label>Occupancy
+          <input
+            type="text"
+            inputMode="numeric"
+            value={occupancyInput}
+            placeholder="e.g. 2 or two"
+            onChange={(e) => setOccupancyInput(e.target.value)}
+          />
+        </label>
+      </fieldset>
 
       <fieldset>
         <legend>Consent</legend>
@@ -103,7 +122,9 @@ export default function RunLauncherPage() {
       <p className="label-preview">
         {label != null
           ? <>Label: <code>{label}</code></>
-          : <span className="hard">Enter occupancy as a number or word (e.g. 2 or two)</span>}
+          : <span className="hard">{!buildingOk
+              ? "Pick a building (or type one under Other…)"
+              : "Enter occupancy as a number or word (e.g. 2 or two)"}</span>}
       </p>
 
       {verdicts.length > 0 && (
@@ -138,7 +159,7 @@ export default function RunLauncherPage() {
       )}
 
       <div className="actions">
-        <button disabled={busy || occupancy == null || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
+        <button disabled={busy || occupancy == null || !buildingOk || (status === "needs_override" && softFailures.length > 0 && !reason)} onClick={() => submit("start")}>
           {status === "needs_override" ? "Override & start" : "Start run"}
         </button>
         <button className="end-run-btn" disabled={busy || ending} onClick={openEnd}>End run…</button>
@@ -193,7 +214,7 @@ export default function RunLauncherPage() {
           </label>
           <div className="actions">
             <button className="cancel" disabled={busy} onClick={cancelEnd}>Cancel</button>
-            <button disabled={busy || occupancy == null} onClick={() => setEndStage("review")}>Review categorization →</button>
+            <button disabled={busy || occupancy == null || !buildingOk} onClick={() => setEndStage("review")}>Review categorization →</button>
           </div>
         </fieldset>
       )}

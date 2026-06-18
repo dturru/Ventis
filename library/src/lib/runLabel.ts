@@ -29,8 +29,15 @@ export function canonical(s: string): string {
 }
 
 // Suggested dropdown values for the UI. The server validates by SHAPE (not membership)
-// so an "other" free-text entry is allowed as long as it is a clean token.
-export const BUILDINGS = ["fahey", "choates", "little", "east_wheelock", "mid_mass", "summit", "apt"] as const;
+// so an "other" free-text entry is allowed as long as it is a clean token. Full Dartmouth
+// residence-hall set (alphabetical); House-community grouping is deliberately omitted since
+// hall→House assignments reshuffle yearly and the stored label only cares about the token.
+export const BUILDINGS = [
+  "andres", "berry", "bildner", "bissell", "brown", "choates", "cohen", "east_wheelock",
+  "fahey", "french", "gile", "judge", "little", "lodge", "lord", "mclane", "mid_mass",
+  "morton", "new_hampshire", "north_mass", "rauner", "richardson", "russell_sage",
+  "streeter", "summit", "topliff", "wheeler", "zimmerman", "apt",
+] as const;
 export const SCENARIOS = ["baseline", "window", "windowclosed", "fan", "fan_window", "negcontrol"] as const;
 
 export interface LabelInputs {

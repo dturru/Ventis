@@ -366,6 +366,22 @@ img, svg { display: block; }
 .run-launcher > .ok { color: var(--green-deep); font-weight: 600; }
 .run-launcher > .hard { color: var(--red); font-weight: 600; }
 
+/* Run Launcher — self-serve consent QR (revealed when method = opt_in_form) */
+.consent-qr .qr-help { margin: 0; font-size: 13px; color: var(--muted); }
+.consent-qr .code-row { display: flex; gap: 8px; }
+.consent-qr .code-row input { flex: 1 1 auto; width: auto; }
+.consent-qr button {
+  font-size: 13px; font-weight: 600; white-space: nowrap; padding: 9px 14px;
+  border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--tile); color: var(--ink);
+}
+.consent-qr .qr-out { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.consent-qr .qr-out img { background: #fff; border-radius: var(--r-sm); padding: 8px; box-shadow: var(--shadow-sm); }
+.consent-qr .qr-link { flex: 1 1 240px; min-width: 220px; display: grid; gap: 10px; align-content: start; }
+.consent-qr .qr-link code {
+  font-family: var(--mono); font-size: 12px; word-break: break-all; color: var(--green-deep);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px;
+}
+
 /* Run Launcher — end-of-run confirmation (destructive: read as a distinct block) */
 .end-run {
   border: 1px solid var(--red);

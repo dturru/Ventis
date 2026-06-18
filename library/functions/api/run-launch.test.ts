@@ -60,6 +60,19 @@ describe("handleRunLaunch", () => {
     expect(d.insertLaunch).toHaveBeenCalledWith(expect.objectContaining({ consent_status: "deferred" }));
   });
 
+  it("opt_in_form: defers to the occupant's self-serve tap — no consent row written, still starts", async () => {
+    const d = deps();
+    const r = await handleRunLaunch(
+      d,
+      { ...body, consent: { ...body.consent, consent_method: "opt_in_form" } },
+      "founder@ventis.app",
+    );
+    expect(r.status).toBe("started");
+    expect(d.insertConsent).not.toHaveBeenCalled(); // occupant's QR submission is the record
+    expect(r.verdicts.find((v) => v.id === "consent_persisted")).toBeUndefined(); // not emitted → no override
+    expect(d.insertLaunch).toHaveBeenCalledWith(expect.objectContaining({ consent_status: "deferred" }));
+  });
+
   it("persists the override reason and flags when a soft check is overridden", async () => {
     const d = deps({ getControl: vi.fn(async () => ({ logging: false, seq: 4, lastTelemetryAt: "2026-06-16T17:00:00Z" })) });
     const r = await handleRunLaunch(

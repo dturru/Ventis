@@ -8,9 +8,10 @@ export function Demo() {
         <div className="eyebrow">Interactive Demo</div>
         <h1 className="section-title">The Ventis dashboard, live.</h1>
         <p className="lede">
-          This is the actual on-device app. Press play to replay a real overnight run: CO₂,
-          temperature, and humidity changing, the fan kicking on, Dodi reacting. Scrub anywhere
-          in the night. No hardware needed.
+          At our booth you can breathe on the sensor and watch CO₂ climb, the fan kick on, and
+          Dodi react in about thirty seconds. Here’s the next best thing: this is the actual
+          on-device app. Press play to replay a real overnight run, and scrub anywhere in the
+          night. No hardware needed.
         </p>
 
         <DeviceDemo />

@@ -95,6 +95,30 @@ export function How() {
           </p>
         </div>
 
+        {/* ── Built for dorm life ─────────────────────────────────────────── */}
+        <div className="prose">
+          <h2 className="section-title" style={{ fontSize: 26, marginTop: 40 }}>Built for dorm life</h2>
+          <p>
+            <strong>No install, fully removable.</strong> It sits in your window with no screws,
+            no adhesive, and no exposed mains wiring. Nothing to mount, nothing for an RA to flag,
+            and it comes out in seconds when you move.
+          </p>
+          <p>
+            <strong>Your roommate won’t notice.</strong> It’s near-silent at low speed, small
+            enough to share a windowsill, and it only runs when it actually needs to, so it won’t
+            wake anyone at 2am.
+          </p>
+          <p>
+            <strong>Your data, only if you opt in.</strong> The device works completely on its own.
+            If you ever choose to share a room’s readings, that’s an explicit opt-in, and the data
+            stays de-identified.
+          </p>
+          <p>
+            <strong>No accommodation needed.</strong> No accommodation request, no doctor’s note,
+            no window AC unit. Just plug it in.
+          </p>
+        </div>
+
         {/* ── The hardware, today ─────────────────────────────────────────── */}
         <h2 className="section-title" style={{ fontSize: 26, marginTop: 40 }}>A working prototype, not a render</h2>
         <figure className="hw-shot">

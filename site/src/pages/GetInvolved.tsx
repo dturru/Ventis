@@ -17,9 +17,10 @@ export function GetInvolved() {
             <div className="ico"><Icon name="bed" size={26} /></div>
             <h3>Residents</h3>
             <p>
-              Want one this fall? Early access is for the <strong>v2 window unit</strong>, the
-              first integrated units, expected Fall 2026. Leave your info to be first in line,
-              and to see your own room’s overnight numbers.
+              A working prototype runs today; early access is for the <strong>v2 window unit</strong>,
+              the first integrated units, expected Fall 2026. Leave your info to be first in line,
+              and to see your own room’s overnight numbers. It sits in the window, comes out in
+              seconds, and needs no accommodation request.
             </p>
             <a className="btn" href={residentsCTA} target="_blank" rel="noreferrer">
               Get early access →
@@ -30,8 +31,11 @@ export function GetInvolved() {
             <div className="ico"><Icon name="building" size={26} /></div>
             <h3>Institutions</h3>
             <p>
-              Housing, facilities, or residential operations team piloting air quality in
-              your buildings? We’d love to show you the data and talk about a pilot.
+              Housing, facilities, or residential operations? Every reading is opt-in and
+              de-identified, kept in a durable system of record, not a laptop. We can show you
+              where air quality actually stands building by building, help verify what your
+              renovations fixed, and run a small consented pilot. No installation, no liability,
+              no burden on your staff.
             </p>
             <Link className="btn btn-primary" to="/contact">
               Start a conversation →

@@ -30,7 +30,7 @@ export function How() {
           <div className="flow-step">
             <div className="big"><Icon name="decide" size={28} /></div>
             <h4>Decides</h4>
-            <p>Ventilates only when it’s worth it: when outdoor air will actually cool the room or clear the CO₂.</p>
+            <p>Ventilates only when the outdoor air will actually cool the room or clear the CO₂.</p>
           </div>
           <div className="flow-arrow"><Chevron /></div>
           <div className="flow-step">
@@ -85,7 +85,7 @@ export function How() {
           <p>
             CO₂ rises as you sleep → Ventis exchanges it for outdoor air → CO₂ falls. The
             decision is <strong>temperature-aware</strong>: if the outdoor air is colder
-            than it’s worth, Ventis meters the exchange instead of dumping a freezing draft
+            than it helps, Ventis eases off the airflow instead of dumping a freezing draft
             into the room.
           </p>
           <p>

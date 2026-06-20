@@ -28,7 +28,7 @@ export function Problem() {
             <div className="point-k">01</div>
             <div className="point-h">CO₂ is invisible</div>
             <p className="point-p">
-              No human sensation maps to 1,100 ppm. No smell, no alarm, no warning. You
+              You can’t feel 1,100 ppm of CO₂. No smell, no alarm, no warning. You
               can’t manage what you can’t measure, so nobody does.
             </p>
           </div>

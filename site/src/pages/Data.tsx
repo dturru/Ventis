@@ -87,7 +87,7 @@ export function Data() {
           <>
             <h2 className="section-title" style={{ marginTop: 40, fontSize: 26 }}>More rooms, same pattern</h2>
             <p className="lede" style={{ fontSize: 16, marginTop: 4 }}>
-              The supporting runs, at a glance — same measured CO₂, plotted compact.
+              The supporting runs at a glance: same measured CO₂, plotted compact.
             </p>
             <div className="mini-runs">
               {supporting.map((run) => (

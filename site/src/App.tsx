@@ -24,8 +24,8 @@ function Footer() {
         <div>
           <div className="footer-brand">Ventis</div>
           <p className="footer-note">
-            Automatic, sensing-driven ventilation for dorm rooms that don't have it —
-            it pulls cool, fresh air in while you sleep, so CO₂ never builds. Built at Dartmouth.
+            Automatic, sensing-driven ventilation for dorm rooms that don't have it.
+            It pulls cool, fresh air in while you sleep, so CO₂ never builds. Built at Dartmouth.
           </p>
         </div>
         <div className="footer-links">

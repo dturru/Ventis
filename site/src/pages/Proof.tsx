@@ -54,8 +54,8 @@ export function Proof() {
           <div className="cta-card">
             <h3>2 · Closed for the night</h3>
             <p>
-              The window shuts for warmth and sleep. Over the next hours CO₂ climbs past the
-              1,000 ppm guideline to a peak of <b>979 ppm</b>, and no one is awake to notice.
+              The window shuts for warmth and sleep. Over the next hours CO₂ climbs toward the
+              1,000 ppm guideline, peaking at <b>979 ppm</b>, and no one is awake to notice.
               (A fan ran the whole time. Moving air around a closed room is not the same as
               bringing fresh air in, so it barely moved the number.)
             </p>

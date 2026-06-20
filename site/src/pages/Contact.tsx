@@ -33,7 +33,7 @@ export function Contact() {
       const body = `Name: ${name}\nEmail: ${email}\n\n${message}`
       window.location.href =
         `mailto:${CONTACT_EMAIL}` +
-        `?subject=${encodeURIComponent('Ventis — pilot / partnership inquiry')}` +
+        `?subject=${encodeURIComponent('Ventis: pilot / partnership inquiry')}` +
         `&body=${encodeURIComponent(body)}`
       setStatus('sent')
       return
@@ -46,7 +46,7 @@ export function Contact() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
-          subject: 'Ventis — pilot / partnership inquiry',
+          subject: 'Ventis: pilot / partnership inquiry',
           from_name: 'Ventis site',
           name,
           email,

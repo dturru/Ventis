@@ -47,3 +47,6 @@ library/public/data/
 
 # local data-exploration scratch (untracked)
 scratch/
+
+# flashable firmware bundle (build artifact)
+/firmware.zip

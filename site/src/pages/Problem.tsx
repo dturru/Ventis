@@ -76,8 +76,9 @@ export function Problem() {
             </div>
           </div>
           <p className="evidence-foot">
-            For a student, that’s focus, studying, and exam performance. For a college, it’s
-            academic performance you can measure, building by building.
+            For a student, that’s focus, studying, and exam performance. For a college, it’s the
+            same thing made measurable, building by building: the wellbeing and performance of every
+            resident, and for the first time something it can actually see, and act on, room by room.
           </p>
         </div>
 

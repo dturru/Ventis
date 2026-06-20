@@ -41,3 +41,9 @@ site/scripts/archive/
 
 # Data Library build artifacts (moat — never commit)
 library/public/data/
+
+# Understand-Anything knowledge-graph output (local only — do not commit)
+.understand-anything/
+
+# local data-exploration scratch (untracked)
+scratch/

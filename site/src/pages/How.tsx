@@ -100,8 +100,8 @@ export function How() {
           <h2 className="section-title" style={{ fontSize: 26, marginTop: 40 }}>Built for dorm life</h2>
           <p>
             <strong>No install, fully removable.</strong> It sits in your window with no screws,
-            no adhesive, and no exposed mains wiring. Nothing to mount, nothing for an RA to flag,
-            and it comes out in seconds when you move.
+            no adhesive, and no exposed mains wiring. It isn’t a window AC unit, so it isn’t on the
+            prohibited list, and it comes out in seconds when you move.
           </p>
           <p>
             <strong>Your roommate won’t notice.</strong> It’s near-silent at low speed, small

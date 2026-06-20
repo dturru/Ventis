@@ -20,7 +20,9 @@ export function Problem() {
         <p className="lede">
           Most Dartmouth dorms predate central air. Overnight, a closed room fills with
           the CO₂ you breathe back out. Nothing about it feels wrong, and by the time it
-          does, your sleep and your focus have already paid for it.
+          does, your sleep and your focus have already paid for it. You can’t even look it
+          up: a building “having AC” doesn’t tell you whether it’s running, or what your
+          room is actually doing tonight.
         </p>
 
         <div className="points-grid">

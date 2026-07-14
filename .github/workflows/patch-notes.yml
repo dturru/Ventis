@@ -10,6 +10,7 @@ name: patch-notes
 on:
   push:
     branches: [main]
+  workflow_dispatch:   # manual "send a test now" — summarizes the latest commit on main
 
 jobs:
   notify:

@@ -54,3 +54,26 @@ def test_dispatch_noop_with_recipients_but_no_creds(monkeypatch):
     monkeypatch.delenv("PATCH_NOTES_SMTP_USER", raising=False)
     monkeypatch.delenv("PATCH_NOTES_SMTP_PASS", raising=False)
     assert pn.dispatch("subj", "<p>hi</p>", recipients="a@b.com") is False
+
+
+def test_dispatch_empty_host_port_env_falls_back_to_defaults(monkeypatch):
+    # An unset GitHub secret arrives as "" (not absent). int("") must not crash the
+    # documented default config (host=smtp.gmail.com, port=465).
+    for k, v in {"PATCH_NOTES_TO": "a@b.com", "PATCH_NOTES_SMTP_USER": "u@gmail.com",
+                 "PATCH_NOTES_SMTP_PASS": "pw", "PATCH_NOTES_SMTP_HOST": "",
+                 "PATCH_NOTES_SMTP_PORT": ""}.items():
+        monkeypatch.setenv(k, v)
+    seen = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=0):
+            seen["host"], seen["port"] = host, port
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, u, p): pass
+        def send_message(self, m): seen["sent"] = True
+
+    import smtplib
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+    assert pn.dispatch("subj", "<p>hi</p>") is True
+    assert seen == {"host": "smtp.gmail.com", "port": 465, "sent": True}

@@ -161,8 +161,10 @@ def dispatch(subject, html, recipients=None):
     if not (tos and user and pw):
         print("(patch_notes: recipients/SMTP creds unset — not sent)")
         return False
-    host = os.environ.get("PATCH_NOTES_SMTP_HOST", "smtp.gmail.com")
-    port = int(os.environ.get("PATCH_NOTES_SMTP_PORT", "465"))
+    # `or` not a default arg: an unset GitHub secret is an EMPTY STRING, not absent,
+    # so os.environ.get(k, default) returns "" and int("") would raise before the try.
+    host = os.environ.get("PATCH_NOTES_SMTP_HOST") or "smtp.gmail.com"
+    port = int(os.environ.get("PATCH_NOTES_SMTP_PORT") or "465")
     sender = os.environ.get("PATCH_NOTES_SMTP_FROM", "") or user
     try:
         import smtplib

@@ -23,6 +23,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
   try {
     await client.connect();
+    // Flood guard: cap rapid repeats per deployment code. This is anti-spam only — the
+    // real anti-forgery control is reconcile_consent's gate (a public-form opt-in only
+    // verifies a run that was started through the authenticated launcher).
+    const recent = await client.query<{ n: number }>(
+      "select count(*)::int as n from consent_submissions " +
+      "where deployment_code = $1 and agreed_at > now() - interval '60 seconds'",
+      [v.value.code],
+    );
+    if ((recent.rows[0]?.n ?? 0) >= 5) {
+      return res.status(429).json({ error: "too many submissions, please slow down" });
+    }
     await client.query(
       "insert into consent_submissions " +
       "(deployment_code, condition, consent_method, attested_by, terms_version, notes) " +

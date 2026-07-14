@@ -136,3 +136,44 @@ def test_plan_reconcile_skips_already_reconciled():
              "reconciled_run_key": "k_fahey"}]
     upserts, marks = plan_reconcile(subs, RUNS)
     assert upserts == [] and marks == []
+
+
+# --- anti-forgery gate: public-form opt-ins require a real authenticated launch ---
+
+def _form_sub(**kw):
+    base = {"id": 1, "condition": "fahey_window_1person", "consent_method": "opt_in_form",
+            "attested_by": "occupant", "terms_version": "v1",
+            "agreed_at": "2026-06-01 20:30:00", "notes": "", "reconciled_run_key": None}
+    base.update(kw)
+    return base
+
+
+def test_gate_links_form_optin_with_a_matching_launch():
+    # A launch exists for this condition (operator started it via the authed launcher).
+    up, marks = plan_reconcile([_form_sub()], RUNS, launched=["fahey_window_1person"])
+    assert len(up) == 1 and marks == [(1, "k_fahey")]
+
+
+def test_gate_rejects_forged_form_optin_without_a_launch():
+    # No launch for this condition -> a fabricated public-form opt-in must NOT link.
+    up, marks = plan_reconcile([_form_sub()], RUNS, launched=["judge_baseline_2person"])
+    assert up == [] and marks == []
+
+
+def test_gate_matches_launch_canonically():
+    # Launch label written differently (number-word, separators) still matches.
+    up, _ = plan_reconcile([_form_sub()], RUNS, launched=["Fahey Window one person"])
+    assert len(up) == 1
+
+
+def test_gate_trusts_verbal_optin_without_a_launch():
+    # opt_in_verbal comes through the authed launcher already — not gated.
+    sub = _form_sub(consent_method="opt_in_verbal")
+    up, marks = plan_reconcile([sub], RUNS, launched=["judge_baseline_2person"])
+    assert len(up) == 1 and marks == [(1, "k_fahey")]
+
+
+def test_gate_disabled_when_launched_is_none():
+    # Back-compat: no launched arg = no gate (legacy callers / other unit tests).
+    up, _ = plan_reconcile([_form_sub()], RUNS)
+    assert len(up) == 1

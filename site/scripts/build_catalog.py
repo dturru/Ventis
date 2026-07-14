@@ -123,6 +123,33 @@ def apply_attr_overrides(rec, anno):
     return rec
 
 
+CAUSAL_MARKERS = {"tier-causal", "causal", "fahey-grade", "fahey"}
+
+
+def derive_auto_tags(rec, existing_tags):
+    """Deterministic tags derived from run data, to be UNIONED with the manual
+    annotation tags. Non-destructive: read-time catalog enrichment only (never writes
+    the annotations table), so a founder's manual annotate.py edit is never clobbered.
+
+    - provenance from device_id: ventis-* devices are the SCD40 PAS sensor. Legacy /
+      unknown device_ids are left untagged for the one-time manual provenance SQL
+      (the MH-Z16 NDIR Pi runs), never guessed.
+    - evidentiary tier: default 'tier-descriptive' UNLESS a manual tag already promotes
+      the run to causal. Encodes the cardinal rule — a run is never AUTO-called causal.
+    - warm-up-trim: co2_mean/co2_peak are always warm-up-trimmed, so tag it when present.
+
+    Returns only the genuinely-new tags (set difference against existing)."""
+    have = {t.strip() for t in str(existing_tags or "").split(",") if t.strip()}
+    auto = set()
+    if str(rec.get("device_id", "")).lower().startswith("ventis"):
+        auto.add("scd40-pas")
+    if not (have & CAUSAL_MARKERS):
+        auto.add("tier-descriptive")
+    if rec.get("co2_mean") is not None:
+        auto.add("warm-up-trim")
+    return auto - have
+
+
 def run_record(run: dict) -> dict:
     lab = parse_label(run.get("condition", ""))
     toks = [t for t in re.split(r"[^a-z0-9]+", str(run.get("condition", "")).lower()) if t]
@@ -235,6 +262,21 @@ def build(db_path=DB, out_dir=None, graphs_dir=GRAPHS_DIR, db_url=None):
             apply_attr_overrides(r, annos.get(r["run_key"], {}))
     except Exception as e:
         print(f"(annotations skipped: {e})")
+    # Auto-enrich: union deterministic derived tags (provenance / tier / warm-up) with
+    # the manual tags. Non-destructive read-time enrichment (never touches the DB).
+    for r in records:
+        have = {t.strip() for t in str(r.get("tags", "")).split(",") if t.strip()}
+        r["tags"] = ",".join(sorted(have | derive_auto_tags(r, r.get("tags"))))
+    # Auto-analysis draft: full stat block + a review-ready Data Log draft per run,
+    # attached to the catalog record. Non-fatal — a draft failure never breaks a build.
+    try:
+        from run_analysis import extra_stats, draft_markdown
+        for r in records:
+            ex = extra_stats(readings.get(r["run_key"], []))
+            r["stats"] = ex
+            r["draft_md"] = draft_markdown(r, ex)
+    except Exception as e:
+        print(f"(analysis draft skipped: {e})")
     json.dump({"generated": _now(), "runs": records},
               open(os.path.join(out_dir, "catalog.json"), "w"), indent=2, default=str)
     csv_dir = os.path.join(out_dir, "csv")

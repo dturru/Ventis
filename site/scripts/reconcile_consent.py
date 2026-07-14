@@ -86,9 +86,20 @@ def match_run(submission, runs, tolerance_h=TOLERANCE_H):
     return best if dist(best) <= tolerance_h * 3600 else None
 
 
-def plan_reconcile(submissions, runs, tolerance_h=TOLERANCE_H):
+def plan_reconcile(submissions, runs, launched=None, tolerance_h=TOLERANCE_H):
     """Pure planner -> (upserts: [consent rec dict], marks: [(submission_id, run_key)]).
-    Only unreconciled submissions that match a run are included."""
+    Only unreconciled submissions that match a run are included.
+
+    Anti-forgery gate: a PUBLIC-FORM submission (consent_method == 'opt_in_form') links
+    ONLY if its run was actually started through the authenticated Run Launcher — i.e.
+    the run's canonical condition is in `launched` (the canonical set of run_launches
+    labels). The public /consent endpoint is unauthenticated and only shape-checks the
+    deployment code, so anyone could POST a consent_submissions row for a guessable
+    condition; but nobody can forge an authed launch, so a fabricated opt-in never
+    verifies a run. Operator-attested submissions ('opt_in_verbal') already come through
+    the authed launcher and stay trusted. `launched=None` disables the gate (unit tests /
+    legacy callers); reconcile() always passes the real set, so the gate is on in prod."""
+    gate = None if launched is None else {canonical(x) for x in launched}
     upserts, marks = [], []
     for s in submissions:
         if s.get("reconciled_run_key"):
@@ -96,6 +107,9 @@ def plan_reconcile(submissions, runs, tolerance_h=TOLERANCE_H):
         run = match_run(s, runs, tolerance_h)
         if not run:
             continue
+        if (gate is not None and s.get("consent_method") == "opt_in_form"
+                and canonical(run.get("condition")) not in gate):
+            continue  # public-form opt-in with no matching authenticated launch — reject
         upserts.append({
             "run_key": run["run_key"],
             "run_id": run.get("run_id", ""),
@@ -110,7 +124,7 @@ def plan_reconcile(submissions, runs, tolerance_h=TOLERANCE_H):
 
 
 def _fetch(db_url):
-    """-> (submissions, runs) from Supabase."""
+    """-> (submissions, runs, launched_labels) from Supabase."""
     import psycopg
     from psycopg.rows import dict_row
     with psycopg.connect(db_url) as con, con.cursor(row_factory=dict_row) as cur:
@@ -121,7 +135,10 @@ def _fetch(db_url):
         cur.execute("select run_key, run_id, condition, "
                     "to_char(start_ts,'YYYY-MM-DD HH24:MI:SS') as start from runs")
         runs = cur.fetchall()
-    return subs, runs
+        # Authenticated-launch proof for the anti-forgery gate (see plan_reconcile).
+        cur.execute("select canonical_label from run_launches")
+        launched = [r["canonical_label"] for r in cur.fetchall()]
+    return subs, runs, launched
 
 
 def _apply(upserts, marks, db_url):
@@ -144,8 +161,8 @@ def reconcile(db_url=None):
     # Non-fatal by design: this is a supplementary enrichment step. A missing table
     # (DDL not run yet) or a transient DB error must never break the hourly pipeline.
     try:
-        subs, runs = _fetch(src)
-        upserts, marks = plan_reconcile(subs, runs)
+        subs, runs, launched = _fetch(src)
+        upserts, marks = plan_reconcile(subs, runs, launched=launched)
         if upserts:
             _apply(upserts, marks, src)
         print(f"reconcile_consent: {len(upserts)} submission(s) reconciled to runs "

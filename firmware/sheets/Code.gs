@@ -72,8 +72,30 @@ function setControl_(logging, label) {
   }
   const cur = sh.getRange('A2:C2').getValues()[0];
   const nextSeq = (Number(cur[2]) || 0) + 1;
-  sh.getRange('A2:C2').setValues([[logging, label_(label), nextSeq]]);
+  const safeLabel = label_(label);
+  sh.getRange('A2:C2').setValues([[logging, safeLabel, nextSeq]]);
+  notifyDiscord_(logging ? '🟢 Run started' : '🔴 Run stopped', safeLabel);
   return nextSeq;
+}
+
+// Best-effort Discord ping on run start/stop. Reads the webhook URL from a Script
+// Property so it's never in the repo (same pattern as SHEETS_TOKEN). SILENT no-op when
+// the property is unset, so this is inert until a webhook is configured. Wrapped so a
+// webhook outage can NEVER break the control write that starts/stops a run.
+function notifyDiscord_(title, label) {
+  try {
+    const url = PropertiesService.getScriptProperties().getProperty('DISCORD_WEBHOOK_URL');
+    if (!url) return;
+    const content = title + (label ? ': `' + label + '`' : '');
+    UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ content: content }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    // notifications are best-effort — never block start/stop on a webhook failure
+  }
 }
 
 // Remote logging control. The device polls this (GET) every minute and applies a

@@ -54,8 +54,11 @@ jobs:
       - name: Reconcile end-of-run captures to runs
         # Folds Run Launcher end-of-run captures (run_launches) into annotations by
         # run_key, so the catalog auto-categorizes the run. No-op if SUPABASE_DB_URL unset.
+        # DISCORD_WEBHOOK_URL (optional) pings once per newly-documented run; silent no-op
+        # if the secret is unset.
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python site/scripts/reconcile_run_ends.py
 
       - name: Build catalog (catalog.json + series + charts)

@@ -1,0 +1,39 @@
+name: patch-notes
+
+# Emails plain-English "patch notes" to the team whenever main changes — a vercel[bot]-
+# style deploy note, rewritten into simple non-technical language.
+#
+# Inert until wired: with no PATCH_NOTES_TO / SMTP creds the script composes but does not
+# send; with no ANTHROPIC_API_KEY it uses a plain template instead of the LLM rewrite.
+# Every step is non-fatal, so a push is never blocked by the notifier.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # need the `before` commit to diff the push range
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the Anthropic SDK (enables the plain-English rewrite)
+        run: pip install anthropic
+      - name: Compose + email patch notes
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PATCH_NOTES_TO: ${{ secrets.PATCH_NOTES_TO }}
+          PATCH_NOTES_SMTP_HOST: ${{ secrets.PATCH_NOTES_SMTP_HOST }}
+          PATCH_NOTES_SMTP_PORT: ${{ secrets.PATCH_NOTES_SMTP_PORT }}
+          PATCH_NOTES_SMTP_USER: ${{ secrets.PATCH_NOTES_SMTP_USER }}
+          PATCH_NOTES_SMTP_PASS: ${{ secrets.PATCH_NOTES_SMTP_PASS }}
+          PATCH_NOTES_SMTP_FROM: ${{ secrets.PATCH_NOTES_SMTP_FROM }}
+        run: python site/scripts/patch_notes.py

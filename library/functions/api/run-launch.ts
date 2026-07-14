@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { verifyAccess, AccessDenied, type AccessEnv } from "./_access";
 import { compose, validateLabelInputs, canonical } from "../../src/lib/runLabel";
 import { evaluatePreflight, gate, type PreflightInputs, type Verdict } from "../../src/lib/preflight";
 import { buildEndFields, type EndCapture, type EndRecord } from "../../src/lib/endFields";
@@ -143,9 +144,22 @@ export async function handleRunLaunch(deps: LaunchDeps, body: LaunchBody, authed
   return { status: "started", verdicts: v2, label, seq };
 }
 
-interface Env { SUPABASE_DB_URL: string; CONTROL_URL: string; CONTROL_TOKEN: string }
+interface Env extends AccessEnv { SUPABASE_DB_URL: string; CONTROL_URL: string; CONTROL_TOKEN: string }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
+  // AUTH FIRST — before body handling or any device/DB work, so the stop path (which
+  // flips logging off + writes records) can never run unauthenticated. When CF_ACCESS_*
+  // is configured this verifies the signed Access JWT; otherwise it's the header, as today.
+  let authedEmail: string | null;
+  try {
+    ({ email: authedEmail } = await verifyAccess(context.request, context.env));
+  } catch (e) {
+    if (e instanceof AccessDenied) {
+      return Response.json({ status: "error", verdicts: [], message: "unauthorized" }, { status: 403 });
+    }
+    throw e;
+  }
+
   const body = (await context.request.json().catch(() => null)) as LaunchBody | null;
   if (!body || (body.action !== "start" && body.action !== "stop")) {
     return Response.json({ status: "error", verdicts: [], message: "bad body" }, { status: 400 });
@@ -154,7 +168,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!SUPABASE_DB_URL || !CONTROL_URL || !CONTROL_TOKEN) {
     return Response.json({ status: "error", verdicts: [], message: "not configured" }, { status: 500 });
   }
-  const authedEmail = context.request.headers.get("Cf-Access-Authenticated-User-Email");
   const sql = postgres(SUPABASE_DB_URL, { ssl: "require", prepare: false, fetch_types: false, connect_timeout: 10 });
 
   const postControl = async (action: "control", logging: boolean, label: string): Promise<number> => {

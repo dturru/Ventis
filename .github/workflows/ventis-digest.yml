@@ -1,0 +1,26 @@
+name: ventis-digest
+
+# Weekly Ventis dataset digest to Discord: new runs, runs needing a quality flag,
+# and thin-coverage conditions. Reads the Supabase system-of-record directly (no
+# catalog build needed). Inert until BOTH secrets are set — no SUPABASE_DB_URL skips
+# the fetch; no DISCORD_WEBHOOK_URL skips the post. Safe to merge before wiring.
+
+on:
+  schedule: [{ cron: "0 13 * * 1" }]   # Mondays ~08:00 ET (13:00 UTC during EDT)
+  workflow_dispatch:                    # manual "run now" for testing
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: pip install -r site/scripts/requirements.txt
+      - name: Compose + post weekly digest
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python site/scripts/digest.py

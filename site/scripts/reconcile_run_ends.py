@@ -14,8 +14,10 @@ thereafter, so later builds never clobber a manual annotate.py edit.
 Runs in CI after supabase_sync (runs exist) and before build_catalog. Dry-run if
 SUPABASE_DB_URL is unset.
 """
+import json
 import os
 import sys
+import urllib.request
 
 from _env import load_env
 load_env()   # pick up SUPABASE_DB_URL from a gitignored .env if present (CI's env wins)
@@ -71,6 +73,38 @@ def plan_reconcile(launches, runs, tolerance_h=TOLERANCE_H):
     return upserts, marks
 
 
+def notifications_for(marks, runs):
+    """Pure: -> list of human labels (run condition) for the runs just reconciled.
+    Used to build one 'run documented' Discord ping per newly-categorized run."""
+    cond = {r.get("run_key"): (r.get("condition") or r.get("run_key")) for r in runs}
+    return [cond.get(rk, rk) for (_launch_id, rk) in marks]
+
+
+def _post_discord(url, content):
+    """POST a single Discord webhook message. Best-effort, short timeout."""
+    data = json.dumps({"content": content}).encode("utf-8")
+    req = urllib.request.Request(url, data=data,
+                                 headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=5).read()
+
+
+def notify_documented(labels, webhook_url=None, poster=_post_discord):
+    """Ping the Discord webhook once per reconciled run. SILENT no-op when the webhook
+    is unset (inert until configured). Non-fatal: a webhook outage must never break the
+    hourly pipeline, so every failure is swallowed. Returns the number of pings sent."""
+    url = webhook_url if webhook_url is not None else os.environ.get("DISCORD_WEBHOOK_URL")
+    if not url or not labels:
+        return 0
+    sent = 0
+    for label in labels:
+        try:
+            poster(url, f"\U0001F4CA Run documented: `{label}`")
+            sent += 1
+        except Exception as e:
+            print(f"(notify_documented: skipped `{label}`, {e})")
+    return sent
+
+
 def _fetch(db_url):
     """-> (stopped launches, runs) from Supabase."""
     import psycopg
@@ -114,6 +148,8 @@ def reconcile(db_url=None):
         upserts, marks = plan_reconcile(launches, runs)
         if upserts:
             _apply(upserts, marks, src)
+            # Ping AFTER a successful apply so we only announce runs actually written.
+            notify_documented(notifications_for(marks, runs))
         print(f"reconcile_run_ends: {len(upserts)} end-capture(s) reconciled to runs "
               f"({len(launches)} stopped launches, {len(runs)} runs)")
     except Exception as e:

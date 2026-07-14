@@ -14,11 +14,10 @@ thereafter, so later builds never clobber a manual annotate.py edit.
 Runs in CI after supabase_sync (runs exist) and before build_catalog. Dry-run if
 SUPABASE_DB_URL is unset.
 """
-import json
 import os
 import sys
-import urllib.request
 
+from _discord import post as _post_discord
 from _env import load_env
 load_env()   # pick up SUPABASE_DB_URL from a gitignored .env if present (CI's env wins)
 
@@ -78,14 +77,6 @@ def notifications_for(marks, runs):
     Used to build one 'run documented' Discord ping per newly-categorized run."""
     cond = {r.get("run_key"): (r.get("condition") or r.get("run_key")) for r in runs}
     return [cond.get(rk, rk) for (_launch_id, rk) in marks]
-
-
-def _post_discord(url, content):
-    """POST a single Discord webhook message. Best-effort, short timeout."""
-    data = json.dumps({"content": content}).encode("utf-8")
-    req = urllib.request.Request(url, data=data,
-                                 headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=5).read()
 
 
 def notify_documented(labels, webhook_url=None, poster=_post_discord):

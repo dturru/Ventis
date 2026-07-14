@@ -11,13 +11,12 @@ Usage:
   python digest.py            # compose from Supabase + post (needs SUPABASE_DB_URL + webhook)
   python digest.py --dry-run  # print the composed digest, post nothing
 """
-import json
 import os
 import sys
-import urllib.request
 from collections import Counter
 from datetime import datetime, timedelta
 
+from _discord import post as _post_discord
 from _env import load_env
 load_env()
 
@@ -79,13 +78,6 @@ def compose_digest(runs, now, window_days=7):
         lines.append(_bullets(thin))
     out = "\n".join(lines)
     return out if len(out) <= MAX_CHARS else out[:MAX_CHARS - 1] + "…"
-
-
-def _post_discord(url, content):
-    data = json.dumps({"content": content}).encode("utf-8")
-    req = urllib.request.Request(url, data=data,
-                                 headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=5).read()
 
 
 def send(text, webhook_url=None, poster=_post_discord):

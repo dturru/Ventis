@@ -9,7 +9,7 @@ def _rows():
     rows = []
     for i in range(40):
         rows.append({
-            "timestamp": f"2026-06-01 20:{i:02d}:00" if i < 60 else None,
+            "timestamp": f"2026-06-01 20:{i:02d}:00",
             "co2_ppm": 900 + i * 20,
             "humidity_pct": 40,
         })
@@ -44,4 +44,5 @@ def test_draft_markdown_fills_numbers_and_leaves_tier_todo():
     assert "fahey_window_1person" in md
     assert "1300 ppm" in md                    # auto-filled number
     assert "Evidentiary tier" in md and "TODO" in md   # judgment left to human
-    assert "never" not in md.lower() or "causal" in md.lower()
+    assert "descriptive" in md.lower() and "causal" in md.lower()   # tier guidance present
+    assert "Caveats" in md and "±50 ppm" in md          # caveats stub present

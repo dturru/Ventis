@@ -60,3 +60,25 @@ def test_send_is_nonfatal_on_poster_error():
     def boom(u, c):
         raise RuntimeError("down")
     assert send("hi", webhook_url="https://hook", poster=boom) is False
+
+
+def test_uncategorized_header_matches_bullets_with_count():
+    # Two uncategorized runs of the SAME condition: header counts runs (2), the single
+    # bullet is annotated ×2 — header and list agree (no more count/dedupe mismatch).
+    runs = [
+        {"condition": "fahey_window_1person", "date": "2026-07-10", "quality_flag": ""},
+        {"condition": "fahey_window_1person", "date": "2026-07-11", "quality_flag": ""},
+    ]
+    d = compose_digest(runs, NOW)
+    assert "Needs a quality flag (2)" in d
+    seg = d.split("Needs a quality flag")[1]
+    assert "fahey_window_1person ×2" in seg
+    assert seg.count("fahey_window_1person") == 1   # one bullet, not two
+
+
+def test_digest_truncated_under_discord_limit():
+    from digest import MAX_CHARS
+    runs = [{"condition": f"bldg{i}_baseline_1person", "date": "2026-07-13",
+             "quality_flag": ""} for i in range(200)]
+    d = compose_digest(runs, NOW)
+    assert len(d) <= MAX_CHARS

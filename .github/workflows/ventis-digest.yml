@@ -18,7 +18,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Python deps
-        run: pip install -r site/scripts/requirements.txt
+        # digest.py needs only psycopg (+ stdlib) — skip the full pipeline requirements
+        # (pandas/matplotlib) to keep this weekly job fast.
+        run: pip install "psycopg[binary]"
       - name: Compose + post weekly digest
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}

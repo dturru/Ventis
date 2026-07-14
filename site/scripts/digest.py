@@ -15,12 +15,14 @@ import json
 import os
 import sys
 import urllib.request
+from collections import Counter
 from datetime import datetime, timedelta
 
 from _env import load_env
 load_env()
 
-MAX_LIST = 15   # cap each section so we stay well under Discord's 2000-char limit
+MAX_LIST = 15      # cap each section's bullets
+MAX_CHARS = 1990   # hard cap under Discord's 2000-char message limit
 
 
 def _date(s):
@@ -39,10 +41,18 @@ def _bullets(items):
     return out
 
 
+def _counted_bullets(conditions):
+    """One bullet per distinct condition, annotated `×N` when it recurs — so the section
+    header (which counts runs) and the bullet list (distinct conditions) stay consistent."""
+    counts = Counter(conditions)
+    rows = [f"{c} ×{n}" if n > 1 else c for c, n in sorted(counts.items())]
+    return _bullets(rows)
+
+
 def compose_digest(runs, now, window_days=7):
     """Pure. runs: [{condition, date, quality_flag}]. -> Discord markdown string.
     A run is 'uncategorized' when it carries no quality flag; 'thin' conditions have
-    exactly one run in the whole dataset."""
+    exactly one run in the whole dataset. Truncated to MAX_CHARS for Discord."""
     cutoff = now - timedelta(days=window_days)
     new_runs, uncategorized, counts = [], [], {}
     for r in runs:
@@ -58,16 +68,17 @@ def compose_digest(runs, now, window_days=7):
     lines = [f"**📊 Ventis weekly digest** — {len(runs)} runs total"]
     lines.append("")
     lines.append(f"**🆕 New this week ({len(new_runs)})**")
-    lines.append(_bullets(sorted(new_runs)) if new_runs else "• none")
+    lines.append(_counted_bullets(new_runs) if new_runs else "• none")
     if uncategorized:
         lines.append("")
         lines.append(f"**🏷️ Needs a quality flag ({len(uncategorized)})**")
-        lines.append(_bullets(sorted(set(uncategorized))))
+        lines.append(_counted_bullets(uncategorized))
     if thin:
         lines.append("")
         lines.append(f"**📉 Thin coverage — single run ({len(thin)})**")
         lines.append(_bullets(thin))
-    return "\n".join(lines)
+    out = "\n".join(lines)
+    return out if len(out) <= MAX_CHARS else out[:MAX_CHARS - 1] + "…"
 
 
 def _post_discord(url, content):
